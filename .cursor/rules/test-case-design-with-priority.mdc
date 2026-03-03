@@ -240,22 +240,16 @@ tc-{优先级}-{模块简称}-{序号}
 
 ##### tc-{优先级}-{模块}-{序号}：[用例场景描述] - H5
 
-###### tc-{优先级}: 前置条件
-- 前置条件1
-- 前置条件2
-
-###### tc-{优先级}: 测试步骤
-1. 操作步骤1
-2. 操作步骤2
-
-###### tc-{优先级}: 预期结果
-- 预期结果1
-- 预期结果2
-
-###### tc-{优先级}: 测试数据
-- 数据项1：具体值
-- 数据项2：具体值
+- tc-{优先级}: 预期结果1
+- tc-{优先级}: 预期结果2
+- tc-{优先级}: 预期结果3
 ```
+
+**格式要点**：
+- 每个用例（H5层级）下方**仅保留预期结果**，以无序列表形式直接列出
+- 不使用 H6 子标题，不单独设置前置条件、测试步骤、测试数据等段落
+- 每条预期结果前必须添加 `tc-{优先级}:` 前缀（如 `tc-P0:`、`tc-P1:`）
+- 前缀中的优先级需与所属 H5 用例场景中的优先级保持一致
 
 ### 4.2 层级详细说明
 
@@ -294,40 +288,29 @@ tc-{优先级}-{模块简称}-{序号}
   - `##### tc-P0-ENT-QUERY-001：用户首次查询权益，未充值过，不返回purchasedEntitlements字段`
   - `##### tc-P1-ENT-UPDATE-005：同时更新买点和权益点，系统返回错误码500.030.025`
 
-#### H6 - 用例详细内容
-用例场景下可包含以下H6级别的子项；**所有H6标题开头必须固定拼接用例优先级前缀，格式为 `tc-P0:` / `tc-P1:`（同理可扩展为 `tc-P2:` / `tc-P3:`），且前缀中的优先级需与所属H5用例场景中的优先级保持一致。**
+#### 用例预期结果列表（H5 下方的列表项）
 
-##### 1. 前置条件（可选）
+用例场景（H5）下方**仅包含预期结果列表**，不使用 H6 子标题。每条预期结果以 `- tc-{优先级}: ` 开头，优先级需与所属 H5 用例场景中的优先级保持一致。
+
+**格式规则**：
+- 不设置独立的"前置条件"、"测试步骤"、"测试数据"段落
+- 不使用"预期结果"标题，直接以带优先级前缀的列表项形式列出
+- 前缀格式：`tc-P0:` / `tc-P1:` / `tc-P2:` / `tc-P3:`
+- 每条预期结果应清晰、可验证、可观测
+
 ```markdown
-###### tc-P0: 前置条件
-- 用户已登录系统
-- 会籍状态为激活
-- 已配置充值模板
+##### tc-P0-ENT-QUERY-001：用户已充值，查询权益返回 purchasedEntitlements 字段
+
+- tc-P0: HTTP 状态码为 200
+- tc-P0: 响应中包含 `purchasedEntitlements` 字段
+- tc-P0: `purchasedEntitlements` 的值等于用户实际充值的点数
+- tc-P0: `maxGuestsNextUse` 的计算包含了 `purchasedEntitlements`
 ```
 
-##### 2. 测试步骤（推荐）
-```markdown
-###### tc-P0: 测试步骤
-1. 调用接口 `/v2/entitlements/search`
-2. 传入参数 membershipId=8888000066668888
-3. 验证响应结果
-```
-
-##### 3. 预期结果（必需）
-```markdown
-###### tc-P0: 预期结果
-- 响应状态码为200
-- 返回字段 purchasedEntitlements 存在且值为2
-- maxGuestsNextUse 的计算包含了买点数量
-```
-
-##### 4. 测试数据（推荐）
-```markdown
-###### tc-P0: 测试数据
-- membershipId: 8888000066668888
-- module: 1
-- purchasedQuantity: 999
-```
+**编写建议**：
+- 用例标题（H5）应包含足够的上下文信息（场景条件+预期行为），减少对独立前置条件的依赖
+- 预期结果应包含具体的验证点（如字段名、值、状态码），而非笼统描述
+- 如需补充测试数据或前置条件，应融入用例标题描述或预期结果条目中
 
 ### 4.3 完整示例
 
@@ -340,61 +323,27 @@ tc-{优先级}-{模块简称}-{序号}
 
 #### 正向场景验证
 
-##### tc-P0-ENT-QUERY-001：用户已充值，查询权益返回purchasedEntitlements字段
+##### tc-P0-ENT-QUERY-001：用户已充值，查询权益返回 purchasedEntitlements 字段
 
-###### tc-P0: 前置条件
-- 用户会籍已激活
-- 用户已完成至少一次充值
-- 会籍等级已配置充值模板
+- tc-P0: HTTP 状态码为 200
+- tc-P0: 响应中包含 `purchasedEntitlements` 字段
+- tc-P0: `purchasedEntitlements` 的值等于用户实际充值的点数
+- tc-P0: `maxGuestsNextUse` 的计算包含了 `purchasedEntitlements`
 
-###### tc-P0: 测试步骤
-1. 调用接口 `/v2/entitlements/search`
-2. 传入参数：membershipId=8888000066668888, module=1
-3. 解析响应JSON
+##### tc-P1-ENT-QUERY-002：用户未充值过，查询权益不返回 purchasedEntitlements 字段
 
-###### tc-P0: 预期结果
-- HTTP状态码为200
-- 响应中包含 `purchasedEntitlements` 字段
-- `purchasedEntitlements` 的值等于用户实际充值的点数
-- `maxGuestsNextUse` 的计算包含了 `purchasedEntitlements`
-
-###### tc-P0: 测试数据
-- membershipId: 8888000066668888
-- 充值点数: 5
-- 共享点数: 3
-- 期望maxGuestsNextUse: 8 (共享点3 + 买点5)
-
-##### tc-P1-ENT-QUERY-002：用户未充值过，查询权益不返回purchasedEntitlements字段
-
-###### tc-P1: 前置条件
-- 用户会籍已激活
-- 用户从未充值过
-- 无充值权益明细
-
-###### tc-P1: 测试步骤
-1. 调用接口 `/v2/entitlements/search`
-2. 传入参数：membershipId=8888000066668889, module=1
-3. 解析响应JSON
-
-###### tc-P1: 预期结果
-- HTTP状态码为200
-- 响应中不包含 `purchasedEntitlements` 字段
-- 其他权益字段正常返回
-- `maxGuestsNextUse` 仅基于非买点的共享点计算
+- tc-P1: HTTP 状态码为 200
+- tc-P1: 响应中不包含 `purchasedEntitlements` 字段
+- tc-P1: 其他权益字段正常返回
+- tc-P1: `maxGuestsNextUse` 仅基于非买点的共享点计算
 
 #### 边界值验证
 
-##### tc-P2-ENT-QUERY-003：用户充值点数为0，验证purchasedEntitlements字段返回
+##### tc-P2-ENT-QUERY-003：用户充值点数为 0，验证 purchasedEntitlements 字段返回
 
-###### tc-P2: 测试步骤
-1. 将用户充值点数编辑为0
-2. 调用 `/v2/entitlements/search`
-3. 验证响应
-
-###### tc-P2: 预期结果
-- 返回 `purchasedEntitlements` 字段
-- `purchasedEntitlements` 值为0
-- 不影响其他权益字段
+- tc-P2: 返回 `purchasedEntitlements` 字段
+- tc-P2: `purchasedEntitlements` 值为 0
+- tc-P2: 不影响其他权益字段
 
 ## 权益编辑接口
 
@@ -402,128 +351,54 @@ tc-{优先级}-{模块简称}-{序号}
 
 #### 充值模板校验
 
-##### tc-P0-ENT-UPDATE-001：未配置充值模板时编辑买点，返回错误码500.030.024
+##### tc-P0-ENT-UPDATE-001：未配置充值模板时编辑买点，返回错误码 500.030.024
 
-###### tc-P0: 前置条件
-- 会籍等级未配置充值商品模板
-- 用户尝试编辑买点
-
-###### tc-P0: 测试步骤
-1. 调用接口 `/v2/entitlements/update`
-2. 传入参数：membershipId=8888000066668890, purchasedQuantity=5
-
-###### tc-P0: 预期结果
-- HTTP状态码为400或业务状态码非0
-- 返回错误码：500.030.024
-- 错误信息：Operation not allowed. Editing this type of entitlement is not supported based on the program settings.
-- 买点数量未发生变化
+- tc-P0: 返回错误码 `500.030.024`
+- tc-P0: 错误信息：`Operation not allowed. Editing this type of entitlement is not supported based on the program settings.`
+- tc-P0: 买点数量未发生变化
 
 #### 同时更新限制
 
-##### tc-P0-ENT-UPDATE-002：同时更新买点和权益点，返回错误码500.030.025
+##### tc-P0-ENT-UPDATE-002：同时更新买点和权益点，返回错误码 500.030.025
 
-###### tc-P0: 前置条件
-- 会籍已配置充值模板
-- 用户同时传入quantity和purchasedQuantity参数
-
-###### tc-P0: 测试步骤
-1. 调用接口 `/v2/entitlements/update`
-2. 传入参数：
-   - membershipId: 8888000066668888
-   - quantity: 3
-   - purchasedQuantity: 2
-
-###### tc-P0: 预期结果
-- 返回错误码：500.030.025
-- 错误信息：Operation not allowed. Different types of entitlements must be updated separately.
-- 买点和权益点数量均未变化
+- tc-P0: 返回错误码 `500.030.025`
+- tc-P0: 错误信息：`Operation not allowed. Different types of entitlements must be updated separately.`
+- tc-P0: 买点和权益点数量均未变化
 
 #### 边界值验证
 
-##### tc-P1-ENT-UPDATE-003：将买点增加到999（上限值），更新成功
+##### tc-P1-ENT-UPDATE-003：将买点增加到 999（上限值），更新成功
 
-###### tc-P1: 前置条件
-- 会籍已配置充值模板
-- 当前买点为0
+- tc-P1: 更新成功
+- tc-P1: 买点值为 999
+- tc-P1: 再次查询确认数据持久化
 
-###### tc-P1: 测试步骤
-1. 调用接口 `/v2/entitlements/update`
-2. 传入参数：purchasedQuantity=999
+##### tc-P1-ENT-UPDATE-004：将买点增加到 1000（超上限），返回非法字符错误
 
-###### tc-P1: 预期结果
-- 更新成功
-- 买点值为999
-- 再次查询确认数据持久化
+- tc-P1: 更新失败
+- tc-P1: 返回错误提示（非法字符或超出限制）
+- tc-P1: 买点值未变化
 
-###### tc-P1: 测试数据
-- 初始值：0
-- 目标值：999
+##### tc-P1-ENT-UPDATE-005：买点减少到 0，更新成功
 
-##### tc-P1-ENT-UPDATE-004：将买点增加到1000（超上限），返回非法字符错误
+- tc-P1: 更新成功
+- tc-P1: 买点值为 0
+- tc-P1: `purchasedEntitlements` 字段仍然返回，值为 0
 
-###### tc-P1: 测试步骤
-1. 调用接口 `/v2/entitlements/update`
-2. 传入参数：purchasedQuantity=1000
+##### tc-P0-ENT-UPDATE-006：买点减少到负数，返回错误码 500.030.012
 
-###### tc-P1: 预期结果
-- 更新失败
-- 返回错误提示（非法字符或超出限制）
-- 买点值未变化
-
-##### tc-P1-ENT-UPDATE-005：买点减少到0，更新成功
-
-###### tc-P1: 前置条件
-- 当前买点为10
-
-###### tc-P1: 测试步骤
-1. 调用接口 `/v2/entitlements/update`
-2. 传入参数：purchasedQuantity=0
-
-###### tc-P1: 预期结果
-- 更新成功
-- 买点值为0
-- purchasedEntitlements 字段仍然返回，值为0
-
-##### tc-P0-ENT-UPDATE-006：买点减少到负数，返回错误码500.030.012
-
-###### tc-P0: 前置条件
-- 当前买点为5
-
-###### tc-P0: 测试步骤
-1. 调用接口 `/v2/entitlements/update`
-2. 传入参数：purchasedQuantity=-1
-
-###### tc-P0: 预期结果
-- 更新失败
-- 返回错误码：500.030.012
-- 错误信息：Insufficient entitlement balance. The requested deduction exceeds the available entitlement.
-- 买点值未变化
+- tc-P0: 更新失败
+- tc-P0: 返回错误码 `500.030.012`
+- tc-P0: 错误信息：`Insufficient entitlement balance. The requested deduction exceeds the available entitlement.`
+- tc-P0: 买点值未变化
 
 #### 计算规则验证
 
-##### tc-P0-ENT-UPDATE-007：更新买点后，验证maxGuestsNextUse计算正确性
+##### tc-P0-ENT-UPDATE-007：更新买点后 maxGuestsNextUse 计算正确（sharedEntitlements=3, purchasedQuantity=5）
 
-###### tc-P0: 前置条件
-- cardholderExclusiveEntitlements: 2
-- guestsExclusiveEntitlements: 1
-- sharedEntitlements: 3
-- purchasedEntitlements: 0
-- allowedGuestsPerUsage: 1
-
-###### tc-P0: 测试步骤
-1. 调用 `/v2/entitlements/update`，设置 purchasedQuantity=5
-2. 调用 `/v2/entitlements/search` 查询权益
-3. 验证 maxGuestsNextUse 的值
-
-###### tc-P0: 预期结果
-- purchasedEntitlements 更新为5
-- maxGuestsNextUse = (sharedEntitlements + purchasedEntitlements) / allowedGuestsPerUsage = (3+5)/1 = 8
-- 买点作为共享点参与计算
-
-###### tc-P0: 测试数据
-- 更新前 maxGuestsNextUse: 3
-- 更新后 maxGuestsNextUse: 8
-- 增量: 5
+- tc-P0: `purchasedEntitlements` 更新为 5
+- tc-P0: `maxGuestsNextUse` = (sharedEntitlements + purchasedEntitlements) / allowedGuestsPerUsage = (3+5)/1 = 8
+- tc-P0: 买点作为共享点参与计算
 ```
 
 ---
@@ -552,20 +427,20 @@ testcases/{需求名称}-测试用例-{序号}.md
 - [ ] 每个新增/修改字段都有用例覆盖
 
 #### 准确性检查
-- [ ] 用例ID命名符合规范
+- [ ] 用例 ID 命名符合规范（`tc-{优先级}-{模块}-{序号}`）
 - [ ] 优先级判定合理
 - [ ] 预期结果清晰可验证
-- [ ] 测试数据完整且真实
+- [ ] 每条预期结果均带有正确的 `tc-Px:` 优先级前缀
 
-#### 可执行性检查
-- [ ] 前置条件明确
-- [ ] 测试步骤可操作
-- [ ] 预期结果可观测
-- [ ] 无依赖缺失
+#### 格式规范检查
+- [ ] 用例仅使用 H1-H5 层级，不使用 H6
+- [ ] 用例标题（H5）包含充分的场景描述（条件+预期行为）
+- [ ] 预期结果以 `- tc-Px:` 列表项形式直接列在 H5 下方
+- [ ] 无独立的"前置条件"、"测试步骤"、"测试数据"段落
 
 #### 独立性检查
 - [ ] 用例间无强耦合
-- [ ] 单个用例可独立执行
+- [ ] 单个用例可独立理解（标题自包含场景上下文）
 - [ ] 用例失败不影响其他用例
 
 ### 6.2 优先级分布建议
@@ -614,9 +489,10 @@ testcases/{需求名称}-测试用例-{序号}.md
 ## 八、XMind导入兼容性说明
 
 ### 8.1 导入格式要求
-- 严格遵守H1-H6的Markdown层级
+- 严格遵守 H1-H5 的 Markdown 层级
 - 每级标题独占一行
-- 使用标准Markdown语法（#号+空格+标题）
+- 使用标准 Markdown 语法（#号+空格+标题）
+- 用例预期结果以 `- tc-Px:` 列表项形式直接跟在 H5 标题下方
 
 ### 8.2 导入后结构
 ```
@@ -625,15 +501,16 @@ testcases/{需求名称}-测试用例-{序号}.md
 │  ├─ 功能测试点1.1（H3）
 │  │  ├─ 验证点1.1.1（H4）
 │  │  │  ├─ tc-P0-XXX-001：用例场景（H5）
-│  │  │  │  ├─ 前置条件（H6）
-│  │  │  │  ├─ 测试步骤（H6）
-│  │  │  │  └─ 预期结果（H6）
+│  │  │  │  ├─ tc-P0: 预期结果1（列表项）
+│  │  │  │  ├─ tc-P0: 预期结果2（列表项）
+│  │  │  │  └─ tc-P0: 预期结果3（列表项）
 ```
 
 ### 8.3 注意事项
-- H6下的列表项会合并显示在同一节点
-- 用例ID会作为节点标签展示
-- 优先级标记便于在XMind中按颜色筛选
+- 每条预期结果（列表项）在 XMind 中显示为独立子节点
+- 用例 ID 会作为节点标签展示
+- 优先级标记便于在 XMind 中按颜色筛选
+- 精简结构（无 H6 层级）使脑图层次更清晰、节点更紧凑
 
 ---
 
@@ -651,55 +528,78 @@ testcases/{需求名称}-测试用例-{序号}.md
 ##### tc-P0-LOGIN-001：用户使用有效凭据登录成功
 ```
 
-#### ❌ 错误示例2：预期结果不明确
+#### ❌ 错误示例2：使用 H6 子标题分隔用例内容
 ```markdown
-###### 预期结果
+##### tc-P0-LOGIN-001：用户使用有效凭据登录成功
+
+###### tc-P0: 前置条件
+- 用户已注册
+
+###### tc-P0: 测试步骤
+1. 打开登录页面
+2. 输入凭据
+
+###### tc-P0: 预期结果
 - 登录成功
 ```
-**问题**：结果描述过于笼统，不可验证
+**问题**：使用了 H6 子标题分段，且预期结果描述过于笼统
 **正确**：
 ```markdown
-###### 预期结果
-- HTTP响应状态码为200
-- 返回用户Token，格式为JWT
-- 跳转到用户首页 /dashboard
-- Session创建成功，有效期为2小时
+##### tc-P0-LOGIN-001：用户使用有效凭据登录成功
+
+- tc-P0: HTTP 响应状态码为 200
+- tc-P0: 返回用户 Token，格式为 JWT
+- tc-P0: 跳转到用户首页 /dashboard
+- tc-P0: Session 创建成功，有效期为 2 小时
 ```
 
-#### ❌ 错误示例3：场景描述不完整
+#### ❌ 错误示例3：预期结果缺少优先级前缀
+```markdown
+##### tc-P0-LOGIN-001：用户使用有效凭据登录成功
+
+- HTTP 响应状态码为 200
+- 返回用户 Token
+```
+**问题**：预期结果列表项缺少 `tc-P0:` 优先级前缀
+**正确**：
+```markdown
+##### tc-P0-LOGIN-001：用户使用有效凭据登录成功
+
+- tc-P0: HTTP 响应状态码为 200
+- tc-P0: 返回用户 Token，格式为 JWT
+```
+
+#### ❌ 错误示例4：场景描述不完整
 ```markdown
 ##### tc-P1-ENT-UPDATE-002：更新买点失败
 ```
 **问题**：未说明失败原因和条件
 **正确**：
 ```markdown
-##### tc-P1-ENT-UPDATE-002：未配置充值模板时更新买点，返回错误码500.030.024
+##### tc-P1-ENT-UPDATE-002：未配置充值模板时更新买点，返回错误码 500.030.024
 ```
 
 ### 9.2 快速参考表
 
 | 元素 | Markdown标记 | 必需性 | 示例 |
 |-----|-------------|--------|------|
-| 文档标题 | # | 必需 | # 会籍权益系统测试用例 |
-| 功能模块 | ## | 必需 | ## 权益查询接口 |
-| 功能测试点 | ### | 必需 | ### 买点字段返回规则 |
-| 验证点 | #### | 必需 | #### 正向场景验证 |
-| 用例场景 | ##### | 必需 | ##### tc-P0-ENT-QUERY-001：... |
-| 前置条件 | ###### | 推荐 | ###### tc-P0: 前置条件 |
-| 测试步骤 | ###### | 推荐 | ###### tc-P0: 测试步骤 |
-| 预期结果 | ###### | 必需 | ###### tc-P0: 预期结果 |
-| 测试数据 | ###### | 推荐 | ###### tc-P0: 测试数据 |
+| 文档标题 | `#` | 必需 | `# 会籍权益系统测试用例` |
+| 功能模块 | `##` | 必需 | `## 权益查询接口` |
+| 功能测试点 | `###` | 必需 | `### 买点字段返回规则` |
+| 验证点 | `####` | 必需 | `#### 正向场景验证` |
+| 用例场景 | `#####` | 必需 | `##### tc-P0-ENT-QUERY-001：...` |
+| 预期结果 | `- tc-Px:` 列表项 | 必需 | `- tc-P0: HTTP 状态码为 200` |
 
 ---
 
 ## 十、总结
 
 ### 核心原则
-1. **优先级清晰**：每个用例必须有明确的优先级标记
-2. **结构规范**：严格遵守H1-H6的层级结构
-3. **描述完整**：场景、步骤、结果都要清晰可验证
-4. **可追溯性**：用例ID与需求、缺陷可关联
-5. **可维护性**：文档结构清晰，易于更新和扩展
+1. **优先级清晰**：每个用例必须有明确的优先级标记，每条预期结果必须带 `tc-Px:` 前缀
+2. **结构精简**：严格遵守 H1-H5 的层级结构，用例仅保留预期结果列表，不使用 H6 子标题
+3. **标题自包含**：用例标题（H5）应包含完整场景描述（条件+预期行为），减少对独立前置条件的依赖
+4. **可追溯性**：用例 ID 与需求、缺陷可关联
+5. **可维护性**：文档结构清晰紧凑，易于更新和扩展，兼容 XMind 导入
 
 ### 使用流程
 1. **需求分析** → 提取测试分析点
