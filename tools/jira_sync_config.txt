@@ -1,0 +1,18 @@
+# Jira Issue -> 本地 Markdown 路径映射（每行一个）
+# 格式: ISSUE_KEY: path/to/output.md
+# 使用: python tools/jira_sync.py --config tools/jira_sync_config.txt
+
+# 2026Q1_SP3
+PAPI-2284: requirements/2026Q1_SP3/PAPI-2284.md
+PAPI-2240: requirements/2026Q1_SP3/PAPI-2240.md
+PAPI-2199: requirements/2026Q1_SP3/entilement.md
+PAPI-2258: requirements/2026Q1_SP3/PAPI-2258.md
+PAPI-2182: requirements/2026Q1_SP3/PAPI-2182.md
+PAPI-2226: requirements/2026Q1_SP3/PAPI-2226.md
+
+# 2026Q1_SP4
+PAPI-2387: requirements/2026Q1_SP4/PAPI-2387.md
+PAPI-2373: requirements/2026Q1_SP4/PAPI-2373.md
+PAPI-2341: requirements/2026Q1_SP4/PAPI-2341.md
+PAPI-2352: requirements/2026Q1_SP4/PAPI-2352.md
+PAPI-2214: requirements/2026Q1_SP4/PAPI-2214.md

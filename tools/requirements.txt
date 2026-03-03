@@ -1,0 +1,2 @@
+# Jira 同步工具 jira_sync.py 依赖
+requests>=2.28.0

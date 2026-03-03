@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Jira 同步: PAPI-2199 -> entilement.md",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "tools/jira_sync.py",
+        "PAPI-2199",
+        "-o",
+        "requirements/2026Q1_SP3/entilement.md"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "JIRA_EMAIL": "${env:JIRA_EMAIL}",
+          "JIRA_API_TOKEN": "${env:JIRA_API_TOKEN}"
+        }
+      },
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Jira 同步: 使用配置文件",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "tools/jira_sync.py",
+        "--config",
+        "tools/jira_sync_config.txt"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "JIRA_EMAIL": "${env:JIRA_EMAIL}",
+          "JIRA_API_TOKEN": "${env:JIRA_API_TOKEN}"
+        }
+      },
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    }
+  ]
+}

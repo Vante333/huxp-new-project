@@ -1,0 +1,5 @@
+# Jira Issue -> 本地 Markdown 路径映射（每行一个）
+# 格式: ISSUE_KEY: path/to/output.md
+# 使用: python jira_sync.py --config jira_sync_config.example.txt
+
+PAPI-2199: requirements/2026Q1_SP3/entilement.md
