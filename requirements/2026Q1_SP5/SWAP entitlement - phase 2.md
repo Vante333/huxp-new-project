@@ -1,0 +1,255 @@
+# SWAP entitlement - phase 2
+
+来源：<https://dragonpass.atlassian.net/wiki/spaces/DGSN/pages/1582891116/SWAP+entitlement+-+phase+2>
+
+---
+
+## 一、定义
+
+- 跨品类权益不支持 tier entitlement
+- 只支持 lounge / setmeal / coupon（1，3，4）的 swap entitlement
+
+## 二、Membership 接口
+
+### 2.1 /v2/entitlements/search 和 /v2/memberships
+
+顶级结构：
+
+```json
+{
+  "code": 0,
+  "data": {
+    "entitlements": {
+      "moduleExclusiveEntitlements": [], // 单品类权益列表
+      "crossModuleEntitlements": [],     // 跨品类权益列表，只有存在 swap 的话才会出现这个 object
+      "enabledTypes": [1, 2]            // 启用的权益类型
+    }
+  }
+}
+```
+
+`crossModuleEntitlements` 结构示例：
+
+```json
+"crossModuleEntitlements": [
+  {
+    "applicableModules": [1, 2, 3], // 跨休息室、快速安检、Set Meal
+    "entitlementPoolId": "aaaa1234", // 权益明细编码
+    "details": {
+      "cardholderExclusiveEntitlements": 2,
+      "guestsExclusiveEntitlements": 1,
+      "sharedEntitlements": 3
+    }
+  }
+]
+```
+
+`enabledTypes` 含义：
+
+| 枚举 | 名称            | 说明           |
+| ---- | --------------- | -------------- |
+| 1    | moduleExclusive | 存在单品类权益 |
+| 2    | crossModule     | 存在 swap 权益 |
+
+### 2.2 /v2/entitlements/update
+
+升级为双定位模式：
+
+- 如果传了 `entitlementPoolId` → 直接更新
+- 如果没传 `entitlementPoolId` → 用 `module + tier` 解析 pool
+- 如果两种都传 → 报错（避免歧义）
+
+示例入参（双定位）：
+
+```json
+{
+  "membershipId": "8888000066668888",
+
+  // 由代码判断权益池
+  "module": 1,
+  "tier": 3, // 新增，指定修改第几级的权益
+
+  // 或由客户指定权益池
+  "entitlementPoolId": "aaaa1234",
+
+  // 更新的数值部分
+  "usageRestriction": 1,
+  "quantity": 1,
+  "purchasedQuantity": 2
+}
+```
+
+#### 2.2.1 原有入参（仅更新 moduleExclusiveEntitlements）
+
+处理流程：
+
+- 查 membership
+- 根据 `module + tier`
+- 找到对应 `entitlementPoolId`
+- 更新 pool
+
+示例入参：
+
+```json
+{
+  "membershipId": "8888000066668888",
+
+  // 由代码判断权益池
+  "module": 1,
+  "tier": 3, // 新增，指定修改第几级的权益
+
+  // 更新的数值部分
+  "usageRestriction": 1,
+  "quantity": 1,
+  "purchasedQuantity": 2
+}
+```
+
+#### 2.2.2 操作 swap 权益（crossModuleEntitlements）
+
+操作 swap 权益时，需要指定权益明细编码：
+
+处理流程：
+
+- 查 membership
+- 根据 `entitlementPoolId + 更新的权益`
+- 找到对应 `entitlementPoolId`
+- 更新 pool
+
+示例入参：
+
+```json
+{
+  "membershipId": "8888000066668888",
+
+  // 由客户指定权益池
+  "entitlementPoolId": "aaaa1234",
+
+  // 更新的数值部分
+  "usageRestriction": 1,
+  "quantity": 1,
+  "purchasedQuantity": 2
+}
+```
+
+#### 2.2.3 返回结构
+
+无论操作 `moduleExclusiveEntitlements` 还是 `crossModuleEntitlements`，返回中都要包含最新的**完整权益状态**：
+
+```json
+{
+  "code": 0,
+  "data": {
+    "membershipId": "8888000066668888",
+    "entitlements": {
+      "moduleExclusiveEntitlements": [...],
+      "crossModuleEntitlements": [], // 跨品类权益列表，只有存在 swap 的话才会出现这个 object
+      "enabledTypes": [1, 2]        // 启用的权益类型，只有存在 swap 的话才会出现该字段
+    }
+  }
+}
+```
+
+### 2.3 /v2/entitlements/details
+
+- swap 没有 tierer，所以该接口查不到 swap 的权益 details。
+- 如果只有 swap，这个接口里传哪个 swap 里的哪个 module 都返回错误提示语 `500.030.030`。
+
+错误码说明：
+
+| 错误码      | 描述                                      | 英文描述                                              |
+| ----------- | ----------------------------------------- | ----------------------------------------------------- |
+| 500.030.030 | 该接口不支持查询 cross module entitlement | This API does not support querying cross-module entitlements. |
+
+- 如果既有 swap 又有单品类权益，那么这个接口只能查到单品类权益。
+
+## 三、资源接口
+
+- 复用 E-pass 相关资源配置逻辑。
+- 资源配置示意图请参考 Confluence 原文中的图片 `image-20260303-062810.png`。
+
+## 四、下单
+
+**preview 和下单前权益计算**
+
+- preview 和下单，需要根据权益明细来计算。
+- 统计会籍下可用权益（初始 / 剩余）时，只统计「待使用」和「已用完」两种状态，不统计「已作废 / 冻结 / 已过期」。
+- 增加跨品类权益后，统计总数要考虑「单品类 + 跨品类」。
+
+**订单取消**
+
+- 订单取消后，权益直接回退到对应明细，由 SaaS 负责处理，PAPI 不需要关心。
+
+ # SWAP entitlement - phase 2
+
+ 来源：<https://dragonpass.atlassian.net/wiki/spaces/DGSN/pages/1582891116/SWAP+entitlement+-+phase+2>
+
+ （以下为从 Confluence 同步的原始 HTML 内容）
+
+ <h3 local-id="cf4697e33682">一、定义</h3><ul local-id="313b4f9fddd6"><li local-id="cd444799916f"><p local-id="8f1f5a2caf3c">跨品类权益不支持tier entitlement</p></li><li local-id="03ee25662d18"><p local-id="bc802b155d9f">只支持lounge/setmeal/coupon（1，3，4）的swap entitlement</p></li></ul><h3 local-id="1f377a7e-04eb-4c68-ab39-0e1e8bdf0e42"><strong>二、Membership 接口</strong></h3><p local-id="1a7534f7-32f7-49fc-b455-1318c4b1eae2"><strong>2.1 /v2/entitlements/search 和 /v2/memberships</strong></p><p local-id="3b0af2f1-b6d1-46b1-9494-c0c3e486869c">顶级结构</p><ac:structured-macro ac:name="code" ac:schema-version="1" ac:local-id="6a54caf7-ad62-460a-a86d-f01da11bd1bf" ac:macro-id="4ddb3bb5-e023-4e68-80b7-2877a32577a9"><ac:parameter ac:name="breakoutMode">wide</ac:parameter><ac:parameter ac:name="breakoutWidth">1800</ac:parameter><ac:plain-text-body><![CDATA[{
+  "code": 0,
+  "data": {
+    "entitlements": {
+      "moduleExclusiveEntitlements": [], //单品类权益列表
+      "crossModuleEntitlements": [], //跨品类权益列表，只有存在swap的话才会出现这个object
+      "enabledTypes": [1,2] //启用的权益类型
+    }
+  }
+}
+]]></ac:plain-text-body></ac:structured-macro><ac:structured-macro ac:name="code" ac:schema-version="1" ac:local-id="3e7a2f1e-6a1c-4196-b12d-f55ebf2453d7" ac:macro-id="7d4a4af1-0ec0-431d-8503-5f4507ac1fb9"><ac:parameter ac:name="breakoutMode">wide</ac:parameter><ac:parameter ac:name="breakoutWidth">1800</ac:parameter><ac:plain-text-body><![CDATA["crossModuleEntitlements": [
+  {
+    "applicableModules": [1, 2, 3], // 跨休息室、快速安检、Set Meal
+    "entitlementPoolId": "aaaa1234" //权益明细编码
+    "details": {
+      "cardholderExclusiveEntitlements": 2,
+      "guestsExclusiveEntitlements": 1,
+      "sharedEntitlements": 3
+    }
+  }
+]]]></ac:plain-text-body></ac:structured-macro><p local-id="d617f3b1-c6f5-4d4b-ac02-dd19b037cef3" /><p local-id="7c3ed9fa-659e-4ff3-bd3d-37d1e1f8031a"><strong>enabledTypes</strong></p><table data-table-width="1800" data-layout="align-start" ac:local-id="067e7678-cbd3-45eb-8d9d-7549284f4939"><tbody><tr ac:local-id="186f4e3a-fad4-4d5f-aec9-f8060be1d3bf"><th ac:local-id="d8714928-5780-434b-bfb6-0edf5f7130bb"><p local-id="6e207c48-c36d-4154-809f-12fb7bcd1b7d"><strong>枚举</strong></p></th><th ac:local-id="3156841da247"><p local-id="71f5d8f572c8" /></th><th ac:local-id="f56766bd-a35e-4d40-a314-ed4992621af1"><p local-id="17d6fa82-6c4c-4d79-b23c-f2e3706a0f7a" /></th></tr><tr ac:local-id="da99d55a-bf8f-4c57-8a2c-d19ae592c00d"><td ac:local-id="35415c5c-adce-4ed8-8685-86ae5e1e4aa0"><p local-id="9b5c467b-7bce-4663-a70d-1a15029df985">1</p></td><td ac:local-id="02a17a6cdbde"><p local-id="6c6e4467361e">moduleExclusive</p></td><td ac:local-id="331eb24a-d89c-4874-af07-0393e73cd059"><p local-id="476ba694-3ef3-4bc6-a45b-d97f5844f2e4">存在单品类权益</p></td></tr><tr ac:local-id="3c89d61c-85e2-4b90-a12a-57bf3fdb510c"><td ac:local-id="0adb3ef1-3def-4b17-93ae-adc1703111f9"><p local-id="0e470b7e-bef7-49d8-830e-3c8bdec4b96b">2</p></td><td ac:local-id="61cb6c2dfd18"><p local-id="e0fa72810368">crossModule</p></td><td ac:local-id="0d90d574-f1a1-47c9-9dd8-fddd9dc8c00a"><p local-id="9460bbde-5888-4206-8536-ca86cac2f705">存在swap权益</p></td></tr></tbody></table><p local-id="d9621f06-40d3-49ac-a886-726b7e9415a3" /><p local-id="58e5e261-b104-419f-bfd1-ad40993e0a0c"><strong>2.2 /v2/entitlements/update</strong></p><p local-id="101a69392620">升级为双定位模式</p><ul local-id="f72e2d7e6377"><li local-id="104125bd2203"><p local-id="4146fc814b73">如果传了 entitlementPoolId &rarr; 直接更新</p></li><li local-id="62b3d02c3bb9"><p local-id="c6a2cefb32f0">如果没传 entitlementPoolId &rarr; 用 module+tier 解析 pool</p></li><li local-id="dae67fd1290c"><p local-id="8ccb88437085">如果两种都传 &rarr; 报错（避免歧义）</p></li></ul><ac:structured-macro ac:name="code" ac:schema-version="1" ac:local-id="1567c58a-05b7-4b8b-a0ee-9273dc5423ea" ac:macro-id="d869b993-125b-4f38-b8cb-f3470f421372"><ac:parameter ac:name="breakoutMode">wide</ac:parameter><ac:parameter ac:name="breakoutWidth">1800</ac:parameter><ac:plain-text-body><![CDATA[{
+"membershipId": "8888000066668888",
+
+//由代码判断权益池
+"module": 1,
+"tier": 3, //新增，指定修改第几级的权益
+
+// 或由客户指定权益池
+  "entitlementPoolId": "aaaa1234",
+
+//更新的数值部份  
+    "usageRestriction": 1,
+    "quantity": 1,
+    "purchasedQuantity": 2,
+}]]></ac:plain-text-body></ac:structured-macro><p local-id="e99c021b08be">2.2.1 原来的入参，还是保留只更新moduleExclusiveEntitlements，返回也不变。</p><p local-id="4cf7d0f83d9a">&rarr; 查 membership<br />&rarr; 根据 module + tier<br />&rarr; 找到对应 entitlementPoolId<br />&rarr; 更新 pool</p><ac:structured-macro ac:name="code" ac:schema-version="1" ac:local-id="0f4e2bd7-256e-446b-8782-913ae379fcb4" ac:macro-id="08e0f24a-d4f6-45d8-be6d-0b52280f63f7"><ac:parameter ac:name="breakoutMode">wide</ac:parameter><ac:parameter ac:name="breakoutWidth">1800</ac:parameter><ac:plain-text-body><![CDATA[{
+"membershipId": "8888000066668888",
+
+//由代码判断权益池
+"module": 1,
+"tier": 3, //新增，指定修改第几级的权益
+
+//更新的数值部份  
+    "usageRestriction": 1,
+    "quantity": 1,
+    "purchasedQuantity": 2,
+}]]></ac:plain-text-body></ac:structured-macro><p local-id="07287a1d-81a2-48ce-acc7-5d0e76ef97e5" /><p local-id="87135a522890">2.2.2 如果要操作swap权益，则需要指定权益明细编码才能编辑</p><p local-id="d9f5d2fbffa8">&rarr; 查 membership<br />&rarr; 根据 entitlementPoolId + 更新的权益<br />&rarr; 找到对应 entitlementPoolId<br />&rarr; 更新 pool</p><ac:structured-macro ac:name="code" ac:schema-version="1" ac:local-id="53ad2ab4-319f-4729-b9ee-e21f38a5a6a4" ac:macro-id="fc0efb47-b0d9-4e45-a68c-65f33873cc26"><ac:parameter ac:name="breakoutMode">wide</ac:parameter><ac:parameter ac:name="breakoutWidth">1800</ac:parameter><ac:plain-text-body><![CDATA[{
+"membershipId": "8888000066668888",
+
+// 或由客户指定权益池
+  "entitlementPoolId": "aaaa1234",
+
+//更新的数值部份  
+    "usageRestriction": 1,
+    "quantity": 1,
+    "purchasedQuantity": 2,
+}]]></ac:plain-text-body></ac:structured-macro><p local-id="489d9fa808c0" /><p local-id="8a9bf02818ce">2.2.3 返回</p><p local-id="b0978918f040">不管是操作了moduleExclusiveEntitlements还是crossModuleEntitlements，返回中都要返回最新的<strong>完整权益状态</strong></p><ac:structured-macro ac:name="code" ac:schema-version="1" ac:local-id="7ed3284d-4922-432a-90dd-2ebfacf81c5c" ac:macro-id="16387f74-2366-439c-827d-df0f90d0fff6"><ac:parameter ac:name="breakoutMode">wide</ac:parameter><ac:parameter ac:name="breakoutWidth">1800</ac:parameter><ac:plain-text-body><![CDATA[{
+    "code": 0,
+    "data": {
+        "membershipId": "8888000066668888",
+        "entitlements": {
+            "moduleExclusiveEntitlements": [...],
+            "crossModuleEntitlements": [], //跨品类权益列表，只有存在swap的话才会出现这个object
+            "enabledTypes": [1,2] //启用的权益类型，只有存在swap的话才会出现这个object
+        }
+    }
+}]]></ac:plain-text-body></ac:structured-macro><p local-id="f9204ce4b864" /><p local-id="857e408effc4"><strong>2.2 /v2/entitlements/details</strong></p><p local-id="54367da7bb49">swap是没有tierer的，所以这个接口查不到swap的权益details。</p><p local-id="5cecc270592a">如果只有swap，这个接口里传哪个swap里的哪个module都返回错误提示语<strong>500.030.030</strong></p><table data-table-width="1800" data-layout="center" ac:local-id="68731b41-1d44-449a-a046-91f20cda185c"><colgroup><col style="width: 333.0px;" /><col style="width: 603.0px;" /><col style="width: 862.0px;" /></colgroup><tbody><tr ac:local-id="bb60fd9a-d234-4d20-be84-22cb927f8353"><td ac:local-id="fc8f2808-8ff0-47b9-9d2a-d9939dba0a2e"><p local-id="b36689342671">500.030.030</p></td><td ac:local-id="91dde716-2af4-4d90-863b-5d9b25b69148"><p local-id="748104c9b441">该接口不支持查询cross module entitlement</p></td><td ac:local-id="d9198980-0120-44f7-84e6-cc9664845b34"><p local-id="eb3fcd528202">This API does not support querying cross-module entitlements.</p></td></tr></tbody></table><p local-id="e1baca3974fd">如果既有swap又有单品类权益，那么这个接口只能查到单品类权益</p><p local-id="eb8dac6a4b16" /><h3 local-id="2a782f4ab04b">三、资源接口</h3><p local-id="73eca9575cb8">复用E-pass相关资源配置逻辑</p><ac:image ac:align="center" ac:layout="center" ac:original-height="427" ac:original-width="1387" ac:custom-width="true" ac:local-id="a875076db356" ac:alt="image-20260303-062810.png" ac:width="1299"><ri:attachment ri:filename="image-20260303-062810.png" ri:version-at-save="1" /></ac:image><p local-id="42af267d520b" /><h3 local-id="0417a9a9a50e">四、下单</h3><p local-id="f396ea0cbc28"><strong>preview和下单前权益计算</strong></p><p local-id="a9cd3c8bb58b">preview和下单，需要根据权益明细来计算</p><p local-id="ea5d8ca579c7">统计会籍下可用权益（初始/剩余）时，应该只统计待使用和已用完2个状态，不统计已作废/冻结/已过期的</p><p local-id="9fc74ffa37aa">增加跨品类权益权益后，统计总数要考虑单品类+跨品类</p><p local-id="5ec97b0ae915">&nbsp;</p><p local-id="8ae1d6da36d9"><strong>订单取消</strong></p><p local-id="2c6e884cd6b2">取消的话权益直接回退到对应明细，saas负责，我们不用管</p>
+
