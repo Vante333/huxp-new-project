@@ -97,6 +97,113 @@ def _adf_inline_to_md(node: dict) -> str:
     return ""
 
 
+def _adf_cell_content_to_md(
+    cell: dict,
+    attachments: list[dict],
+    images_dir: Path,
+    image_downloads: list[tuple[str, Path]],
+) -> str:
+    """将表格单元格内容转为纯文本（用于 Markdown 表格单元格）"""
+    content = cell.get("content") or []
+    parts = []
+    for c in content:
+        typ = c.get("type")
+        if typ == "paragraph":
+            inline_parts = [_adf_inline_to_md(x) for x in (c.get("content") or [])]
+            parts.append("".join(inline_parts).strip())
+        elif typ == "text":
+            parts.append(_adf_inline_to_md(c))
+        elif typ == "mediaSingle":
+            for mc in (c.get("content") or []):
+                if mc.get("type") == "media":
+                    attrs = mc.get("attrs") or {}
+                    alt = (attrs.get("alt") or "image").strip()
+                    media_id = attrs.get("id") or ""
+                    url = None
+                    for att in attachments:
+                        fn = (att.get("filename") or "").strip()
+                        if fn and (fn == alt or att.get("id") == media_id):
+                            url = att.get("content")
+                            if not alt or alt == "image":
+                                alt = fn
+                            break
+                    ext = Path(alt).suffix or ".png"
+                    safe_name = re.sub(r"[^\w\-.]", "_", Path(alt).stem)[:80] + ext
+                    local_path = images_dir / safe_name
+                    image_downloads.append((url or "", local_path))
+                    parts.append(f"![{alt}]({images_dir.name}/{safe_name})")
+        else:
+            inner = c.get("content") or []
+            for ic in inner:
+                if ic.get("type") == "text":
+                    parts.append(_adf_inline_to_md(ic))
+    return " ".join(parts).replace("\n", " ").replace("|", "\\|").strip()
+
+
+def _adf_table_to_md(
+    table_node: dict,
+    attachments: list[dict],
+    images_dir: Path,
+    image_downloads: list[tuple[str, Path]],
+) -> str:
+    """将 ADF table 节点转为 Markdown 表格"""
+    rows = table_node.get("content") or []
+    if not rows:
+        return ""
+    
+    md_rows = []
+    header_row_idx = -1
+    
+    for row_idx, row in enumerate(rows):
+        if row.get("type") != "tableRow":
+            continue
+        cells = row.get("content") or []
+        row_cells = []
+        is_header_row = False
+        
+        for cell in cells:
+            cell_type = cell.get("type")
+            if cell_type in ("tableHeader", "tableCell"):
+                if cell_type == "tableHeader":
+                    is_header_row = True
+                cell_text = _adf_cell_content_to_md(cell, attachments, images_dir, image_downloads)
+                row_cells.append(cell_text)
+        
+        if row_cells:
+            md_rows.append((is_header_row, row_cells))
+            if is_header_row and header_row_idx < 0:
+                header_row_idx = len(md_rows) - 1
+    
+    if not md_rows:
+        return ""
+    
+    # 计算每列最大宽度（用于对齐，可选）
+    col_count = max(len(r[1]) for r in md_rows)
+    
+    # 构建 Markdown 表格
+    lines = []
+    separator_added = False
+    
+    # 如果没有表头行，将第一行视为表头
+    if header_row_idx < 0 and md_rows:
+        md_rows[0] = (True, md_rows[0][1])
+        header_row_idx = 0
+    
+    for idx, (is_header, cells) in enumerate(md_rows):
+        # 补齐列数
+        while len(cells) < col_count:
+            cells.append("")
+        line = "| " + " | ".join(cells) + " |"
+        lines.append(line)
+        # 在表头行后添加分隔符（只添加一次）
+        if not separator_added and is_header:
+            separator = "|" + "|".join(["------"] * col_count) + "|"
+            lines.append(separator)
+            separator_added = True
+    
+    return "\n".join(lines) + "\n"
+
+
 def _adf_block_to_md(
     node: dict,
     attachments: list[dict],
@@ -204,6 +311,9 @@ def _adf_block_to_md(
             for c in content
         ).strip()
         return prefix + "> " + inner.replace("\n\n", "\n> ") + "\n\n"
+
+    if typ == "table":
+        return _adf_table_to_md(node, attachments, images_dir, image_downloads) + "\n"
 
     if typ == "doc":
         return "".join(
