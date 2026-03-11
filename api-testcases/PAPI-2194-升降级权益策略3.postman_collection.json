@@ -1,0 +1,705 @@
+{
+  "info": {
+    "_postman_id": "papi-2194-strategy3-test-scenarios",
+    "name": "PAPI-2194-升降级权益策略3",
+    "description": "升降级权益策略3（PAPI-2194）接口自动化测试场景，包含策略枚举与租户限制相关测试用例",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "https://developer-sandbox.dragonpass.com/api",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "token_type",
+      "value": "Bearer",
+      "type": "string"
+    },
+    {
+      "key": "Program-ID",
+      "value": "1947144996987904",
+      "type": "string",
+      "description": "Revolut租户Program ID"
+    },
+    {
+      "key": "Non_Revolut_Program_ID",
+      "value": "",
+      "type": "string",
+      "description": "非Revolut租户Program ID（用于租户限制测试）"
+    },
+    {
+      "key": "clientId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "secret",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "membershipId",
+      "value": "",
+      "type": "string",
+      "description": "测试会籍ID"
+    },
+    {
+      "key": "programId",
+      "value": "1947144996987904",
+      "type": "string",
+      "description": "源Program ID"
+    },
+    {
+      "key": "targetProgramId",
+      "value": "1947144997012480",
+      "type": "string",
+      "description": "目标Program ID"
+    },
+    {
+      "key": "非Revolut_programId",
+      "value": "",
+      "type": "string",
+      "description": "非Revolut租户的源Program ID"
+    },
+    {
+      "key": "非Revolut_targetProgramId",
+      "value": "",
+      "type": "string",
+      "description": "非Revolut租户的目标Program ID"
+    }
+  ],
+  "item": [
+    {
+      "name": "前置步骤-获取Token",
+      "request": {
+        "method": "POST",
+        "url": "{{BASE_URL}}/v2/auth/token",
+        "header": [
+          {
+            "key": "X-Program-ID",
+            "value": "{{Program-ID}}"
+          },
+          {
+            "key": "X-Request-ID",
+            "value": "{{$guid}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"clientId\": \"{{clientId}}\",\n    \"secret\": \"{{secret}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('获取Token成功', function() {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.code).to.eql(0);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "if (jsonData.code === 0 && jsonData.data) {",
+              "    pm.collectionVariables.set('access_token', jsonData.data.accessToken);",
+              "    pm.collectionVariables.set('token_type', jsonData.data.tokenType || 'Bearer');",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "策略枚举与租户限制",
+      "item": [
+        {
+          "name": "正向场景验证",
+          "item": [
+            {
+              "name": "tc-P1-STGY-001 Revolut租户使用策略3-正常受理",
+              "request": {
+                "method": "POST",
+                "url": "{{BASE_URL}}/v2/memberships/programChange",
+                "header": [
+                  {
+                    "key": "X-Program-ID",
+                    "value": "{{Program-ID}}"
+                  },
+                  {
+                    "key": "X-Request-ID",
+                    "value": "{{$guid}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token_type}} {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"membershipId\": \"{{membershipId}}\",\n    \"programId\": \"{{programId}}\",\n    \"targetProgramId\": \"{{targetProgramId}}\",\n    \"entitlementOptions\": {\n        \"strategy\": 3\n    },\n    \"validityOptions\": {\n        \"strategy\": 1\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "tc-P1-STGY-001：Revolut 租户使用 entitlementStrategy=3 调用 Change Membership Program API，接口正常受理\n\n验证点：\n- HTTP 状态码为 200\n- 接口正常受理并触发策略 3 的新权益迁移逻辑\n- 响应中迁移策略类型记录为 3"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// tc-P1-STGY-001: Revolut租户使用策略3-正常受理",
+                      "",
+                      "pm.test('HTTP状态码为200', function() {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('接口正常受理-code为0', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.code).to.eql(0);",
+                      "});",
+                      "",
+                      "pm.test('响应包含正确的membershipId', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.data).to.have.property('membershipId');",
+                      "});",
+                      "",
+                      "pm.test('响应包含正确的programId(目标)', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    var targetProgramId = pm.collectionVariables.get('targetProgramId');",
+                      "    pm.expect(jsonData.data.programId).to.eql(targetProgramId);",
+                      "});",
+                      "",
+                      "pm.test('响应包含previousProgramId(源)', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    var programId = pm.collectionVariables.get('programId');",
+                      "    pm.expect(jsonData.data.previousProgramId).to.eql(programId);",
+                      "});",
+                      "",
+                      "// 返回中不包含中文检查",
+                      "pm.test('返回中不包含中文', function() {",
+                      "    var res = pm.response.text();",
+                      "    var hasChinese = /[\\u4e00-\\u9fa5]/.test(res);",
+                      "    pm.expect(hasChinese).to.equal(false);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tc-P2-STGY-002 Revolut租户使用策略1-行为不变",
+              "request": {
+                "method": "POST",
+                "url": "{{BASE_URL}}/v2/memberships/programChange",
+                "header": [
+                  {
+                    "key": "X-Program-ID",
+                    "value": "{{Program-ID}}"
+                  },
+                  {
+                    "key": "X-Request-ID",
+                    "value": "{{$guid}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token_type}} {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"membershipId\": \"{{membershipId}}\",\n    \"programId\": \"{{programId}}\",\n    \"targetProgramId\": \"{{targetProgramId}}\",\n    \"entitlementOptions\": {\n        \"strategy\": 1\n    },\n    \"validityOptions\": {\n        \"strategy\": 1\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "tc-P2-STGY-002：Revolut 租户使用策略 1 调用 Change Membership Program API，行为与现有逻辑一致\n\n验证点：\n- HTTP 状态码为 200\n- 权益迁移逻辑走策略 1 现有路径，不受策略 3 新增影响"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// tc-P2-STGY-002: Revolut租户使用策略1-行为不变",
+                      "",
+                      "pm.test('HTTP状态码为200', function() {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('接口正常受理-code为0', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.code).to.eql(0);",
+                      "});",
+                      "",
+                      "pm.test('策略1行为正常-响应结构正确', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.data).to.have.property('membershipId');",
+                      "    pm.expect(jsonData.data).to.have.property('programId');",
+                      "    pm.expect(jsonData.data).to.have.property('previousProgramId');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tc-P2-STGY-003 Revolut租户使用策略2-行为不变",
+              "request": {
+                "method": "POST",
+                "url": "{{BASE_URL}}/v2/memberships/programChange",
+                "header": [
+                  {
+                    "key": "X-Program-ID",
+                    "value": "{{Program-ID}}"
+                  },
+                  {
+                    "key": "X-Request-ID",
+                    "value": "{{$guid}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token_type}} {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"membershipId\": \"{{membershipId}}\",\n    \"programId\": \"{{programId}}\",\n    \"targetProgramId\": \"{{targetProgramId}}\",\n    \"entitlementOptions\": {\n        \"strategy\": 2\n    },\n    \"validityOptions\": {\n        \"strategy\": 1\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "tc-P2-STGY-003：Revolut 租户使用策略 2 调用 Change Membership Program API，行为与现有逻辑一致\n\n验证点：\n- HTTP 状态码为 200\n- 权益迁移逻辑走策略 2 现有路径，不受策略 3 新增影响"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// tc-P2-STGY-003: Revolut租户使用策略2-行为不变",
+                      "",
+                      "pm.test('HTTP状态码为200', function() {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('接口正常受理-code为0', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.code).to.eql(0);",
+                      "});",
+                      "",
+                      "pm.test('策略2行为正常-响应结构正确', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.data).to.have.property('membershipId');",
+                      "    pm.expect(jsonData.data).to.have.property('programId');",
+                      "    pm.expect(jsonData.data).to.have.property('previousProgramId');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "租户白名单校验",
+          "item": [
+            {
+              "name": "tc-P2-STGY-005 非Revolut租户使用策略3-拒绝",
+              "request": {
+                "method": "POST",
+                "url": "{{BASE_URL}}/v2/memberships/programChange",
+                "header": [
+                  {
+                    "key": "X-Program-ID",
+                    "value": "{{Non_Revolut_Program_ID}}"
+                  },
+                  {
+                    "key": "X-Request-ID",
+                    "value": "{{$guid}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token_type}} {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"membershipId\": \"{{membershipId}}\",\n    \"programId\": \"{{非Revolut_programId}}\",\n    \"targetProgramId\": \"{{非Revolut_targetProgramId}}\",\n    \"entitlementOptions\": {\n        \"strategy\": 3\n    },\n    \"validityOptions\": {\n        \"strategy\": 1\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "tc-P2-STGY-005：非 Revolut 租户传入 entitlementStrategy=3 时返回错误\n\n验证点：\n- HTTP 状态码为非 200（或code为-1）\n- 返回明确的错误码和提示语\n- 权益数据未发生变化"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// tc-P2-STGY-005: 非Revolut租户使用策略3-拒绝",
+                      "",
+                      "pm.test('非Revolut租户使用策略3被拒绝', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.code).to.eql(-1);",
+                      "});",
+                      "",
+                      "pm.test('返回明确的错误信息', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('msg');",
+                      "    pm.expect(jsonData.msg).to.not.be.empty;",
+                      "});",
+                      "",
+                      "pm.test('返回错误码', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('errCode');",
+                      "    // 预期错误码格式: 400.030.xxx",
+                      "    pm.expect(jsonData.errCode).to.match(/^400\\.030\\./);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "边界值验证",
+          "item": [
+            {
+              "name": "tc-P3-STGY-006 策略值为4-非法枚举值",
+              "request": {
+                "method": "POST",
+                "url": "{{BASE_URL}}/v2/memberships/programChange",
+                "header": [
+                  {
+                    "key": "X-Program-ID",
+                    "value": "{{Program-ID}}"
+                  },
+                  {
+                    "key": "X-Request-ID",
+                    "value": "{{$guid}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token_type}} {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"membershipId\": \"{{membershipId}}\",\n    \"programId\": \"{{programId}}\",\n    \"targetProgramId\": \"{{targetProgramId}}\",\n    \"entitlementOptions\": {\n        \"strategy\": 4\n    },\n    \"validityOptions\": {\n        \"strategy\": 1\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "tc-P3-STGY-006：entitlementStrategy 传入非法枚举值 4\n\n验证点：\n- 返回参数错误响应"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// tc-P3-STGY-006: 策略值为4-非法枚举值",
+                      "",
+                      "pm.test('非法枚举值4被拒绝', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.code).to.eql(-1);",
+                      "});",
+                      "",
+                      "pm.test('返回参数错误信息', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('msg');",
+                      "});",
+                      "",
+                      "pm.test('返回错误码-400开头', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    if (jsonData.errCode) {",
+                      "        pm.expect(jsonData.errCode).to.match(/^400\\./);",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tc-P3-STGY-007 策略值为0-非法枚举值",
+              "request": {
+                "method": "POST",
+                "url": "{{BASE_URL}}/v2/memberships/programChange",
+                "header": [
+                  {
+                    "key": "X-Program-ID",
+                    "value": "{{Program-ID}}"
+                  },
+                  {
+                    "key": "X-Request-ID",
+                    "value": "{{$guid}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token_type}} {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"membershipId\": \"{{membershipId}}\",\n    \"programId\": \"{{programId}}\",\n    \"targetProgramId\": \"{{targetProgramId}}\",\n    \"entitlementOptions\": {\n        \"strategy\": 0\n    },\n    \"validityOptions\": {\n        \"strategy\": 1\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "tc-P3-STGY-007：entitlementStrategy 传入非法枚举值 0\n\n验证点：\n- 返回参数错误响应"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// tc-P3-STGY-007: 策略值为0-非法枚举值",
+                      "",
+                      "pm.test('非法枚举值0被拒绝', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.code).to.eql(-1);",
+                      "});",
+                      "",
+                      "pm.test('返回参数错误信息', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('msg');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tc-P3-STGY-008 策略值为-1-非法枚举值",
+              "request": {
+                "method": "POST",
+                "url": "{{BASE_URL}}/v2/memberships/programChange",
+                "header": [
+                  {
+                    "key": "X-Program-ID",
+                    "value": "{{Program-ID}}"
+                  },
+                  {
+                    "key": "X-Request-ID",
+                    "value": "{{$guid}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token_type}} {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"membershipId\": \"{{membershipId}}\",\n    \"programId\": \"{{programId}}\",\n    \"targetProgramId\": \"{{targetProgramId}}\",\n    \"entitlementOptions\": {\n        \"strategy\": -1\n    },\n    \"validityOptions\": {\n        \"strategy\": 1\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "tc-P3-STGY-008：entitlementStrategy 传入非法枚举值 -1\n\n验证点：\n- 返回参数错误响应"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// tc-P3-STGY-008: 策略值为-1-非法枚举值",
+                      "",
+                      "pm.test('非法枚举值-1被拒绝', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.code).to.eql(-1);",
+                      "});",
+                      "",
+                      "pm.test('返回参数错误信息', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('msg');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tc-P3-STGY-009 策略值为null",
+              "request": {
+                "method": "POST",
+                "url": "{{BASE_URL}}/v2/memberships/programChange",
+                "header": [
+                  {
+                    "key": "X-Program-ID",
+                    "value": "{{Program-ID}}"
+                  },
+                  {
+                    "key": "X-Request-ID",
+                    "value": "{{$guid}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token_type}} {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"membershipId\": \"{{membershipId}}\",\n    \"programId\": \"{{programId}}\",\n    \"targetProgramId\": \"{{targetProgramId}}\",\n    \"entitlementOptions\": {\n        \"strategy\": null\n    },\n    \"validityOptions\": {\n        \"strategy\": 1\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "tc-P3-STGY-009：entitlementStrategy 传入 null\n\n验证点：\n- 返回参数错误响应"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// tc-P3-STGY-009: 策略值为null",
+                      "",
+                      "pm.test('策略值null被拒绝', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.code).to.eql(-1);",
+                      "});",
+                      "",
+                      "pm.test('返回参数错误信息', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('msg');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "tc-P3-STGY-010 未传strategy字段",
+              "request": {
+                "method": "POST",
+                "url": "{{BASE_URL}}/v2/memberships/programChange",
+                "header": [
+                  {
+                    "key": "X-Program-ID",
+                    "value": "{{Program-ID}}"
+                  },
+                  {
+                    "key": "X-Request-ID",
+                    "value": "{{$guid}}"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "{{token_type}} {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"membershipId\": \"{{membershipId}}\",\n    \"programId\": \"{{programId}}\",\n    \"targetProgramId\": \"{{targetProgramId}}\",\n    \"entitlementOptions\": {},\n    \"validityOptions\": {\n        \"strategy\": 1\n    }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "tc-P3-STGY-010：未传 entitlementStrategy 字段时的默认处理\n\n验证点：\n- 系统按默认策略处理（不触发策略 3 逻辑）或返回参数错误"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// tc-P3-STGY-010: 未传strategy字段",
+                      "",
+                      "pm.test('未传strategy字段被拒绝或使用默认值', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    // 预期返回错误（code=-1）或使用默认策略成功（code=0）",
+                      "    pm.expect(jsonData.code).to.be.oneOf([-1, 0]);",
+                      "});",
+                      "",
+                      "pm.test('响应结构正确', function() {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property('code');",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
