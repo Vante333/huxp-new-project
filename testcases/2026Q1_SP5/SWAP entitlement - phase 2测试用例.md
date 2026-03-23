@@ -1,196 +1,238 @@
-# SWAP entitlement - phase 2 测试用例
+# SWAPEntitlementPhase2测试用例
 
-## Membership 接口
+## Membership接口
 
-### /v2/entitlements/search 与 /v2/memberships
+### v2_entitlements_search与v2_memberships
 
 #### 正向场景验证
 
-##### tc-P1-ENT-QUERY-001：会员仅存在单品类权益时，返回 moduleExclusiveEntitlements 且 enabledTypes=[1]
+##### tc-p1: 会员仅存在单品类权益时返回ModuleExclusiveEntitlements且EnabledTypes仅为1
 
-- tc-P1: HTTP 状态码为 200
-- tc-P1: 响应体中 `entitlements.moduleExclusiveEntitlements` 返回该会员所有单品类权益明细
-- tc-P1: 响应体中不返回或返回空数组 `entitlements.crossModuleEntitlements`
-- tc-P1: `entitlements.enabledTypes` 仅包含值 `1`
+- pc: 会员仅配置单品类权益且无跨品类swap权益
+- 调用GET_v2_entitlements_search查询该会员权益
+  - HTTP状态码为200且响应体仅返回`moduleExclusiveEntitlements`并且`enabledTypes`仅包含`1`
+- 对比响应中的单品类权益明细与SaaS会籍配置
+  - 响应中的单品类权益数量和字段值与配置保持一致
 
-##### tc-P1-ENT-QUERY-002：会员仅存在跨品类 swap 权益时，返回 crossModuleEntitlements 且 enabledTypes=[2]
+##### tc-p1: 会员仅存在跨品类Swap权益时返回CrossModuleEntitlements且EnabledTypes仅为2
 
-- tc-P1: HTTP 状态码为 200
-- tc-P1: 响应体中 `entitlements.crossModuleEntitlements` 返回所有跨品类 swap 权益明细
-- tc-P1: `entitlements.crossModuleEntitlements[*].entitlementPoolId` 与会籍下实际的权益明细编码一一对应
-- tc-P1: `entitlements.enabledTypes` 仅包含值 `2`
-- tc-P1: `entitlements.moduleExclusiveEntitlements` 不返回或为空数组
+- pc: 会员仅配置跨品类swap权益且无单品类权益
+- 调用GET_v2_entitlements_search查询该会员权益
+  - HTTP状态码为200且响应体仅返回`crossModuleEntitlements`并且`enabledTypes`仅包含`2`
+- 校验`crossModuleEntitlements[*].entitlementPoolId`与会籍配置映射关系
+  - 每个`entitlementPoolId`均与实际权益明细编码一一对应
 
-##### tc-P1-ENT-QUERY-003：会员同时存在单品类 + 跨品类 swap 权益时，两类权益均正确返回且 enabledTypes=[1,2]
+##### tc-p1: 会员同时存在单品类与跨品类Swap权益时两类权益均返回且EnabledTypes为1和2
 
-- tc-P1: HTTP 状态码为 200
-- tc-P1: 响应体中同时包含 `moduleExclusiveEntitlements` 与 `crossModuleEntitlements`
-- tc-P1: `entitlements.enabledTypes` 同时包含 `1` 和 `2`
-- tc-P1: 单品类、跨品类权益数量及明细与 SaaS 会籍配置保持一致
+- pc: 会员同时配置单品类权益和跨品类swap权益
+- 调用GET_v2_entitlements_search查询该会员权益
+  - HTTP状态码为200且响应体同时包含`moduleExclusiveEntitlements`和`crossModuleEntitlements`
+- 校验`enabledTypes`及两类权益明细
+  - `enabledTypes`同时包含`1`和`2`且权益明细与SaaS会籍配置一致
 
 #### 结构与字段规则验证
 
-##### tc-P2-ENT-QUERY-004：验证 crossModuleEntitlements.details 中三类权益数的返回规则
+##### tc-p2: 验证CrossModuleEntitlementsDetails中三类权益字段返回规则
 
-- tc-P2: `details.cardholderExclusiveEntitlements` 返回持卡人专属权益剩余点数
-- tc-P2: `details.guestsExclusiveEntitlements` 返回携伴专属权益剩余点数
-- tc-P2: `details.sharedEntitlements` 返回共享权益剩余点数
-- tc-P2: 对于为 0 的权益类型，可按实现约定返回 0 或不返回字段，但接口行为与需求/设计一致
+- pc: 会员存在跨品类swap权益且详情中包含持卡人专属携伴专属和共享权益
+- 调用GET_v2_entitlements_search查询该会员权益
+  - 响应中的`details.cardholderExclusiveEntitlements`、`details.guestsExclusiveEntitlements`、`details.sharedEntitlements`字段返回行为与设计一致
+- 针对值为0的权益字段执行校验
+  - 值为0时返回0或不返回字段均可但必须与约定保持一致且行为稳定
 
-##### tc-P2-ENT-QUERY-005：验证 crossModuleEntitlements.applicableModules 支持的跨品类组合
+##### tc-p2: 验证CrossModuleEntitlementsApplicableModules返回跨品类组合与配置一致
 
-- tc-P2: 当配置为“休息室+Setmeal”时，`applicableModules` 仅包含 lounge 与 setmeal 对应的 module 枚举
-- tc-P2: 当配置为“Setmeal+Coupon”或“休息室+Coupon”或“三者皆有”时，`applicableModules` 返回与配置一致的 module 集合
-- tc-P2: 返回的 module 枚举值与 phase 1 中 E-pass 的多品类配置保持一致
+- pc: 分别准备休息室+Setmeal、Setmeal+Coupon、休息室+Coupon和三者皆有四种配置数据
+- 调用GET_v2_entitlements_search查询各配置下会员权益
+  - `applicableModules`返回的module枚举集合与各自配置完全一致
+- 对比phase1中E-pass多品类模块枚举
+  - 本次返回的module枚举与phase1行为一致
 
-### /v2/entitlements/update
+### v2_entitlements_update
 
-#### 双定位模式（entitlementPoolId 与 module+tier）
+#### 双定位模式验证
 
-##### tc-P1-ENT-UPDATE-001：仅传 module+tier 更新单品类权益成功（双定位模式）
+##### tc-p1: 仅传ModuleTier定位可成功更新单品类权益
 
-- tc-P1: 入参仅包含 `membershipId`、`module`、`tier` 以及数值字段（如 `usageRestriction`、`quantity`、`purchasedQuantity`）
-- tc-P1: 系统能根据 `membershipId+module+tier` 唯一解析出对应 `entitlementPoolId`
-- tc-P1: 对应单品类权益 pool 数值被正确更新
-- tc-P1: 返回体中 `entitlements` 结构完整，包含更新后的 `moduleExclusiveEntitlements`
+- pc: 会员存在可更新的单品类权益且`membershipId+module+tier`可唯一定位权益池
+- 调用PUT_v2_entitlements_update仅传`membershipId`、`module`、`tier`和待更新数值字段
+  - 接口更新成功并正确定位对应`entitlementPoolId`且该单品类权益池数值被正确更新
+- 校验返回体结构
+  - 返回体`entitlements`结构完整且包含更新后的`moduleExclusiveEntitlements`
 
-##### tc-P1-ENT-UPDATE-002：仅传 entitlementPoolId 更新单品类或跨品类权益成功
+##### tc-p1: 仅传EntitlementPoolId可成功更新单品类或跨品类权益
 
-- tc-P1: 入参包含合法的 `entitlementPoolId` 和待更新的数值字段，不传 `module`/`tier`
-- tc-P1: 系统根据 `entitlementPoolId` 精确定位到对应 pool（可为单品类或 swap）
-- tc-P1: 对应权益 pool 数值被正确更新
-- tc-P1: 返回体中 `entitlements` 结构完整，包含最新的单品类与跨品类权益
+- pc: 准备合法且归属于当前会员的`entitlementPoolId`
+- 调用PUT_v2_entitlements_update仅传`entitlementPoolId`和待更新数值字段
+  - 接口可精确定位对应权益池并成功更新目标字段
+- 校验返回体中两类权益状态
+  - 返回体`entitlements`反映最新权益结果并与更新后的数据库状态一致
 
-##### tc-P1-ENT-UPDATE-003：同时传 entitlementPoolId 与 module/tier 时返回参数冲突错误
+##### tc-p1: 同时传EntitlementPoolId与ModuleTier时返回参数冲突且不更新
 
-- tc-P1: 入参同时包含 `entitlementPoolId` 与 `module`、`tier`
-- tc-P1: 接口返回 4xx 或业务错误码，表示双定位参数冲突
-- tc-P1: 任何权益 pool 均未被修改
+- pc: 会员存在可更新权益池
+- 调用PUT_v2_entitlements_update同时传`entitlementPoolId`与`module`、`tier`
+  - 接口返回4xx或业务参数冲突错误码
+- 查询更新前后权益池数据
+  - 任一权益池数值均未发生变化
 
 #### 原有入参与兼容性
 
-##### tc-P2-ENT-UPDATE-004：沿用原有入参仅更新 moduleExclusiveEntitlements，返回结构与历史保持一致
+##### tc-p2: 沿用历史入参仅更新单品类权益时返回结构与历史版本一致
 
-- tc-P2: 入参仅包含 `membershipId`、`module`、可选 `tier` 以及 `usageRestriction`、`quantity`、`purchasedQuantity`
-- tc-P2: 在仅有单品类权益的会员上更新成功，返回与 phase 1 定义一致的 `entitlements` 结构
-- tc-P2: 在既有单品类又有 swap 的会员上，仅单品类权益被更新，`crossModuleEntitlements` 不受影响
+- pc: 准备仅单品类权益会员和单品类+swap混合权益会员各一组
+- 调用PUT_v2_entitlements_update仅传历史兼容参数更新单品类权益
+  - 单品类权益更新成功且返回结构与phase1定义保持一致
+- 校验混合权益会员中的跨品类权益是否被影响
+  - `crossModuleEntitlements`保持不变
 
-#### swap 权益更新（crossModuleEntitlements）
+#### Swap权益更新验证
 
-##### tc-P1-ENT-UPDATE-005：指定 entitlementPoolId 成功更新跨品类 swap 权益
+##### tc-p1: 指定合法EntitlementPoolId可成功更新跨品类Swap权益
 
-- tc-P1: 入参 `entitlementPoolId` 对应一个合法的 swap 权益 pool
-- tc-P1: 更新 `usageRestriction`、`quantity` 或 `purchasedQuantity` 后，`crossModuleEntitlements` 中对应 pool 的值正确变化
-- tc-P1: 返回体中的 `enabledTypes` 包含 `2`，并与会员实际存在的跨品类权益保持一致
+- pc: 入参`entitlementPoolId`对应合法swap权益池
+- 调用PUT_v2_entitlements_update更新`usageRestriction`或`quantity`或`purchasedQuantity`
+  - `crossModuleEntitlements`中对应权益池字段值按请求正确变化
+- 校验返回中的启用类型
+  - 返回体`enabledTypes`包含`2`且与会员实际跨品类权益状态一致
 
-##### tc-P2-ENT-UPDATE-006：使用不存在或不属于当前会员的 entitlementPoolId 时返回错误
+##### tc-p2: 使用不存在或不属于当前会员的EntitlementPoolId返回错误且不更新
 
-- tc-P2: 入参 `entitlementPoolId` 不存在或不属于当前 `membershipId`
-- tc-P2: 接口返回明确错误码与提示信息，不会更新任何权益
+- pc: 准备不存在的`entitlementPoolId`和属于其他会员的`entitlementPoolId`
+- 调用PUT_v2_entitlements_update发起更新请求
+  - 接口返回明确错误码和提示信息
+- 查询会员权益池数据
+  - 当前会员任一权益池均未被更新
 
-##### tc-P2-ENT-UPDATE-007：更新 swap 权益时数值非法（负数或超上限）返回参数错误
+##### tc-p2: 更新Swap权益传入负数或超上限时返回参数错误且数据不变
 
-- tc-P2: 当传入 `quantity`、`purchasedQuantity` 为负数或超过系统上限时，接口返回参数校验错误
-- tc-P2: 对应权益 pool 的数值保持不变
+- pc: 会员存在可更新swap权益池且已知系统数值上限
+- 调用PUT_v2_entitlements_update分别传入负数和超上限值
+  - 接口返回参数校验错误
+- 对比更新前后权益池数值
+  - 对应权益池数值保持不变
 
 #### 返回结构完整性
 
-##### tc-P1-ENT-UPDATE-008：无论更新单品类或跨品类权益，返回体都包含最新完整权益状态
+##### tc-p1: 更新单品类或跨品类权益后返回体均包含最新完整权益状态
 
-- tc-P1: 成功更新后，返回体 `data.entitlements` 中同时包含最新的 `moduleExclusiveEntitlements` 与 `crossModuleEntitlements`
-- tc-P1: 当会员存在 swap 权益时，返回中包含 `enabledTypes` 字段且内容正确
-- tc-P1: 当会员不存在 swap 权益时，`enabledTypes` 中不包含 `2`
+- pc: 准备单品类权益会员和混合权益会员各一组
+- 调用PUT_v2_entitlements_update分别更新单品类和跨品类权益
+  - 成功响应中的`data.entitlements`均返回最新完整权益状态
+- 校验`enabledTypes`字段返回逻辑
+  - 会员存在swap权益时包含`2`不存在swap权益时不包含`2`
 
-### /v2/entitlements/details
+### v2_entitlements_details
 
-#### 不支持 cross module entitlement 的限制
+#### CrossModuleEntitlement限制验证
 
-##### tc-P1-ENT-DETAILS-001：会员仅有跨品类 swap 权益时，调用 details 接口返回 500.030.030
+##### tc-p1: 会员仅有跨品类Swap权益时调用Details接口返回500030030
 
-- tc-P1: 为仅配置 swap 权益的会员，调用 `/v2/entitlements/details`，`module` 传任一 swap 所覆盖的 module
-- tc-P1: 接口返回错误码 `500.030.030`
-- tc-P1: 错误消息为“This API does not support querying cross-module entitlements.” 或与文档描述一致
-- tc-P1: 不返回任何 swap 权益 details
+- pc: 会员仅配置swap权益且无单品类权益
+- 调用GET_v2_entitlements_details并传入swap覆盖范围内任一module
+  - 接口返回错误码`500.030.030`
+- 校验错误信息和返回内容
+  - 错误信息与文档一致且不返回任何swap权益details
 
-##### tc-P1-ENT-DETAILS-002：会员同时拥有单品类 + swap 权益时，details 仅返回单品类权益
+##### tc-p1: 会员同时拥有单品类与Swap权益时Details仅返回单品类明细
 
-- tc-P1: 为同时拥有单品类与 swap 的会员，调用 `/v2/entitlements/details`，`module` 传单品类对应的 module
-- tc-P1: 接口仅返回单品类权益的 details，且与 membership 中的 moduleExclusiveEntitlements 对应
-- tc-P1: 接口不返回 cross module entitlement 相关明细
+- pc: 会员同时拥有单品类权益和swap权益
+- 调用GET_v2_entitlements_details并传入单品类对应module
+  - 接口仅返回单品类权益details
+- 校验是否出现跨品类明细
+  - 响应中不返回任何cross module entitlement相关明细
 
-##### tc-P2-ENT-DETAILS-003：当会员无任何权益或传入无效 module 时的异常处理
+##### tc-p2: 会员无权益或传入无效Module时按约定返回错误且不命中500030030
 
-- tc-P2: 对无任何权益的会员调用 details 接口，返回空结果或设计约定的业务错误
-- tc-P2: 传入与会员权益无关的 module 时，返回参数错误或资源不存在错误，且不使用 500.030.030
+- pc: 准备无任何权益会员以及传入与会员权益无关module两类数据
+- 调用GET_v2_entitlements_details分别发起请求
+  - 接口返回空结果或约定业务错误且无效module场景不返回`500.030.030`
 
 ## 资源接口
 
-### 复用 E-pass 相关资源配置逻辑
+### 复用Epass资源配置逻辑
 
 #### 资源检索与可用范围
 
-##### tc-P2-ENT-RESOURCE-001：跨品类 swap 权益在资源检索接口中可正确检索到多品类资源
+##### tc-p2: 跨品类Swap权益在资源检索接口可检索到对应多品类资源
 
-- tc-P2: 使用配置有 swap 的会籍模板，调用 `/v2/resources`、`/v2/search` 等资源相关接口
-- tc-P2: 可根据 swap 配置的 `applicableModules` 检索到对应品类（lounge/setmeal/coupon）的资源
-- tc-P2: 资源可用性与 phase 1 的多品类 E-pass 行为保持一致
+- pc: 会籍模板已配置swap权益并覆盖多个module
+- 调用GET_v2_resources和GET_v2_search等资源相关接口
+  - 可按`applicableModules`检索到对应的lounge或setmeal或coupon资源
+- 对比phase1多品类E-pass行为
+  - 资源可用性行为与phase1保持一致
 
-##### tc-P3-ENT-RESOURCE-002：swap 场景下资源更新与下架逻辑回归
+##### tc-p3: Swap场景下资源更新与下架逻辑保持历史行为一致
 
-- tc-P3: 在存在 swap 配置的 program 下，调用 `/v2/resources/updates` 接口
-- tc-P3: 资源上下架与更新结果与 phase 1 行为一致，本次改动不会影响更新逻辑
+- pc: program下存在swap配置并已准备可上下架资源
+- 调用GET_v2_resources_updates验证资源更新与下架行为
+  - 资源上下架与更新结果与phase1保持一致且本次改动未引入回归
 
 ## 下单与权益统计
 
-### preview 与下单前权益计算
+### Preview与下单前权益计算
 
-#### 单品类 + 跨品类合并统计
+#### 单品类与跨品类合并统计
 
-##### tc-P1-ORDER-CALC-001：仅有单品类权益时，预览与下单前权益统计仅包含单品类权益
+##### tc-p1: 仅有单品类权益时预览与下单前统计仅包含单品类权益
 
-- tc-P1: 在仅配置单品类权益的会员上发起预览与下单请求
-- tc-P1: 权益统计结果仅基于 `moduleExclusiveEntitlements` 的明细进行计算
-- tc-P1: 统计结果与历史实现保持一致
+- pc: 会员仅配置单品类权益且无swap权益
+- 发起预览与下单前权益计算请求
+  - 统计结果仅基于`moduleExclusiveEntitlements`明细计算
+- 对比历史实现基线结果
+  - 统计值与历史实现一致
 
-##### tc-P1-ORDER-CALC-002：仅有跨品类 swap 权益时，预览与下单前权益统计仅包含跨品类权益
+##### tc-p1: 仅有跨品类Swap权益时预览与下单前统计仅包含跨品类权益
 
-- tc-P1: 在仅配置 swap 权益的会员上发起预览与下单请求
-- tc-P1: 权益统计结果基于 `crossModuleEntitlements` 的明细进行计算
-- tc-P1: 可用权益数量与 swap 权益明细中的剩余权利数一致
+- pc: 会员仅配置swap权益且无单品类权益
+- 发起预览与下单前权益计算请求
+  - 统计结果仅基于`crossModuleEntitlements`明细计算
+- 对比可用权益数量与权益明细
+  - 统计值与swap权益明细中的剩余权利数一致
 
-##### tc-P1-ORDER-CALC-003：同时存在单品类 + 跨品类权益时，统计总数为二者之和
+##### tc-p1: 同时存在单品类与跨品类权益时统计总数为两者之和
 
-- tc-P1: 在同时拥有单品类和 swap 权益的会员上发起预览与下单请求
-- tc-P1: 权益统计总数=单品类权益可用数量 + 跨品类权益可用数量
-- tc-P1: 单品类与跨品类权益均可作为本次订单可用权益参与计算
+- pc: 会员同时拥有单品类权益和swap权益
+- 发起预览与下单前权益计算请求
+  - 统计总数等于单品类可用数量与跨品类可用数量之和
+- 校验订单可用权益来源
+  - 单品类和跨品类权益均可参与订单计算
 
 #### 权益状态过滤规则
 
-##### tc-P2-ORDER-CALC-004：仅统计待使用与已用完状态的权益，不统计已作废/冻结/已过期
+##### tc-p2: 仅统计待使用和已用完状态权益不统计已作废冻结已过期
 
-- tc-P2: 为会员配置多种状态的权益明细（待使用/已用完/已作废/冻结/已过期）
-- tc-P2: 预览与下单前的权益统计仅计入“待使用”和“已用完”两类明细
-- tc-P2: 已作废、冻结、已过期的权益不计入初始/剩余统计
+- pc: 会员权益明细同时包含待使用已用完已作废冻结已过期状态
+- 发起预览与下单前权益计算请求
+  - 统计结果仅计入待使用和已用完状态明细
+- 校验非计入状态
+  - 已作废冻结和已过期状态均不计入初始或剩余统计
 
-##### tc-P2-ORDER-CALC-005：跨品类权益状态过滤规则与单品类一致
+##### tc-p2: 跨品类Swap权益状态过滤规则与单品类规则一致
 
-- tc-P2: 为 swap 权益分别配置不同状态的明细记录
-- tc-P2: 统计可用权益时，对 swap 权益应用与单品类相同的状态过滤规则
-- tc-P2: 统计结果仍为“单品类+跨品类”中状态为待使用/已用完的明细之和
+- pc: swap权益下准备多状态明细数据
+- 发起预览与下单前权益计算请求
+  - swap权益应用与单品类相同的状态过滤规则
+- 校验合并统计结果
+  - 最终统计结果为单品类和跨品类中待使用与已用完明细之和
 
 ### 订单取消
 
-#### SaaS 回退与 PAPI 行为
+#### SaaS回退与PAPI行为
 
-##### tc-P2-ORDER-CANCEL-001：取消订单后权益由 SaaS 回退，PAPI 不重复回退
+##### tc-p2: 取消订单后权益由SaaS回退且PAPI不执行重复回退
 
-- tc-P2: 会员使用单品类或跨品类权益下单成功后取消订单
-- tc-P2: 由 SaaS 将权益回退到对应的权益明细，PAPI 不对同一订单执行二次回退
-- tc-P2: 取消后再次查询 membership，权益余额与回退后的实际值一致
+- pc: 会员使用单品类或跨品类权益完成下单
+- 取消订单后查询权益回退来源与动作日志
+  - 权益由SaaS回退且PAPI未对同一订单执行二次回退
+- 取消后再次查询会员权益
+  - 会员权益余额与回退后的实际值一致
 
-##### tc-P3-ORDER-CANCEL-002：多次重复取消同一订单时，权益余额保持幂等
+##### tc-p3: 重复取消同一订单时权益余额保持幂等
 
-- tc-P3: 对同一订单执行重复取消或重放取消请求
-- tc-P3: PAPI 不因重复取消请求导致权益被多次回退
-- tc-P3: 会员最终权益余额与首次取消后的结果保持一致
+- pc: 存在已取消订单并可重复触发取消请求
+- 对同一订单执行重复取消或重放取消请求
+  - PAPI不会因重复请求导致权益多次回退
+- 查询会员最终权益余额
+  - 最终权益余额与首次取消后的结果一致
 
