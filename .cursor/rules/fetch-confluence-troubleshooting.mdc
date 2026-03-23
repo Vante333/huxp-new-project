@@ -1,0 +1,127 @@
+---
+description: 从 Confluence 拉取需求/技术文档到本地目录的完整流程与问题排查
+globs: tech-docs/**/*.md, requirements/**/*.md, tools/fetch_confluence.py
+alwaysApply: false
+---
+
+# Confluence 页面拉取指南
+
+当用户提供 Confluence URL 并要求拉取内容时，**自动执行以下完整流程**，无需额外确认。
+
+## 自动执行流程
+
+### 步骤 1：解析 URL 并确定输出路径
+
+从 URL 中提取信息：
+- **PAGE_ID**：从 `/pages/<PAGE_ID>/` 提取
+- **页面标题**：从 URL 末尾或 `/<TITLE>` 部分推断
+
+根据内容类型确定输出目录：
+| 内容类型 | 输出目录 | 示例 |
+|---------|---------|------|
+| 需求文档 | `requirements/<迭代>/` | `requirements/2026Q1_SP5/V3.17.0.md` |
+| 技术方案 | `tech-docs/<迭代>/` | `tech-docs/2026Q1_SP5/tech-design.md` |
+
+### 步骤 2：拉取 Markdown 内容
+
+**必须使用 `full_network` 权限**执行：
+
+```bash
+python tools/fetch_confluence.py markdown <PAGE_ID> <输出路径>
+```
+
+示例：
+```bash
+python tools/fetch_confluence.py markdown 1577484335 requirements/2026Q1_SP5/V3.17.0.md
+```
+
+### 步骤 3：下载图片附件
+
+**必须使用 `full_network` 权限**，通过内联 Python 脚本下载到对应 `images/` 目录：
+
+```python
+python -c "
+import os, sys
+sys.path.insert(0, 'tools')
+from fetch_confluence import api_get, get_auth_header, BASE_URL
+from urllib.request import Request, urlopen
+
+page_id = '<PAGE_ID>'
+img_dir = '<输出目录>/images'
+os.makedirs(img_dir, exist_ok=True)
+
+data = api_get(f'/rest/api/content/{page_id}/child/attachment?limit=100')
+for att in data.get('results', []):
+    filename = att['title']
+    if not filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg')):
+        continue
+    download_url = BASE_URL + att['_links']['download']
+    req = Request(download_url, headers=get_auth_header())
+    resp = urlopen(req, timeout=120)
+    with open(os.path.join(img_dir, filename), 'wb') as f:
+        f.write(resp.read())
+    print(f'Saved: {filename}')
+"
+```
+
+**注意**：图片较多时下载耗时较长（可能 2-4 分钟），设置 `block_until_ms: 120000` 或更长。
+
+### 步骤 4：输出结果摘要
+
+完成后向用户报告：
+1. 生成的文件路径
+2. 下载的图片数量
+3. 文档主要内容概要（标题、功能模块等）
+4. 提示表格格式可能需要手动整理
+
+---
+
+## 常见问题与解决方案
+
+### 问题 1：网络请求被沙箱拦截
+
+**现象**：`ConnectionRefusedError` 或 `URLError: <urlopen error [WinError 10061]>`
+
+**解决**：Shell 命令必须添加 `required_permissions: ["full_network"]`
+
+### 问题 2：WebFetch 无法访问 Confluence
+
+**现象**：WebFetch 返回 Atlassian 登录页面。
+
+**解决**：不要用 WebFetch，使用 `tools/fetch_confluence.py`，它通过 `.env` 中的 `JIRA_EMAIL` / `JIRA_API_TOKEN` 进行 API 认证。
+
+### 问题 3：Windows 下中文文件名导致 OSError
+
+**现象**：`OSError: [Errno 22] Invalid argument`
+
+**解决**：输出文件名使用英文命名（如 `V3.17.0.md`），避免中文字符。
+
+### 问题 4：download_images 目录硬编码
+
+**现象**：`fetch_confluence.py` 的 `download_images` 模式目录写死。
+
+**解决**：使用步骤 3 的内联 Python 脚本，可自定义目标目录。
+
+### 问题 5：HTML 转 Markdown 格式混乱
+
+**现象**：表格结构破损、HTML 实体未转义、标题挤在一行。
+
+**解决**：自动转换后提示用户可能需要手动整理：
+- 表格改写为标准 Markdown 格式
+- 清理 HTML 实体（`&ndash;` → `–`、`&nbsp;` → 空格）
+- 章节标题拆分为独立行
+
+---
+
+## 快速参考
+
+```bash
+# 1. 拉取 Markdown（需要 full_network 权限）
+python tools/fetch_confluence.py markdown <PAGE_ID> <输出路径>
+
+# 2. 列出附件
+python tools/fetch_confluence.py attachments <PAGE_ID>
+
+# 3. 下载图片（使用内联脚本，需要 full_network 权限）
+# 见步骤 3 的完整脚本
+```
