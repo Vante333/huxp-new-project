@@ -127,6 +127,37 @@ npx -y apifox-mcp-server@latest --project-id=<项目ID> --apifox-api-base-url=<�
 }
 ```
 
+### 方式三：使用 `.env` 管理令牌（推荐，避免提交密钥）
+
+将 `APIFOX_ACCESS_TOKEN` 写在**项目根目录**的 `.env` 中（确保 `.gitignore` 已忽略 `.env`），由 PowerShell 启动脚本读取后再启动 MCP。本仓库提供 **`.cursor/run-apifox-mcp.ps1`** 与 **`.env.example`**。
+
+**若你已有 `.env`（含 `JIRA_EMAIL`、`JIRA_API_TOKEN` 等）**：**不要改动或删除原有行**，仅在文件**末尾**追加「Apifox MCP」段（见 `.env.example` 底部），增加一行 `APIFOX_ACCESS_TOKEN=` 即可。
+
+**`.cursor/mcp.json` 示例**（不要在 JSON 里写令牌）：
+
+```json
+{
+  "mcpServers": {
+    "API 文档": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "<仓库绝对路径>\\.cursor\\run-apifox-mcp.ps1",
+        "-ProjectId",
+        "<项目ID>",
+        "-BranchId",
+        "<分支ID>"
+      ]
+    }
+  }
+}
+```
+
+**步骤**：若无 `.env`，可复制 `.env.example` 为 `.env` 并逐项填写；若已有 `.env`，仅在保留原配置的前提下**追加** `APIFOX_ACCESS_TOKEN=`（见 `.env.example` 中「Apifox MCP」段）。
+
 ### 3. 重启 MCP 服务
 
 `Ctrl + Shift + P` → 输入 `Reload Window` → 回车
@@ -220,6 +251,42 @@ npx -y apifox-mcp-server@latest --project-id=<项目ID> --apifox-api-base-url=<�
 
 ---
 
+### 问题 6：`ParameterBindingException` + `WriteErrorCommand`（Windows + PowerShell 启动脚本）
+
+**现象**：Cursor MCP 日志中出现 `ParameterBindingException`，`FullyQualifiedErrorId` 为 `PositionalParameterNotFound,Microsoft.PowerShell.Commands.WriteErrorCommand`，随后 `Client closed` / `initializing -> error`。
+
+**根本原因**：MCP 由 Cursor 以**非交互子进程**拉起 PowerShell。部分环境下对 `Write-Error` 的位置参数绑定不稳定，错误被“绑定异常”盖住，难以看到真实原因。
+
+**解决方案（本仓库已落实）**：`.cursor/run-apifox-mcp.ps1` 在启动阶段**不再使用 `Write-Error`**，改为将致命信息写入 **stderr** 后 `exit 1`（见脚本内 `Write-McpLaunchErr`）。
+
+---
+
+### 问题 7：stderr 中文乱码、日志里出现 `undefined` 或像“脚本碎片”的内容；误判未配置 `APIFOX_ACCESS_TOKEN`
+
+**现象**：
+
+- 日志里中文末尾变成 `?`，后面还跟一大段像 PowerShell 源码的乱码，并可能出现 `undefined`。
+- 或提示 `APIFOX_ACCESS_TOKEN` 未设置，但编辑器里明明已在 `.env` 中填写。
+
+**可能原因**：
+
+| 原因 | 说明 |
+|------|------|
+| **stderr 编码** | Windows 控制台默认代码页与 Cursor 按 **UTF-8** 解读日志不一致时，多字节字符（如中文句号）易断码，后续字节被误显示成“代码碎片”。 |
+| **`.env` 未保存** | MCP 读的是**磁盘上的文件**；若仅编辑未保存，进程内仍看不到令牌。 |
+| **路径不一致** | 确认 `mcp.json` 里 `-File` 指向的仓库根目录下，确实存在正在维护的那份 `.env`。 |
+
+**解决方案（本仓库已落实）**：
+
+1. **`Write-McpLaunchErr`**：用 **UTF-8 字节**写入 stderr，减轻 Cursor 侧断码与误解析。
+2. **解析仓库根目录**：用 **`$PSScriptRoot`** 推导项目根（相对 `$MyInvocation.MyCommand.Path` 在少数宿主下更稳）。
+3. **令牌校验**：使用 **`[string]::IsNullOrWhiteSpace($env:APIFOX_ACCESS_TOKEN)`**，避免仅空格被当成已配置。
+4. **可读的英文错误行**：前缀 **`[apifox-mcp]`**，并输出**已尝试加载的 `.env` 绝对路径**（不含令牌），便于对照是否读错文件。
+
+**自助排查**：修改 `.env` 后**保存文件** → `Reload Window` 或重启 Cursor → 若仍失败，将日志中带 **`[apifox-mcp]`** 的整行复制出来核对路径与提示。
+
+---
+
 ## 六、验证 MCP 是否工作正常
 
 配置完成并 Reload Window 后，在 Cursor 对话中输入：
@@ -243,24 +310,45 @@ AI 应该能正常返回项目中的接口信息。
 
 ## 八、本项目最终配置
 
-**`.cursor/mcp.json`**：
+令牌放在**项目根目录** **`.env`** 的 `APIFOX_ACCESS_TOKEN`（已在 `.gitignore`，勿提交）。**与 `JIRA_EMAIL`、`JIRA_API_TOKEN` 等原有项并存**：已有 `.env` 时只在末尾追加 Apifox 段，勿删改原配置；新环境可参考 **`.env.example`** 完整结构。
+
+**`.cursor/mcp.json`**（不在此文件存放令牌；以下为当前双项目示例）：
+
 ```json
 {
   "mcpServers": {
-    "API 文档": {
-      "command": "cmd",
-      "args": ["/c", "d:\\interface\\interface_cursor\\.cursor\\run-apifox-mcp.cmd"],
-      "env": {
-        "APIFOX_ACCESS_TOKEN": "APS-xxxxx"
-      }
+    "API 文档 346181": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "d:\\interface\\interface_cursor\\.cursor\\run-apifox-mcp.ps1",
+        "-ProjectId",
+        "346181",
+        "-BranchId",
+        "309372"
+      ]
+    },
+    "API 文档 345747": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "d:\\interface\\interface_cursor\\.cursor\\run-apifox-mcp.ps1",
+        "-ProjectId",
+        "345747",
+        "-BranchId",
+        "309343"
+      ]
     }
   }
 }
 ```
 
-**`.cursor/run-apifox-mcp.cmd`**：
-```batch
-@echo off
-set PATH=C:\Program Files\nodejs;%PATH%
-npx -y apifox-mcp-server@latest --project-id=345747 --apifox-api-base-url=https://apifox.dragonpass.com.cn
-```
+**`.cursor/run-apifox-mcp.ps1`**：由 **`$PSScriptRoot`** 推导仓库根目录并读取其中 **`.env`**，再执行 `npx apifox-mcp-server@latest`（含 `--apifox-api-base-url`、分支 ID 等，见脚本内参数默认值）。启动失败时通过 **`Write-McpLaunchErr`** 以 **UTF-8** 写 stderr，避免 Cursor 日志断码；校验 **`APIFOX_ACCESS_TOKEN`** 使用 **`IsNullOrWhiteSpace`**；错误信息带 **`[apifox-mcp]`** 前缀与 **`.env` 绝对路径**，便于与「问题 6」「问题 7」对照排查。**`run-apifox-mcp*.cmd`** 为可选手动入口，内部调用该脚本。
+
+若本机找不到 `npx`，可在 `.cmd` 中于调用 PowerShell 前增加 `set PATH=C:\Program Files\nodejs;%PATH%`（参见上文「问题 1」）。

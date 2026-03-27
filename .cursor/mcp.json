@@ -1,11 +1,32 @@
 {
   "mcpServers": {
-    "API 文档": {
-      "command": "cmd",
-      "args": ["/c", "d:\\interface\\interface_cursor\\.cursor\\run-apifox-mcp.cmd"],
-      "env": {
-        "APIFOX_ACCESS_TOKEN": "APS-J75tJzWEexmcQd5SESOh52D4iw0oFVA6"
-      }
+    "API 1.0 phase 1": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "d:\\interface\\interface_cursor\\.cursor\\run-apifox-mcp.ps1",
+        "-ProjectId",
+        "346181",
+        "-BranchId",
+        "309372"
+      ]
+    },
+    "API Q1SP4+5": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "d:\\interface\\interface_cursor\\.cursor\\run-apifox-mcp.ps1",
+        "-ProjectId",
+        "345747",
+        "-BranchId",
+        "309343"
+      ]
     }
   }
 }

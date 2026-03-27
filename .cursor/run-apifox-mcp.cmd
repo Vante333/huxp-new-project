@@ -1,2 +1,2 @@
 @echo off
-npx -y apifox-mcp-server@latest --project-id=345747 --apifox-api-base-url=https://apifox.dragonpass.com.cn --branch-id=309343
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0run-apifox-mcp.ps1" -ProjectId 345747 -BranchId 309343

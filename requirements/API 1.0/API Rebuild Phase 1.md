@@ -6,8 +6,7 @@
 
 ## 1. 产品背景
 
-在 DragonPass 1.0 的生态中，权益（Entitlement）是连接「订单使用」的核心载体。  
-1.0 没有会籍这个概念。基于原有 1.0 API，目前需要重构权益管理部分接口，主要提供以下功能：
+在 DragonPass 1.0 的生态中，权益（Entitlement）是连接「订单使用」的核心载体。1.0 是没有会籍这个概念的。基于原有的 1.0 API，我们目前需要重构权益管理部分接口，主要提供以下功能：
 
 - 提供统一的权益发放与管理能力
 - 支持会员 / 非会员两种模式
@@ -29,11 +28,11 @@ APIFOX 见以下项目：
 
 ### 2.3 权益模版（Entitlement Template）
 
-定义权益商品（如：休息室商品、FT 商品等）。在这个商品中进行权益数量 / 网点范围等配置管理。
+定义权益商品（如：休息室商品，FT 商品等）。在这个商品中进行权益数量 / 网点范围等配置的管理。
 
 ### 2.4 权益分配（Usage Allocation）
 
-又叫权益精细化管理，支持休息室和嘉宾品类，只有在 SAAS 打开开关后才能进行操作。
+又叫权益精细化管理，支持休息室和嘉宾品类。只有在 SAAS 打开开关后才能进行操作。
 
 ```json
 {
@@ -59,16 +58,16 @@ APIFOX 见以下项目：
 
 ```text
 POST /v3_general_entitlement_issuance
+旧：/api/business/general/equity/member/grant
 ```
 
 能力：
 
 - 支持两种模式：
-  - 无会员发放（`clientUserId`），通过第三方用户 id 发放
+  - 无会员发放（`clientOrderId`），通过第三方订单 id 发放
   - 已有会员发放（`memberId`），通过已经在 DP 生成的会员 id 发放
 - 支持自定义有效期
-- `clientUserId` 可重复传入，即在同一个用户下多次发放权益
-- `clientOrderId` 可选
+- 如果 `memberId` 不传，则 `clientOrderId` 必传；不可重复传入，即同一个三方订单只能对应一条 DP 权益
 - 支持权益数量（可为小数）
 - 支持权益分配（cardholder / guest）：
   - `cardholderUsages + guestUsages = availableUsages`
@@ -76,7 +75,7 @@ POST /v3_general_entitlement_issuance
 
 关键规则：
 
-- `clientUserId` 和 `memberId` 二选一
+- `clientOrderId` 与 `memberId` 二选一
 - `availableUsages` 必填
 - 支持 `remark` 扩展字段
 
@@ -86,17 +85,18 @@ POST /v3_general_entitlement_issuance
 | --- | --- | --- |
 | 重复 `clientOrderId` | 500.031.002 | 同一个第三方订单号不能重复发放权益 |
 | 无效 `entitlementTemplateId` | 301.031.003 | 权益编码有误 |
-| `usageAllocation` 不等于 total | 500.031.005 | 权益总额不一致 |
+| `usageAllocation` 内的值不等于 `availableUsages` | 500.031.005 | 权益总额不一致 |
 
 ### 3.2 权益查询（单条）接口
 
 ```text
 POST /v3_general_entitlement_query
+/api/business/general/equity/detail/list
 ```
 
 支持按以下条件进行查询：
 
-- `clientOrderId`（如果之前有传入）
+- `clientOrderId`（如果之前有传入的话）
 - `voucherCode`
 - 不支持使用 `clientUserId` 进行查询
 
@@ -131,7 +131,7 @@ POST /v3_general_member_entitlement_list
 
 用于：
 
-- App 展示某个会员下剩余的权益数量
+- App 展示某个会员下剩下的权益数量
 
 查询异常：
 
@@ -143,6 +143,7 @@ POST /v3_general_member_entitlement_list
 
 ```text
 POST /v3_general_entitlement_status_update
+/api/business/general/equity/detail/change-state
 ```
 
 支持状态流转：
@@ -173,6 +174,7 @@ POST /v3_general_entitlement_status_update
 
 ```text
 POST /v3_general_entitlement_update
+/api/business/general/equity/detail/edit
 ```
 
 支持修改：
@@ -188,7 +190,7 @@ POST /v3_general_entitlement_update
 | --- | --- | --- |
 | 权益更新失败 | 500.031.003 | 权益编辑失败 |
 | 权益总额不一致 | 500.031.005 | 权益总额不一致 |
-| 不支持编辑 `usageAllocation` | 500.031.005 | 该权益不支持编辑 `usageAllocation` |
+| 不支持编辑 allocation | 500.031.005 | 该权益不支持编辑 usageAllocation |
 
 ### 3.6 动态二维码（核销）接口
 
