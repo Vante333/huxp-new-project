@@ -27,6 +27,17 @@
         "-BranchId",
         "309343"
       ]
+    },
+    "mysql": {
+      "type": "stdio",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "d:\\interface\\interface_cursor\\.cursor\\run-mysql-mcp.ps1"
+      ]
     }
   }
 }
