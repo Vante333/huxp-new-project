@@ -39,6 +39,24 @@
       },
       "group": "none",
       "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "PAPI-2548: 清空 Allure 结果 + pytest + serve",
+      "type": "shell",
+      "command": "python",
+      "args": ["tools/ServePapi2548Allure.py"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "PAPI-2548: 仅 allure serve（不删、不跑测试）",
+      "type": "shell",
+      "command": "python",
+      "args": ["tools/ServePapi2548Allure.py", "--serve-only"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
     }
   ]
 }

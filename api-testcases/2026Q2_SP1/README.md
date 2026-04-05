@@ -95,6 +95,20 @@ pytest api-testcases/2026Q2_SP1 -m "not manual" --alluredir=reports/papi2548-all
 
 需已安装 [Allure Commandline](https://github.com/allure-framework/allure2/releases)。
 
+**推荐（每次仅保留一份原始结果）**：单独执行 `allure serve` 不会清空 `reports/papi2548-allure-results`；若希望「打开报告前删掉旧结果 → 再跑 pytest → 再 serve」一条命令完成，在仓库根执行：
+
+```bash
+python tools/ServePapi2548Allure.py
+```
+
+若本轮已跑过 pytest、只需打开当前结果目录：
+
+```bash
+python tools/ServePapi2548Allure.py --serve-only
+```
+
+等价的手动命令（在 `api-testcases/2026Q2_SP1` 下）：
+
 ```bash
 allure serve ../../reports/papi2548-allure-results
 ```

@@ -349,6 +349,6 @@ AI 应该能正常返回项目中的接口信息。
 }
 ```
 
-**`.cursor/run-apifox-mcp.ps1`**：由 **`$PSScriptRoot`** 推导仓库根目录并读取其中 **`.env`**，再执行 `npx apifox-mcp-server@latest`（含 `--apifox-api-base-url`、分支 ID 等，见脚本内参数默认值）。启动失败时通过 **`Write-McpLaunchErr`** 以 **UTF-8** 写 stderr，避免 Cursor 日志断码；校验 **`APIFOX_ACCESS_TOKEN`** 使用 **`IsNullOrWhiteSpace`**；错误信息带 **`[apifox-mcp]`** 前缀与 **`.env` 绝对路径**，便于与「问题 6」「问题 7」对照排查。**`run-apifox-mcp*.cmd`** 为可选手动入口，内部调用该脚本。
+**`.cursor/run-apifox-mcp.ps1`**：由 **`$PSScriptRoot`** 推导仓库根目录并读取其中 **`.env`**，再执行 `npx apifox-mcp-server@latest`（含 `--apifox-api-base-url`、分支 ID 等，见脚本内参数默认值）。启动失败时通过 **`Write-McpLaunchErr`** 以 **UTF-8** 写 stderr，避免 Cursor 日志断码；校验 **`APIFOX_ACCESS_TOKEN`** 使用 **`IsNullOrWhiteSpace`**；错误信息带 **`[apifox-mcp]`** 前缀与 **`.env` 绝对路径**，便于与「问题 6」「问题 7」对照排查。手动调试时在仓库根执行：`powershell -NoProfile -ExecutionPolicy Bypass -File .\.cursor\run-apifox-mcp.ps1 -ProjectId <项目ID> -BranchId <分支ID>`（参数与 `.cursor/mcp.json` 保持一致）；本仓库不再附带 `.cmd` 快捷方式，需要时可按上文「方式二」自行新建。
 
-若本机找不到 `npx`，可在 `.cmd` 中于调用 PowerShell 前增加 `set PATH=C:\Program Files\nodejs;%PATH%`（参见上文「问题 1」）。
+若本机找不到 `npx`，可在自建 `.cmd` 中于调用 PowerShell 前增加 `set PATH=C:\Program Files\nodejs;%PATH%`（参见上文「问题 1」）。

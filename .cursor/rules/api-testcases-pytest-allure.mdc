@@ -1,0 +1,39 @@
+---
+description: api-testcases 下 pytest、分层环境变量、Allure 与 Postman 双轨约定
+globs: api-testcases/**/*.py
+alwaysApply: false
+---
+
+# api-testcases：pytest / Allure / 业务探测
+
+## 环境变量分层
+
+- 加载顺序以金样例 `conftest.py` 为准：先根目录 `.env`（**不覆盖**已在进程环境中的键），再若 `DP_PROFILE` 合法则加载 `env/.env.<profile>` 并**覆盖**文件中出现的键。
+- 新增套件时复制同一模式：在 `conftest` 导入阶段完成加载，避免用例内重复读盘。
+
+## pytest
+
+- 在 `conftest.py` 的 `pytest_configure` 中注册 **markers**（如 `manual`、`needs_extensions_read`），说明用中文，与 `pytest.ini` 的 `addopts` 配合使用。
+- 套件 `pytest.ini` 宜含 `--clean-alluredir`，与命令行 `--alluredir=...` 同用，避免多次运行合并导致报告重复。
+
+## 沙箱与跳过策略
+
+- 会话级能力探测（金样例：`BuildSandboxFlags` / `Papi2548SandboxFlags`）：读侧未发布、写侧无权限时 **`pytest.skip`** 并给出可操作提示；可选 `DP_ASSUME_*` 仅用于本地已确认环境时的临时绕过。
+- 单测前置：取 token 失败、缺必填 `DP_*` 时 skip 或 fail，信息需指向变量名与文档。
+
+## Allure（与套件 README 一致）
+
+- HTTP 步骤统一走 **`RequestWithAllure`**；附件顺序：`request_step_meta`（仅当有 `step_code`/`step_title`）→ `request_meta` → `response_body_json` 或 `response_body_text` → `response_status`。
+- 与 JSON 相关的内容附件优先 **`text/plain`**（格式化文本），避免 Allure 2.x 对 `application/json` 内嵌预览空白。
+- 断言结果使用 **`断言结果_*`** 命名体系；用例级复位序号由 conftest 中 autouse fixture 调用 `ResetAllureAssertionAttachmentCounter`，避免同名覆盖。
+- 步骤标题与序列码：通过 **`ScenarioSteps`** 与 **`_StepKw(steps, "简述")`** 生成 `step_code` / `step_title` 传入各 HTTP 封装。
+
+## 业务断言习惯（PAPI-2548 金样例）
+
+- 响应按 **信封**解析：`ParseResponseEnvelope`、`IsBusinessSuccess`；extensions 可能来自 `extensions` 或 `feature`（含 JSON 字符串）路径，比对前用 **`NormalizeExtensionsForCompare`** 等与 Postman Tests（JS）语义对齐。
+- **`/v2/memberships/extensions`** 的 HTTP 方法由环境（如 `DP_MEMBERSHIP_EXTENSIONS_METHOD`）选择，默认与沙箱常见行为一致；变更时同步文档与 Postman 生成脚本。
+
+## Postman / Apifox 双轨
+
+- Collection 使用 **v2.1** schema；修改 Python helpers 时**同步** `postman/Generate*.py` 内嵌 JS 与导出 JSON，必要时增加 **parity** 小测（参见金样例 `test_p2548_normalize_parity.py` 一类做法）。
+- 变量与 `DP_*` 映射写在套件 `postman/README.md`，不在规则中重复维护表格。

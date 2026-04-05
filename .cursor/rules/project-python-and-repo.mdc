@@ -1,0 +1,44 @@
+---
+description: 本仓库 Python 通用约定、命名、注释、错误处理与安全（与金样例对齐）
+alwaysApply: true
+---
+
+# 项目 Python 与仓库约定
+
+## 范围与权威
+
+- 接口自动化金样例目录：`api-testcases/2026Q2_SP1/`（`conftest.py`、`papi2548_helpers.py`、`test_*.py`）。
+- 详细工作流与环境变量表见 `.cursor/skills/api-testcase-pack/SKILL.md` 与同套件 `README.md`；本规则只写必须一致的短约束。
+
+## 语言与类型
+
+- 新代码使用 **Python 3.8+**，文件顶部使用 `from __future__ import annotations`。
+- 为公共函数、模块级变量与复杂结构补充 **typing**；返回值类型应可静态推断（配合本机/CI 的 pyright/mypy 若已配置）。
+
+## 命名（金样例）
+
+- **对外可复用能力**（HTTP 封装、断言入口、数据类工厂等）：**PascalCase**，例如 `GetAccessToken`、`PostMembershipsSearch`、`AssertJsonResponse`。
+- **模块内私有辅助**：**单下划线 + PascalCase**，例如 `_RepoRoot`、`_StepKw`、`_AttachAllureRequestMeta`。
+- **pytest fixture**（业务语义型）：**PascalCase**，例如 `Token`、`ScenarioSteps`。
+- **pytest 钩子与框架 API**：保持框架惯例 **snake_case**，例如 `pytest_configure`、`_ResetAllureAssertionAttachmentCounterPerTest`（pytest 命名习惯）。
+- **`tools/` 历史脚本** 多为 snake_case；**新增或大改**时优先向金样例命名与类型风格对齐，无需一次性全目录重写。
+
+## 注释与文档字符串
+
+- 模块级 docstring：**简体中文**，说明用途、必填环境变量、与文档/网关不一致处（如 POST vs PATCH）。
+- 函数 docstring：说明副作用（写环境变量、发 HTTP）、关键参数与返回值；代码标识符用双反引号包裹（Markdown 习惯与现有一致）。
+- 行内 `#`：仅用于非显而易见的约束（安全、Allure MIME、Windows 路径、兼容分支）。
+
+## 错误处理
+
+- **新代码**避免空 `except` 与吞掉根因；应 `raise` 带明确中文/英文信息的异常，或 `pytest.skip`/`pytest.fail` 并写清依赖条件。
+- 可读 `OSError`、网络超时等：在边界层捕获并转为明确错误或跳过说明。
+
+## 环境与安全（Windows）
+
+- 凭据与密钥放在仓库根 `.env` 与 `env/.env.<profile>`（`profile` 仅 `a-zA-Z0-9_-`），**勿提交**真实值；示例仅保留 `*.example`。
+- 文档与命令示例需考虑 **PowerShell**（如 `Resolve-Path`、`$env:VAR`）。路径说明见 `env/README.md`。
+
+## 与用户的交互
+
+- 助手对用户说明默认使用 **简体中文**（与团队习惯一致）。
