@@ -1,4 +1,4 @@
-﻿# 环境变量与敏感信息（切勿提交）
+# 环境变量与敏感信息（切勿提交）
 .env
 .env.local
 .env.*.local
@@ -7,6 +7,9 @@
 env/.env.*
 !env/.env.example
 !env/.env.*.example
+
+# 测试报告与 Allure 结果（本地生成，勿提交）
+reports/
 
 # Python cache artifacts
 __pycache__/
