@@ -1,6 +1,8 @@
 """
 PAPI-2548 会籍 extensions 自动化用例（不含非内部租户场景）。
 
+主链路（注册→search→extensions→search）见 ``papi2548_helpers.RunPapi2548MainE2EScenario`` 与该模块 docstring。
+
 执行前请设置：DP_PROGRAM_ID、DP_CLIENT_ID、DP_CLIENT_SECRET；
 可选 DP_BASE_URL（默认 https://developer-sandbox.dragonpass.com/api）。
 """
@@ -41,7 +43,6 @@ from papi2548_helpers import (
     GetAccessToken,
     IsBusinessSuccess,
     IsHttpOk,
-    MembershipsExtensionsHttpContextLabel,
     NormalizeExtensionsForCompare,
     Papi2548SandboxFlags,
     PostMemberships,
@@ -54,6 +55,9 @@ from papi2548_helpers import (
     PostMembershipsSearch,
     RegisterMembershipSuccess,
     RegisterMembershipSuccessDetail,
+    RequirePapi2548ExtensionsWriteOrSkip,
+    RequirePapi2548SearchShowsExtensionsOrSkip,
+    RunPapi2548MainE2EScenario,
     RunPatchExtensionsAssertions,
     RunPatchInvalidMembershipIdAssertions,
     RunPatchInvalidOperationGatewayAssertions,
@@ -76,21 +80,6 @@ def Token() -> str:
 
 def _ExpectedPairsFromRegister(items: List[ExtensionRegisterItem]) -> List[Tuple[str, Optional[str]]]:
     return NormalizeExtensionsForCompare(items)
-
-
-def _RequireExtensionsWrite(flags: Papi2548SandboxFlags) -> None:
-    if not flags.post_extensions_works:
-        pytest.skip(
-            f"{MembershipsExtensionsHttpContextLabel()} 探测未通过（常见 201.000.001）。"
-            "若已开放权限：请更新 DP_CLIENT_ID/DP_CLIENT_SECRET 后重试；"
-            "仍失败可临时设置 DP_ASSUME_EXTENSIONS_WRITE=1 跳过探测（仅本地确认可用时）。"
-        )
-
-
-def _RequireSearchVisibleExtensions(flags: Papi2548SandboxFlags) -> None:
-    """依赖 search 比对删除前后状态时用。"""
-    if not flags.search_shows_extensions:
-        pytest.skip("本用例需 search 返回 extensions；读侧未发布时跳过，避免假通过")
 
 
 def _StepKw(steps: AllureHttpScenarioSteps, brief: str) -> Dict[str, str]:
@@ -509,7 +498,7 @@ class TestMembershipsExtensionsUpdate:
         papi2548_sandbox_flags: Papi2548SandboxFlags,
         ScenarioSteps: AllureHttpScenarioSteps,
     ) -> None:
-        _RequireExtensionsWrite(papi2548_sandbox_flags)
+        RequirePapi2548ExtensionsWriteOrSkip(papi2548_sandbox_flags)
         exts: List[ExtensionRegisterItem] = [{"type": "keepA", "value": "1"}]
         mid, _ = RegisterMembershipSuccess(
             Token,
@@ -539,7 +528,7 @@ class TestMembershipsExtensionsUpdate:
         papi2548_sandbox_flags: Papi2548SandboxFlags,
         ScenarioSteps: AllureHttpScenarioSteps,
     ) -> None:
-        _RequireExtensionsWrite(papi2548_sandbox_flags)
+        RequirePapi2548ExtensionsWriteOrSkip(papi2548_sandbox_flags)
         exts: List[ExtensionRegisterItem] = [{"type": "k1", "value": "old"}]
         mid, _ = RegisterMembershipSuccess(
             Token,
@@ -569,7 +558,7 @@ class TestMembershipsExtensionsUpdate:
         papi2548_sandbox_flags: Papi2548SandboxFlags,
         ScenarioSteps: AllureHttpScenarioSteps,
     ) -> None:
-        _RequireExtensionsWrite(papi2548_sandbox_flags)
+        RequirePapi2548ExtensionsWriteOrSkip(papi2548_sandbox_flags)
         exts: List[ExtensionRegisterItem] = [
             {"type": "a1", "value": "1"},
             {"type": "b2", "value": "2"},
@@ -606,8 +595,8 @@ class TestMembershipsExtensionsUpdate:
         papi2548_sandbox_flags: Papi2548SandboxFlags,
         ScenarioSteps: AllureHttpScenarioSteps,
     ) -> None:
-        _RequireExtensionsWrite(papi2548_sandbox_flags)
-        _RequireSearchVisibleExtensions(papi2548_sandbox_flags)
+        RequirePapi2548ExtensionsWriteOrSkip(papi2548_sandbox_flags)
+        RequirePapi2548SearchShowsExtensionsOrSkip(papi2548_sandbox_flags)
         exts: List[ExtensionRegisterItem] = [{"type": "only", "value": "x"}]
         mid, _ = RegisterMembershipSuccess(
             Token,
@@ -660,7 +649,7 @@ class TestMembershipsExtensionsUpdate:
         papi2548_sandbox_flags: Papi2548SandboxFlags,
         ScenarioSteps: AllureHttpScenarioSteps,
     ) -> None:
-        _RequireExtensionsWrite(papi2548_sandbox_flags)
+        RequirePapi2548ExtensionsWriteOrSkip(papi2548_sandbox_flags)
         exts: List[ExtensionRegisterItem] = [
             {"type": "delMe", "value": "1"},
             {"type": "keepMe", "value": "2"},
@@ -718,7 +707,7 @@ class TestMembershipsExtensionsUpdate:
         papi2548_sandbox_flags: Papi2548SandboxFlags,
         ScenarioSteps: AllureHttpScenarioSteps,
     ) -> None:
-        _RequireSearchVisibleExtensions(papi2548_sandbox_flags)
+        RequirePapi2548SearchShowsExtensionsOrSkip(papi2548_sandbox_flags)
         exts: List[ExtensionRegisterItem] = [{"type": "stable", "value": "1"}]
         payload_io = BuildMinimalMembershipPayload(extensions=exts)
         mid, _ = RegisterMembershipSuccess(
@@ -822,101 +811,7 @@ class TestMembershipsExtensionsE2E:
         papi2548_sandbox_flags: Papi2548SandboxFlags,
         ScenarioSteps: AllureHttpScenarioSteps,
     ) -> None:
-        _RequireExtensionsWrite(papi2548_sandbox_flags)
-        if not papi2548_sandbox_flags.search_shows_extensions:
-            pytest.skip("E2E 需 search 返回 extensions 以完成二次核对")
-        exts: List[ExtensionRegisterItem] = [
-            {"type": "e1", "value": "1"},
-            {"type": "e2", "value": "2"},
-        ]
-        payload_e2e = BuildMinimalMembershipPayload(extensions=exts)
-        mid, _ = RegisterMembershipSuccess(
-            Token,
-            payload_e2e,
-            **_StepKw(ScenarioSteps, "注册会籍"),
-        )
-        expected_after: List[ExtensionRegisterItem] = [
-            {"type": "e2", "value": "2"},
-            {"type": "e3", "value": "3"},
-        ]
-        u_box: Dict[str, Any] = {}
-        PostMembershipsSearch(
-            Token,
-            mid,
-            after_response=lambda r: RunSearchResponseAssertions(
-                r,
-                http_context="E2E POST /v2/memberships/search#1",
-                membership_id=mid,
-                client_user_id=str(payload_e2e["clientUserId"]),
-                expect_status=1,
-                search_core_context="E2E search#1",
-                use_postman=False,
-                extensions_equal_to=exts,
-                extensions_context="search#1",
-                assert_shape_and_no_dup=True,
-            ),
-            **_StepKw(ScenarioSteps, "search #1"),
-        )
-
-        ops: List[ExtensionUpdateItem] = [
-            {"operation": "UPSERT", "type": "e3", "value": "3"},
-            {"operation": "DELETE", "type": "e1"},
-        ]
-
-        def _AfterE2EPatch(resp: Response) -> None:
-            got = RunPatchExtensionsAssertions(
-                resp,
-                membership_id=mid,
-                http_context=f"E2E {MembershipsExtensionsHttpContextLabel()}",
-                expected_extensions=expected_after,
-                ext_context="extensions 更新响应",
-                assert_no_dup=True,
-            )
-            u_box["after_update"] = NormalizeExtensionsForCompare(got)
-
-        PatchMembershipsExtensions(
-            Token,
-            mid,
-            ops,
-            after_response=_AfterE2EPatch,
-            **_StepKw(ScenarioSteps, "PATCH 更新 extensions"),
-        )
-        after_update: List[Tuple[str, Optional[str]]] = u_box["after_update"]
-
-        s2_box: Dict[str, Any] = {}
-
-        def _AfterE2ESearch2(resp: Response) -> None:
-            RunSearchResponseAssertions(
-                resp,
-                http_context="E2E POST /v2/memberships/search#2",
-                membership_id=mid,
-                client_user_id=str(payload_e2e["clientUserId"]),
-                expect_status=1,
-                search_core_context="E2E search#2",
-                use_postman=False,
-                extensions_equal_to=expected_after,
-                extensions_context="search#2",
-                assert_shape_and_no_dup=True,
-            )
-            _st, _e, s2_inner = ParseResponseEnvelope(resp)
-            rec2 = UnwrapMembershipRecord(s2_inner)
-            s2_ext = ExtractExtensionsList(rec2)
-            after_search = NormalizeExtensionsForCompare(s2_ext)
-            with allure.step("E2E：二次 search 与 PATCH 响应一致且为最终预期集合"):
-                assert after_search == after_update
-            s2_box["after_search"] = after_search
-
-        PostMembershipsSearch(
-            Token,
-            mid,
-            after_response=_AfterE2ESearch2,
-            **_StepKw(ScenarioSteps, "search #2"),
-        )
-        after_search_final: List[Tuple[str, Optional[str]]] = s2_box["after_search"]
-        pairs = {t for t, _ in after_search_final}
-        assert "e1" not in pairs
-        assert "e2" in pairs
-        assert "e3" in pairs
+        RunPapi2548MainE2EScenario(Token, ScenarioSteps, papi2548_sandbox_flags)
 
 
 @allure.feature("PAPI-2548")

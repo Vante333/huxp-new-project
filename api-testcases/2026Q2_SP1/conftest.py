@@ -55,19 +55,50 @@ def _ProfileSegmentSafe(segment: str) -> bool:
     return bool(segment) and _PROFILE_SAFE.match(segment) is not None
 
 
+def _ApplyProfileNameFromLocalProfileFile(root: Path) -> None:
+    """
+    当进程与根 ``.env`` 均未设置 ``DP_PROFILE`` 时，读取 ``env/.local_profile``：
+    首条非空、非 ``#`` 注释行作为 profile 名，写入 ``os.environ``（与 ``env/.env.<profile>`` 配套）。
+
+    这样本地可只维护 ``env/.local_profile``（内容为 ``canary`` 等），无需每次在 PowerShell 里执行
+    ``$env:DP_PROFILE = "canary"``。已在环境中显式设置 ``DP_PROFILE`` 时本逻辑不生效。
+    """
+    if os.environ.get("DP_PROFILE", "").strip():
+        return
+    path = root / "env" / ".local_profile"
+    if not path.is_file():
+        return
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError:
+        return
+    for line in raw.splitlines():
+        seg = line.strip()
+        if not seg or seg.startswith("#"):
+            continue
+        if _ProfileSegmentSafe(seg):
+            os.environ["DP_PROFILE"] = seg
+        return
+
+
 def _LoadAllDotenvLayers() -> None:
     """
     分层加载环境变量：
     1. 仓库根目录 ``.env``（不覆盖已在进程环境中的键）；
-    2. 若 ``DP_PROFILE`` 合法且存在 ``env/.env.<profile>``，则加载该文件并**覆盖**同名键。
+    2. 若 ``DP_PROFILE`` 仍为空，尝试 ``env/.local_profile`` 首行指定 profile；
+    3. 若 ``DP_PROFILE`` 合法且存在 ``env/.env.<profile>``，则加载该文件并**覆盖**同名键。
+    4. 若 profile 为 ``canary``（大小写不敏感）且仍未设置 ``DP_X_VERSION``，默认 ``canary``，
+       以发送 ``x-version: canary``（与 ``BuildCommonHeaders`` 一致）；显式配置或 ``omit`` 等仍优先。
     """
     root = _RepoRoot()
     _ApplyDotenvFile(root / ".env", overwrite=False)
+    _ApplyProfileNameFromLocalProfileFile(root)
     profile = os.environ.get("DP_PROFILE", "").strip()
-    if not _ProfileSegmentSafe(profile):
-        return
-    prof_path = root / "env" / f".env.{profile}"
-    _ApplyDotenvFile(prof_path, overwrite=True)
+    if _ProfileSegmentSafe(profile):
+        prof_path = root / "env" / f".env.{profile}"
+        _ApplyDotenvFile(prof_path, overwrite=True)
+    if profile.lower() == "canary" and not os.environ.get("DP_X_VERSION", "").strip():
+        os.environ["DP_X_VERSION"] = "canary"
 
 
 _LoadAllDotenvLayers()
@@ -77,6 +108,38 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "manual: 需人工/外部系统观测，默认不跑")
     config.addinivalue_line("markers", "needs_extensions_read: 依赖 search/register 返回 extensions")
     config.addinivalue_line("markers", "needs_extensions_write: 依赖 PATCH /v2/memberships/extensions 可用")
+    config.addinivalue_line(
+        "markers",
+        "needs_cross_module_data: PAPI-2515 读侧数据依赖（含注册造数的 doc gap 等；非必等于环境变量探测）",
+    )
+    config.addinivalue_line(
+        "markers",
+        "p2515_probe_membership: 仅读探测会籍，需 DP_P2515_PROBE_MEMBERSHIP_ID；"
+        "本地默认不收集，需 DP_P2515_INCLUDE_PROBE=1",
+    )
+    config.addinivalue_line(
+        "markers",
+        "needs_cross_module_write: PAPI-2515 写链路，注册+entitlements/update+按池 update，会改写沙箱权益数值",
+    )
+    config.addinivalue_line(
+        "markers",
+        "needs_p2424_usage_order_id: PAPI-2424 回归用例，依赖环境变量 DP_P2424_USAGE_ORDER_ID（非 MS 开头 usage 订单号）",
+    )
+
+
+def _EnvTruthy(name: str) -> bool:
+    v = os.environ.get(name, "").strip().lower()
+    return v in ("1", "true", "yes", "on")
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list) -> None:
+    """
+    本地默认不收集 ``p2515_probe_membership``（避免维护 ``DP_P2515_PROBE_MEMBERSHIP_ID`` 仍出现 Skipped 条）。
+    显式开启：``DP_P2515_INCLUDE_PROBE=1``（须同时配置探测会籍 ID）。
+    """
+    if _EnvTruthy("DP_P2515_INCLUDE_PROBE"):
+        return
+    items[:] = [it for it in items if it.get_closest_marker("p2515_probe_membership") is None]
 
 
 @pytest.fixture(autouse=True)

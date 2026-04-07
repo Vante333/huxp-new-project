@@ -21,11 +21,16 @@ alwaysApply: false
 - 会话级能力探测（金样例：`BuildSandboxFlags` / `Papi2548SandboxFlags`）：读侧未发布、写侧无权限时 **`pytest.skip`** 并给出可操作提示；可选 `DP_ASSUME_*` 仅用于本地已确认环境时的临时绕过。
 - 单测前置：取 token 失败、缺必填 `DP_*` 时 skip 或 fail，信息需指向变量名与文档。
 
+## 主链路与单一编排（新建 helpers 必选）
+
+- 需求专属 **`papi*_helpers.py`**：模块级 docstring（简体中文）须写 **主链路**（按真实 HTTP 先后顺序；鉴权是否由用例 `Token` 提供；`Sxx` 由 `ScenarioSteps.Next` 按请求递增等）；产品「附件链 / 主场景」须有 **`Run<需求>MainE2EScenario`**，对应 **`test_*` 主 E2E 仅一行调用**，逻辑不拆在测试文件与 helpers 两处。共享 **`pytest.skip`** 封装为 **`Require…OrSkip`** 放入 helpers；步骤字典型可用 **`_HttpStepKw`**。对照：`RunPapi2548MainE2EScenario`、`RunP2515MainE2EScenario`。
+
 ## Allure（与套件 README 一致）
 
 - HTTP 步骤统一走 **`RequestWithAllure`**；附件顺序：`request_step_meta`（仅当有 `step_code`/`step_title`）→ `request_meta` → `response_body_json` 或 `response_body_text` → `response_status`。
 - 与 JSON 相关的内容附件优先 **`text/plain`**（格式化文本），避免 Allure 2.x 对 `application/json` 内嵌预览空白。
-- 断言结果使用 **`断言结果_*`** 命名体系；用例级复位序号由 conftest 中 autouse fixture 调用 `ResetAllureAssertionAttachmentCounter`，避免同名覆盖。
+- **可复用业务断言（新建/扩展必守）**：`papi*_helpers.py` 中对外暴露、多处调用的 **`Assert*` 函数**（非测试文件内一次性 `assert`）须与金样例一致，使用 **`papi2548_helpers._RunAllureAssertionStep`** 包装：内部 **`def _Do() -> str`** 完成原有 `assert` 逻辑，**成功时 `return` 简短中文摘要**；由 `_RunAllureAssertionStep` 统一写入 **`allure.step`** 与 **`断言结果_*`** 双附件（**勿**在业务 helpers 里再手写 `_RecordAllureAssertionResult`，避免重复与命名分叉）。序号依赖 conftest 中 autouse 调用的 **`ResetAllureAssertionAttachmentCounter`**。参照：`papi2548_helpers.py` 内用法；跨需求复用见 `papi2515_helpers.py`、`papi2424_helpers.py` 从 `papi2548_helpers` 的导入。
+- **断言与 HTTP 步骤同屏（可选）**：若希望断言出现在某一请求的步骤**内部**而非与其平级，在该次 `RequestWithAllure`（或封装它的 `Post*`）的 **`after_response`** 回调里调用上述 **`Assert*`**（与 PAPI-2515 规则 `.cursor/rules/papi-2515-crossmodule-troubleshooting.mdc` §4 一致）。
 - 步骤标题与序列码：通过 **`ScenarioSteps`** 与 **`_StepKw(steps, "简述")`** 生成 `step_code` / `step_title` 传入各 HTTP 封装。
 
 ## 业务断言习惯（PAPI-2548 金样例）

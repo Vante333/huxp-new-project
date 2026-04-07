@@ -9,6 +9,8 @@
 | [`PAPI-2548-membership-extensions.postman_collection.json`](PAPI-2548-membership-extensions.postman_collection.json) | **主文件**：Postman / Apifox → **Import** → 选择本文件。内容与 [`test_papi_2548_extensions.py`](../test_papi_2548_extensions.py) / [`papi2548_helpers.py`](../papi2548_helpers.py) 对齐（文件夹 `01 Register`～`04 E2E` 对应各类 `Test*`）。 |
 | [`GeneratePostmanCollectionPapi2548.py`](GeneratePostmanCollectionPapi2548.py) | **生成器**：修改后执行 `python api-testcases/2026Q2_SP1/postman/GeneratePostmanCollectionPapi2548.py` 重新写出上方 JSON。 |
 | [`PAPI-2548-sandbox.postman_environment.json`](PAPI-2548-sandbox.postman_environment.json) | **可选**：Postman → Import → Environment；在右上角环境下拉框选中后，`baseUrl` / `programId` / `clientId` / `clientSecret` 会覆盖同名集合变量（未填的仍以集合为准）。 |
+| [`PAPI-2515-cross-module-entitlements.postman_collection.json`](PAPI-2515-cross-module-entitlements.postman_collection.json) | **PAPI-2515**：与 [`PAPI-2548-membership-extensions.postman_collection.json`](PAPI-2548-membership-extensions.postman_collection.json) 同构——多文件夹对齐 `test_papi_2515_cross_module_entitlements.py`；公共 JS 内联于 [`GeneratePostmanCollectionPapi2515.py`](GeneratePostmanCollectionPapi2515.py) 的 `BuildP2515JsHelpersLines()`（与 2548 的 `BuildHelpersJsLines()` 同模式）。 |
+| [`GeneratePostmanCollectionPapi2515.py`](GeneratePostmanCollectionPapi2515.py) | 运行后写出上方 PAPI-2515 集合 JSON。 |
 
 ## 变量与自动化（`DP_*`）对应
 
@@ -20,6 +22,8 @@
 | `clientSecret` | `DP_CLIENT_SECRET` |
 
 `accessToken`、`membershipId` 由请求 **Tests** 脚本自动写入集合变量，一般无需手填。`fakeMembershipId` 用于「非法 membershipId」请求（默认占位长数字，可改为不存在的 id）。多步场景还会写入 **`u07aExtNorm`**、**`u03bExtNorm`**、**`e3patchNorm`**（JSON 字符串，供后续请求比对 extensions）。
+
+**PAPI-2515**：E2E 中 `p2515_pool_plan_json` 在 **[S04]** 写入；**[S05]** 主请求打 `plan[0]`，其余条在后置脚本用 **`pm.sendRequest`** 串行发出。内联请求头 **优先克隆当前步骤 `pm.request` 里已解析的头**（与 Apifox 实际发出的主请求一致）；否则用 **`pm.variables` / `replaceIn` / 集合→环境→全局`** 拼 `Authorization`、`X-Program-ID`（缓解 `201.000.001 invalid secret`）。跳转 **[S06]** 优先 **`pm.execution.setNextRequest`**。若两者皆无则内联两次 search，可取消勾选 [S06]/[S07] 以免重复。若 Apifox 有 `setNextRequest` 但不跳到 S06，可在集合/环境设 **`DP_P2515_FORCE_INLINE_TAIL=1`**（或 **`P2515_FORCE_INLINE_TAIL`**）强制内联 S06/S07，并同样取消勾选 [S06]/[S07]。仅 **[S05]** 按池串行（``plan[1..]``）的 **`pm.sendRequest`** 需要打印入参/出参时，设 **`DP_P2515_VERBOSE_SEND_IO=1`**（或 **`P2515_VERBOSE_SEND_IO`**），在运行器 **控制台** 查看；内联 S06/S07 不打印。`probeMembershipId` 对齐 `DP_P2515_PROBE_MEMBERSHIP_ID`。
 
 ## 断言（Tests）与导入 Apifox
 

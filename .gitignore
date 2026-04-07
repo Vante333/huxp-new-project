@@ -7,6 +7,8 @@
 env/.env.*
 !env/.env.example
 !env/.env.*.example
+# 本地默认 profile 名（见 api-testcases conftest：无 DP_PROFILE 时读取首行）
+env/.local_profile
 
 # 测试报告与 Allure 结果（本地生成，勿提交）
 reports/

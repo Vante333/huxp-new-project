@@ -4,6 +4,20 @@ PAPI-2548 会籍 extensions 自动化辅助函数。
 会籍 extensions 更新路径为 ``/v2/memberships/extensions``；需求文档（Jira）为 **POST**，沙箱网关常见为 **PATCH**，
 由 ``GetMembershipsExtensionsHttpMethod`` / 环境变量 ``DP_MEMBERSHIP_EXTENSIONS_METHOD`` 选择（默认 PATCH）。
 /v2/memberships/search 为 POST，body 含 membershipId（与 Postman 集合一致）。
+
+**主链路（extensions 写侧 E2E，单一编排入口）**：``RunPapi2548MainE2EScenario(token, steps, flags)`` 与
+``test_e2e_register_search_extensions_search`` 对齐。HTTP 先后顺序（Allure ``S01/S02/…`` 由 ``steps.Next`` 按请求递增）：
+
+1. ``POST /v2/memberships``：注册会籍，携带 ``extensions``（默认两条 type：``e1``、``e2``）
+2. ``POST /v2/memberships/search``（search #1）：断言单条与注册 extensions 一致（``RunSearchResponseAssertions``）
+3. ``{GetMembershipsExtensionsHttpMethod()} /v2/memberships/extensions``：``UPSERT e3`` + ``DELETE e1``（``PatchMembershipsExtensions``）
+4. ``POST /v2/memberships/search``（search #2）：与 PATCH 响应归一化集合一致，并最终 type 集合不含 ``e1``、含 ``e2``/``e3``
+
+**前置 skip**（编排内已调用）：``RequirePapi2548ExtensionsWriteOrSkip(flags)``；若 search 不可见 extensions 则
+``pytest.skip``（E2E 需二次 search 核对）。鉴权 ``POST /v2/auth/token`` 由用例 ``GetAccessToken`` / ``Token`` fixture
+提供，不在本编排内发送。
+
+**其它用例**：边界/负向/单步用例仍直接调用 ``RegisterMembershipSuccess``、``PostMembershipsSearch`` 等；详见各 ``test_*``。
 """
 from __future__ import annotations
 
@@ -16,6 +30,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, Final, List, Mapping, Optional, Sequence, Set, Tuple, TypedDict, cast
 
 import allure
+import pytest
 import requests
 from requests import Response
 
@@ -249,13 +264,19 @@ def BuildNextRequestId() -> str:
     return str(uuid.uuid4())
 
 
-def BuildCommonHeaders(token: Optional[str] = None) -> Dict[str, str]:
+def BuildCommonHeaders(token: Optional[str] = None, *, x_program_id: Optional[str] = None) -> Dict[str, str]:
     """
     默认不发送 x-version（与通了的 Postman 请求一致）。若需走 canary 路由，设置
     环境变量 DP_X_VERSION=canary；设为 omit/none/off 或不设置均表示不传该头。
+
+    ``x_program_id``：非空时用作 ``X-Program-ID``（如 PAPI-2424 与 ``DP_PROGRAM_ID`` 不同的 ePass program）；否则沿用 ``GetProgramId()``。
     """
+    if x_program_id is not None and str(x_program_id).strip():
+        prog = str(x_program_id).strip()
+    else:
+        prog = GetProgramId()
     headers: Dict[str, str] = {
-        "X-Program-ID": GetProgramId(),
+        "X-Program-ID": prog,
         "X-Request-ID": BuildNextRequestId(),
         "Content-Type": "application/json",
         "Accept": "*/*",
@@ -321,6 +342,12 @@ class AllureHttpScenarioSteps:
         return code, title
 
 
+def _HttpStepKw(steps: AllureHttpScenarioSteps, brief: str) -> JsonDict:
+    """生成 ``RequestWithAllure`` 用的 ``step_code`` / ``step_title``。"""
+    code, title = steps.Next(brief)
+    return {"step_code": code, "step_title": title}
+
+
 def _AttachJson(name: str, payload: object) -> None:
     """
     将对象格式化为 JSON 文本后附加。
@@ -347,6 +374,7 @@ def RequestWithAllure(
     after_response: Optional[AfterResponseHook] = None,
     step_code: Optional[str] = None,
     step_title: Optional[str] = None,
+    x_program_id: Optional[str] = None,
 ) -> Response:
     """
     发起 HTTP 请求并写入 Allure。
@@ -359,10 +387,12 @@ def RequestWithAllure(
     path 以 / 开头，例如 /v2/memberships。
 
     step_code / step_title：序列码与可读标题，显示在步骤名最前（如 ``[S01] 步骤1 · 注册 · POST ...``）。
+
+    x_program_id：覆盖 ``X-Program-ID``（与 ``BuildCommonHeaders`` 一致）。
     """
     base = GetBaseUrl().rstrip("/")
     url = base + (path if path.startswith("/") else "/" + path)
-    headers = BuildCommonHeaders(token)
+    headers = BuildCommonHeaders(token, x_program_id=x_program_id)
 
     step_name = FormatAllureHttpStepTitle(
         method,
@@ -667,42 +697,43 @@ def RunUpsertMissingValueDocumentedAssertions(resp: Response, *, membership_id: 
     )
 
 
-def GetAccessToken() -> str:
+def _PostAccessTokenExchange(
+    client_id: str,
+    client_secret: str,
+    *,
+    allure_step_title: str,
+    program_id_for_header: str,
+    omit_program_id: bool,
+    bearer_raw: str,
+) -> str:
     """
-    POST /v2/auth/token。
+    执行 ``POST /v2/auth/token`` 并解析 ``accessToken``。
 
-    与 Postman 一致：携带 X-Request-ID；若已配置 DP_PROGRAM_ID 则携带 X-Program-ID。
-    若网关要求在取 token 前带 Bearer，可设置 DP_TOKEN_REQUEST_BEARER（仅填 JWT 本体，不含 Bearer 前缀）。
-    不需要 Program 头时设 DP_TOKEN_OMIT_PROGRAM_ID=1。
+    ``program_id_for_header``：已 trim；非空且未 ``omit_program_id`` 时写入 ``X-Program-ID``。
+    ``bearer_raw``：父级 JWT 等，可含或不含 ``Bearer `` 前缀。
     """
-    cid = GetClientId()
-    sec = GetClientSecret()
     url = GetBaseUrl().rstrip("/") + "/v2/auth/token"
     token_headers: Dict[str, str] = {
         "Content-Type": "application/json",
         "Accept": "*/*",
         "X-Request-ID": BuildNextRequestId(),
     }
-    if not _EnvFlagTrue("DP_TOKEN_OMIT_PROGRAM_ID"):
-        pid = os.getenv("DP_PROGRAM_ID", "").strip()
-        if pid:
-            token_headers["X-Program-ID"] = pid
-    bearer_raw = os.getenv("DP_TOKEN_REQUEST_BEARER", "").strip()
-    if bearer_raw:
-        token_headers["Authorization"] = (
-            bearer_raw if bearer_raw.lower().startswith("bearer ") else "Bearer " + bearer_raw
-        )
-    with allure.step("POST /v2/auth/token"):
+    if not omit_program_id and program_id_for_header:
+        token_headers["X-Program-ID"] = program_id_for_header
+    br = bearer_raw.strip()
+    if br:
+        token_headers["Authorization"] = br if br.lower().startswith("bearer ") else "Bearer " + br
+    with allure.step(allure_step_title):
         _AttachAllureRequestMeta(
             url=url,
             method="POST",
             headers=token_headers,
-            json_body={"clientId": cid, "secret": "***"},
+            json_body={"clientId": client_id, "secret": "***"},
         )
         try:
             resp = requests.post(
                 url,
-                json={"clientId": cid, "secret": sec},
+                json={"clientId": client_id, "secret": client_secret},
                 headers=token_headers,
                 timeout=30.0,
             )
@@ -724,6 +755,74 @@ def GetAccessToken() -> str:
     if not token or not isinstance(token, str):
         raise RuntimeError(f"token 响应中无 accessToken: {data!r}")
     return token
+
+
+def GetAccessToken() -> str:
+    """
+    POST /v2/auth/token（默认 ``DP_CLIENT_ID`` / ``DP_CLIENT_SECRET``）。
+
+    与 Postman 一致：携带 X-Request-ID；若已配置 DP_PROGRAM_ID 则携带 X-Program-ID。
+    若网关要求在取 token 前带 Bearer，可设置 DP_TOKEN_REQUEST_BEARER（仅填 JWT 本体，不含 Bearer 前缀）。
+    不需要 Program 头时设 DP_TOKEN_OMIT_PROGRAM_ID=1。
+
+    ePass 等 **另一套 client** 见 ``GetAccessTokenForEpass``（``DP_EPASS_CLIENT_ID`` / ``DP_EPASS_CLIENT_SECRET``）。
+    """
+    return _PostAccessTokenExchange(
+        GetClientId(),
+        GetClientSecret(),
+        allure_step_title="POST /v2/auth/token",
+        program_id_for_header=os.getenv("DP_PROGRAM_ID", "").strip(),
+        omit_program_id=_EnvFlagTrue("DP_TOKEN_OMIT_PROGRAM_ID"),
+        bearer_raw=os.getenv("DP_TOKEN_REQUEST_BEARER", "").strip(),
+    )
+
+
+def EpassTokenCredentialsConfigured() -> bool:
+    """是否已配置 ePass 专用取 token 的 clientId/secret（两项均非空）。"""
+    c = os.getenv("DP_EPASS_CLIENT_ID", "").strip()
+    s = os.getenv("DP_EPASS_CLIENT_SECRET", "").strip()
+    return bool(c and s)
+
+
+def GetAccessTokenForEpass() -> str:
+    """
+    POST /v2/auth/token，使用 **ePass 场景专用** client（与默认 ``DP_CLIENT_ID`` 并存、同一 profile 内维护）。
+
+    - **请求体**：``DP_EPASS_CLIENT_ID``、``DP_EPASS_CLIENT_SECRET``（PAPI-2424 与 ``DP_EPASS_PROGRAM_ID`` 同为必填，由用例 ``RequireP2424EpassTokenEnvOrSkip`` 校验）。
+    - **X-Program-ID**：``DP_EPASS_PROGRAM_ID`` 优先，否则回退 ``DP_PROGRAM_ID``。
+    - **父级 Bearer（可选）**：``DP_EPASS_TOKEN_REQUEST_BEARER`` 优先，否则 ``DP_TOKEN_REQUEST_BEARER``（仅 JWT 本体亦可，会自动加 ``Bearer ``）。
+    - ``DP_TOKEN_OMIT_PROGRAM_ID=1`` 时与本仓库默认取 token 行为一致：不传 ``X-Program-ID``。
+    """
+    cid = os.getenv("DP_EPASS_CLIENT_ID", "").strip()
+    sec = os.getenv("DP_EPASS_CLIENT_SECRET", "").strip()
+    if not cid or not sec:
+        raise RuntimeError(
+            "ePass 专用取 token 需同时配置 DP_EPASS_CLIENT_ID 与 DP_EPASS_CLIENT_SECRET"
+        )
+    ep_pid = os.getenv("DP_EPASS_PROGRAM_ID", "").strip()
+    pid_hdr = ep_pid if ep_pid else os.getenv("DP_PROGRAM_ID", "").strip()
+    bear_ep = os.getenv("DP_EPASS_TOKEN_REQUEST_BEARER", "").strip()
+    bear = bear_ep if bear_ep else os.getenv("DP_TOKEN_REQUEST_BEARER", "").strip()
+    return _PostAccessTokenExchange(
+        cid,
+        sec,
+        allure_step_title="POST /v2/auth/token（ePass 专用 client）",
+        program_id_for_header=pid_hdr,
+        omit_program_id=_EnvFlagTrue("DP_TOKEN_OMIT_PROGRAM_ID"),
+        bearer_raw=bear,
+    )
+
+
+def ResolveAccessTokenForP2424OrDefault() -> str:
+    """
+    脚本/临时调用：若已配置 ``DP_EPASS_CLIENT_ID``+``DP_EPASS_CLIENT_SECRET`` 则 ``GetAccessTokenForEpass``，否则 ``GetAccessToken``。
+
+    **注意**：pytest 套件 ``test_papi_2424_*`` 已改为 **强制** 三项 ePass 变量（含 ``DP_EPASS_TOKEN_REQUEST_BEARER``），见
+    ``papi2424_helpers.RequireP2424EpassTokenEnvOrSkip``。
+    """
+    if EpassTokenCredentialsConfigured():
+        return GetAccessTokenForEpass()
+    return GetAccessToken()
 
 
 def BuildMinimalMembershipPayload(
@@ -1562,11 +1661,15 @@ def RegisterMembershipSuccessDetail(
     *,
     step_code: Optional[str] = None,
     step_title: Optional[str] = None,
+    after_register_success: Optional[Callable[[JsonDict], None]] = None,
 ) -> Tuple[str, List[JsonDict], JsonDict]:
     """
     注册会籍并断言成功；返回 membershipId、extensions 列表、完整 data 对象（便于对新增字段做精细断言）。
 
     断言挂在 ``POST /v2/memberships`` 步骤内、响应附件之后，便于 Allure 中「断言结果」出现在请求元数据下方。
+
+    ``after_register_success``：在 HTTP+注册体基础断言成功后调用，入参为 ``data`` 对象（与返回的第三项相同），
+    用于在同一步骤内追加 PAPI-2515 等契约断言（嵌套为当前 HTTP 步骤的子步骤）。
     """
     box: Dict[str, Any] = {}
 
@@ -1577,6 +1680,8 @@ def RegisterMembershipSuccessDetail(
         box["mid"] = str(body["membershipId"])
         box["exts"] = ExtractExtensionsList(body)
         box["body"] = body
+        if after_register_success is not None:
+            after_register_success(body)
 
     PostMemberships(
         token,
@@ -1688,3 +1793,129 @@ def BuildSandboxFlags(token: str) -> Papi2548SandboxFlags:
     if _EnvFlagTrue("DP_ASSUME_EXTENSIONS_WRITE"):
         w = True
     return Papi2548SandboxFlags(search_shows_extensions=r, post_extensions_works=w)
+
+
+def RequirePapi2548ExtensionsWriteOrSkip(flags: Papi2548SandboxFlags) -> None:
+    """extensions 写路径探测未通过时 ``pytest.skip``（与套件 conftest 探测一致）。"""
+    if flags.post_extensions_works:
+        return
+    pytest.skip(
+        f"{MembershipsExtensionsHttpContextLabel()} 探测未通过（常见 201.000.001）。"
+        "若已开放权限：请更新 DP_CLIENT_ID/DP_CLIENT_SECRET 后重试；"
+        "仍失败可临时设置 DP_ASSUME_EXTENSIONS_WRITE=1 跳过探测（仅本地确认可用时）。"
+    )
+
+
+def RequirePapi2548SearchShowsExtensionsOrSkip(flags: Papi2548SandboxFlags) -> None:
+    """search 未回显 extensions 时 ``pytest.skip``。"""
+    if flags.search_shows_extensions:
+        return
+    pytest.skip("本用例需 search 返回 extensions；读侧未发布时跳过，避免假通过")
+
+
+def RunPapi2548MainE2EScenario(
+    token: str,
+    steps: AllureHttpScenarioSteps,
+    flags: Papi2548SandboxFlags,
+) -> None:
+    """
+    PAPI-2548 **主链路**编排：注册（含 extensions）→ search → ``/v2/memberships/extensions`` 混合改 → search。
+
+    依赖 ``flags`` 已含会话级探测结果；步骤顺序见模块 docstring **主链路**表。pytest 用例宜直接调用本函数以保持单一真相源。
+    """
+    RequirePapi2548ExtensionsWriteOrSkip(flags)
+    if not flags.search_shows_extensions:
+        pytest.skip("E2E 需 search 返回 extensions 以完成二次核对")
+
+    exts: List[ExtensionRegisterItem] = [
+        {"type": "e1", "value": "1"},
+        {"type": "e2", "value": "2"},
+    ]
+    payload_e2e = BuildMinimalMembershipPayload(extensions=exts)
+    mid, _ = RegisterMembershipSuccess(
+        token,
+        payload_e2e,
+        **_HttpStepKw(steps, "注册会籍"),
+    )
+    expected_after: List[ExtensionRegisterItem] = [
+        {"type": "e2", "value": "2"},
+        {"type": "e3", "value": "3"},
+    ]
+    u_box: Dict[str, Any] = {}
+    PostMembershipsSearch(
+        token,
+        mid,
+        after_response=lambda r: RunSearchResponseAssertions(
+            r,
+            http_context="E2E POST /v2/memberships/search#1",
+            membership_id=mid,
+            client_user_id=str(payload_e2e["clientUserId"]),
+            expect_status=1,
+            search_core_context="E2E search#1",
+            use_postman=False,
+            extensions_equal_to=exts,
+            extensions_context="search#1",
+            assert_shape_and_no_dup=True,
+        ),
+        **_HttpStepKw(steps, "search #1"),
+    )
+
+    ops: List[ExtensionUpdateItem] = [
+        {"operation": "UPSERT", "type": "e3", "value": "3"},
+        {"operation": "DELETE", "type": "e1"},
+    ]
+
+    def _AfterE2EPatch(resp: Response) -> None:
+        got = RunPatchExtensionsAssertions(
+            resp,
+            membership_id=mid,
+            http_context=f"E2E {MembershipsExtensionsHttpContextLabel()}",
+            expected_extensions=expected_after,
+            ext_context="extensions 更新响应",
+            assert_no_dup=True,
+        )
+        u_box["after_update"] = NormalizeExtensionsForCompare(got)
+
+    PatchMembershipsExtensions(
+        token,
+        mid,
+        ops,
+        after_response=_AfterE2EPatch,
+        **_HttpStepKw(steps, "PATCH 更新 extensions"),
+    )
+    after_update: List[Tuple[str, Optional[str]]] = u_box["after_update"]
+
+    s2_box: Dict[str, Any] = {}
+
+    def _AfterE2ESearch2(resp: Response) -> None:
+        RunSearchResponseAssertions(
+            resp,
+            http_context="E2E POST /v2/memberships/search#2",
+            membership_id=mid,
+            client_user_id=str(payload_e2e["clientUserId"]),
+            expect_status=1,
+            search_core_context="E2E search#2",
+            use_postman=False,
+            extensions_equal_to=expected_after,
+            extensions_context="search#2",
+            assert_shape_and_no_dup=True,
+        )
+        _st, _e, s2_inner = ParseResponseEnvelope(resp)
+        rec2 = UnwrapMembershipRecord(s2_inner)
+        s2_ext = ExtractExtensionsList(rec2)
+        after_search = NormalizeExtensionsForCompare(s2_ext)
+        with allure.step("E2E：二次 search 与 PATCH 响应一致且为最终预期集合"):
+            assert after_search == after_update
+        s2_box["after_search"] = after_search
+
+    PostMembershipsSearch(
+        token,
+        mid,
+        after_response=_AfterE2ESearch2,
+        **_HttpStepKw(steps, "search #2"),
+    )
+    after_search_final: List[Tuple[str, Optional[str]]] = s2_box["after_search"]
+    pairs = {t for t, _ in after_search_final}
+    assert "e1" not in pairs
+    assert "e2" in pairs
+    assert "e3" in pairs

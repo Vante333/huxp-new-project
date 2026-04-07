@@ -1,0 +1,162 @@
+---
+description: PAPI-2515 crossModule 排障——summary/pools、双 update、软断言、Allure、探测用例 Skip/默认不收集、无 ID 对拍误区、serve 端口
+globs: api-testcases/**/papi2515*.py,api-testcases/**/test_papi_2515*.py
+alwaysApply: false
+---
+
+# PAPI-2515 crossModule：Agent 自检与自助处理
+
+在修改或调试 `papi2515_helpers.py`、`test_papi_2515_cross_module_entitlements.py` 及关联 Allure 报告时，按下列条目处理；详细实现与开关见套件 `README.md`、根目录 `.env.example`。
+
+---
+
+## 0. 用例管理「数量」≠ 本仓库 pytest 覆盖范围（常见误解）
+
+**现象**：脑图/XMind 某接口节点下挂 **几十条**用例（如 memberships、search 各 73），同事问「两条自动化是否全覆盖」。
+
+**要点**：
+
+- 仓库内 **PAPI-2515** 相关 pytest 条数少，主攻 **crossModule 新结构 + 一条 E2E 主链 + doc gap 补项**；**不等于** 用例管理系统里该接口下的全部分类（不同 program、分页、extensions、权限、负向、回归等）。
+- **手工 Markdown 用例表**（如 `testcases/.../PAPI-2515-...测试用例.md`）与自动化应对照 **逐条 tc-*** 映射，不能默认「跑过 PAPI-2515 即表内全绿」。
+- **Agent 动作**：用户问覆盖度时，按 **文档 tc / 脑图维度** 输出「已覆盖 / 缺口」表；勿把脑图节点计数与 pytest 条数混为一谈。
+
+---
+
+## 0b. 需求/文档对齐与补用例时的实现要点（本轮实践摘要）
+
+| 主题 | 建议 |
+|------|------|
+| **memberships 与 search 对拍** | 独立 **`POST /v2/memberships/search`** 取会籍记录中的 `entitlements`，与 **`POST /v2/entitlements/search`** 归一化比对；封装见 `MembershipsSearchSuccessEntitlements`、`AssertCrossModuleSearchVsMembershipsAlign`。 |
+| **summary 携伴字段 tc-P1-GEN-002** | `AssertCrossModuleSummaryGuestAggregateKeys`；字段名可用 `DP_P2515_SUMMARY_GUEST_KEY_ALLOWED` / `MAX` 对齐网关。 |
+| **单池更新不波及他组 tc-P3-GEN-001** | 更新前后两次 search，对 **非** `touched_group_key` 的组做归一化快照比对：`AssertCrossModuleOtherGroupsNormalizedUnchanged`。 |
+| **软断言 vs 硬断言** | E2E 需「失败仍发后续 HTTP」时用 **`P2515E2ESoftAssert` + `_P2515E2ECaptureAssertion`**；在 **`after_entitlements` 里直接 `Assert*`** 失败会 **立刻结束用例**（无软收集），仅适合独立用例。 |
+
+---
+
+## 1. `summary` 与 `pools` 逐池加总（缺键当 0）不一致，尤其 `sharedEntitlements`
+
+**脚本语义**：对每个 `pools[].details`，某指标键缺失则按 **0** 累加，再与 `summary` 同名字段比较（`DetailMetricOrZero` / `SumPoolDetailsMetrics`）。
+
+**常见根因（非算错）**：网关返回的 `summary` 为 **组级合并**；各池 `details` 常被 **裁剪**，例如 **`sharedEntitlements` 仅出现在 `summary`，各池 `details` 无该键**，则加总为 0，与 `summary` 不一致。
+
+**自助**：
+
+1. 看 Allure 附件 **`p2515_summary_vs_details_*`** 逐项对照四字段。
+2. 沙箱需先跑通、接受裁剪现状：设 **`DP_P2515_RELAX_SUMMARY_POOL_SUM=1`**（关闭严格恒等式）。
+3. 产品要求「必须可加总」：推动接口/文档与断言一致，勿强行在客户端伪造加总逻辑。
+
+**代码锚点**：`RelaxSummaryPoolSumFromEnv`、`ResolveStrictSummaryEqualsPoolSums`、`AssertCrossModuleContract`、`AttachAllureP2515SummaryVsPoolDetailsBreakdown`。
+
+## 2. 两个 `update` 接口勿混淆
+
+| 接口 | 路径特征 | 典型用途 |
+|------|-----------|----------|
+| 单品类 / body 定位 | `POST /v2/entitlements/update` | 无路径 `entitlementPoolId`；body 含 `module`、`tier`、`usageRestriction` 等 |
+| cross 单池 | `POST /v2/entitlements/{entitlementPoolId}/update` | 路径带池 ID；body 为 `purchasedQuantity` 或 `quantity` + `usageRestriction` |
+
+**自助**：以 OpenAPI 为准（如 MCP `read_project_oas_*`）；仓库封装为 `PostEntitlementsUpdate` 与 `PostEntitlementsUpdateByPoolId`。
+
+**按池被拒**：业务 `errCode=500.030.024` 表示 **program 禁止按池编辑**，换模板/环境；E2E 可用 `PostEntitlementsPoolUpdateOrRecord` 写入 `errors_out` 以继续后续步骤。
+
+## 3. 中间断言失败后后续 HTTP 未执行
+
+**根因**：pytest 中 **`assert` / 未捕获的 `AssertionError` 会立即结束当前 test 函数**，同函数内后续代码（含 HTTP）不执行。
+
+**自助**：
+
+- **拆用例**：一步一条 `test_*`。
+- **软断言**：主 E2E 使用 **`P2515E2ESoftAssert`**（`Run` 包裹业务断言，末尾 **`RaiseIfAnyFailure`**），见 `test_papi_2515_cross_module_entitlements.py`。
+- **`pytest.skip` 与软断言不同**：`skip` 会结束该用例，不是「只记一条再继续」。
+
+**前置 HTTP**（取 token、注册、search 等）是否仍硬失败即停：由用例设计决定；通常无数据则不应强行继续。
+
+---
+
+## 4. Allure 里「断言步骤」与 HTTP 步骤脱节（用户希望断言挂在对应请求下）
+
+**现象**：`PAPI-2515-S01`、`AssertCrossModuleContract` 等出现在与 `[S01] POST ...` **平级**的步骤里，而不是请求步骤的子级。
+
+**根因**：`RequestWithAllure` 在 **`with allure.step(step_name):`** 内依次：发请求 → 挂响应附件 → 调用 **`after_response(resp)`**（见 `papi2548_helpers.RequestWithAllure`）。仅在 **`after_response` / 同一调用栈内的子 `allure.step`** 中触发的断言，才会嵌套在该 HTTP 步骤下。
+
+**修复模式（本仓库已采用）**：
+
+1. **注册**：`RegisterMembershipSuccessDetail(..., after_register_success=lambda body: ...)`（`papi2548_helpers`）。
+2. **权益 search**：`EntitlementsSearchSuccess(..., after_entitlements=lambda ent: ...)`（`papi2515_helpers`）。
+3. **会籍 search**：`MembershipsSearchSuccessEntitlements(..., after_entitlements=lambda ent: ...)`（`papi2515_helpers`）。
+4. **任意请求**：在传入 `Post*` 封装的 **`after_response`** 里解析信封并断言（与 README「search/PATCH 断言同屏」一致）。
+
+**软断言 + 嵌套**：在 `after_*` 内调用 **`_P2515E2ECaptureAssertion(soft, label, fn)`**，避免 `AssertionError` 中断后续 HTTP，且子断言仍落在当前 HTTP 步骤下。
+
+---
+
+## 5. 运行 pytest / Allure 报告时的常见问题（Windows）
+
+**`pytest.ini` 与 `--alluredir`**：套件含 **`addopts = --clean-alluredir`** 时，命令行必须带 **`--alluredir=...`**，否则每次会清空默认目录；多次运行若不加同一目录，报告里可能出现重复 Suite（见套件 `README.md`）。
+
+**`allure serve` 绑定失败**：`Failed to bind ... Address already in use`。处理：**换端口**或 **`allure serve <results> --host 127.0.0.1 --port 0`**（由 Allure 选空闲端口）。报告 URL 以终端输出为准。
+
+**运行命令示例（仓库根，PowerShell）**：
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path "api-testcases\2026Q2_SP1").Path
+pytest api-testcases/2026Q2_SP1/test_papi_2515_cross_module_entitlements.py -v --alluredir=reports/papi2515-allure-results
+allure serve reports/papi2515-allure-results --host 127.0.0.1 --port 0
+```
+
+**失败仍有报告**：用例失败时 Allure 仍会写入结果，**可正常 serve** 用于排障；优先看失败步骤下的 **`p2515_summary_vs_details_*`** 与请求/响应附件。
+
+---
+
+## 6. 与用户约定「开关」时的原则（避免过度设计）
+
+若用户明确表示 **不需要** 用环境变量「默认关闭某条易失败/破坏数据的用例」：
+
+- 删除 **`DP_*_ENABLE_*` 类门禁**，改为 **直接执行** 或 **`pytest.skip` 仅由数据前置决定**（如无买点池、无第二组 `applicableModules`）。
+- 保留 **非门禁** 的配置（如字段名映射 `DP_P2515_SUMMARY_GUEST_KEY_*`）是合理的；需在 `.env.example` 注释中写清语义。
+
+**Agent**：不要自行加「默认同关」的 feature flag，除非 README/用户明确要求。
+
+**已落地的例外（与本条不矛盾）**：PAPI-2515 **环境会籍探测**用例经团队选择改为 **默认不收集**（减少无 `DP_P2515_PROBE_MEMBERSHIP_ID` 时的 Skipped 噪音），**显式** `DP_P2515_INCLUDE_PROBE=1` 才收集；见 **§7** 与 `conftest.py` 中 `pytest_collection_modifyitems`。
+
+---
+
+## 7. 本次常见会话问题汇总（Allure Skipped / 探测 ID / 对拍误区 / 跑报告）
+
+以下条目来自多次排障会话，**Agent 遇到同类现象时优先按表处理**，避免误判为「用例坏了」或重复实现自动发现逻辑。
+
+### 7.1 Allure 显示 Skipped：「未设置 DP_P2515_PROBE_MEMBERSHIP_ID」
+
+| 项目 | 说明 |
+|------|------|
+| **本质** | 不是 HTTP 失败，是 **`pytest.skip`**：只读探测用例 `test_search_cross_module_contract_with_probe_membership` 依赖环境变量中的会籍 ID。 |
+| **用户目标：不想维护探测 ID** | 改跑 **注册造数主链**：`TestP2515CrossModuleE2E::test_e2e_register_search_module_update_pool_updates`，或 `-m needs_cross_module_write`（需 `DP_PROGRAM_ID` / `DP_P2515_PROGRAM_ID` 等，**会写沙箱**）。 |
+| **本地默认不收集探测** | 用例带 marker **`p2515_probe_membership`**；`conftest.py` 中 **`pytest_collection_modifyitems`**：除非 **`DP_P2515_INCLUDE_PROBE`** 为 `1` / `true` / `yes` / `on`，否则**不收集**该用例，Allure 中不再出现「缺 ID 而 Skip」条。 |
+| **仍要跑探测时** | 同时设置 **`DP_P2515_INCLUDE_PROBE=1`** 与 **`DP_P2515_PROBE_MEMBERSHIP_ID=<UUID>`**（会籍须含非空 `crossModuleEntitlements`）。 |
+
+**代码锚点**：`test_papi_2515_cross_module_entitlements.py`（`TestP2515SearchCrossModuleContract`）、`conftest.py`（`pytest_configure` / `pytest_collection_modifyitems`）。
+
+### 7.2 误区：「分别调 /v2/memberships/search 与 /v2/entitlements/search 就能自动找到含 cross 的会籍」
+
+| 项目 | 说明 |
+|------|------|
+| **本仓库封装事实** | `PostMembershipsSearch` 与 `PostEntitlementsSearch` 的请求体均含 **`membershipId`**，用于**已知会籍**的查询，**不是**无 ID 的全量列举。 |
+| **能做的** | 在**已有同一 `membershipId`** 下，对两次 search 返回的 `entitlements` 做 **key/结构对拍**（如 `MembershipsSearchSuccessEntitlements`、`AssertCrossModuleSearchVsMembershipsAlign`）。 |
+| **不能做的** | 仅凭上述两接口在**无 membershipId 来源**时「扫出」一条带 cross 的会籍；需外部 ID（环境变量、注册响应、或其它列表类 API，以 OpenAPI 为准）。 |
+
+**Agent 动作**：用户提出「自动探测 ID」时，先核对 OAS/网关是否提供**按客户号、分页列表**等入口；若无，应说明限制并指向 **E2E 注册** 或 **`DP_P2515_PROBE_MEMBERSHIP_ID`**，勿假设两 search 可枚举。
+
+### 7.3 跑全套 PAPI-2515 自动化后「大量失败」：summary 与 pools 加总不一致
+
+| 现象 | 与 §1 相同根因，会话中典型数字 |
+|------|-------------------------------|
+| **断言** | `crossModule[i] summary 与 pools 加总不一致`，例如 **`sharedEntitlements`**：`summary` 为 2，各池 `details` 加总为 0（池内缺该键按 0 计）。 |
+| **处置** | 沙箱接受网关裁剪时设 **`DP_P2515_RELAX_SUMMARY_POOL_SUM=1`**；再跑 pytest；Allure 附件 **`p2515_summary_vs_details_*`** 对照。 |
+| **E2E 软断言** | 主链末尾 **`soft.RaiseIfAnyFailure()`** 汇总多步业务断言；首步注册响应若已触发 summary/pools 严格断言，会进入 `errors` 列表，需结合 §1 一并处理。 |
+
+### 7.4 用户要「在线 Allure 报告」时的标准动作（Windows）
+
+1. 仓库根 **`PYTHONPATH`** 指向 `api-testcases/2026Q2_SP1`（PowerShell：`$env:PYTHONPATH = (Resolve-Path "api-testcases\2026Q2_SP1").Path`）。
+2. **`pytest .../test_papi_2515_cross_module_entitlements.py -v --alluredir=reports/papi2515-allure-results`**（路径与目录名可按项目约定）。
+3. **`allure serve reports/papi2515-allure-results --host 127.0.0.1 --port 0`**，以终端输出的 **http://127.0.0.1:端口/** 为准；端口占用见 **§5**。
+
+**注意**：`pytest.ini` 含 `--clean-alluredir` 时，**每次**须在命令行指定同一 `--alluredir`，否则行为与空目录有关；见套件 `README.md`。

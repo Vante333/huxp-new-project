@@ -52,13 +52,50 @@ allure serve ..\..\reports\papi2548-allure-results
 
 `pytest.ini` 中应包含 `addopts = --clean-alluredir`，以便每次带 `--alluredir` 运行时先清空目录，避免多次运行合并导致用例数翻倍。
 
-## Postman 生成器（最小结构提示）
+## Postman 生成器（2548/2515 金样例形态）
 
 - **Schema**：`https://schema.getpostman.com/json/collection/v2.1.0/collection.json`
-- **事件**：请求的 `event` 中 `listen: "test"`，`script.exec` 为 JavaScript 字符串数组（与 Python helpers 行为对齐）。
-- **变量**：集合/环境中定义 `baseUrl`、`programId`、`clientId`、`clientSecret` 等，与 README 中 `DP_*` 对照表一致。
-- 生成后：在 Postman 或 Apifox 中 **Import** 写出的 JSON；团队流程见金样例 [`postman/README.md`](../../../api-testcases/2026Q2_SP1/postman/README.md)。
+- **脚本单一来源（与 2548 一致）**：公共 JavaScript 写在 **`postman/GeneratePostmanCollection<需求>.py`** 的 **`Build<需求>JsHelpersLines()`** 内（`js = r"""..."""`，再 `splitlines()` 或 `splitlines()` 写入 `event`），**不要**单独维护与生成器并行的仓库根 `*.js` 作为唯一规范（除非团队明确要求）。
+- **结构**：**多文件夹**（如 `00 Auth`、按 `Test*` 区分的 E2E / Doc gap）；**请求 `name`** 对齐 pytest 方法或步骤语义；**主链路 HTTP 顺序**对齐对应 `Run…MainE2EScenario` 与 helpers **主链路**表（例：2515 含多次 `entitlements/search`、按池 update 与集合变量 `p2515_pool_update_body_raw` 等）。
+- **事件**：每个请求的 `event` 中 `listen: "test"`，`script.exec` 为字符串数组：先整段 helpers，再 `save_token` / `save_mid` / 场景专属 `Lines_*`（见 `MakeTestEvent` / `MakeP2515TestEvent` 模式）。
+- **变量**：集合（及可选环境 JSON）中定义 `baseUrl`、`programId`、`clientId`、`clientSecret` 等，与 `postman/README.md` 中 `DP_*` 对照表一致。
+- **注册体**：`firstName` / `lastName` 等若网关要求**仅拉丁字母**，模板中勿填中文或数字；标识可用 `email` 前缀等。
+- **生成命令**（仓库根）：`python api-testcases/2026Q2_SP1/postman/GeneratePostmanCollectionPapi2548.py` 或 `…Papi2515.py`。
+- **导入**：Postman / Apifox **Import** 写出的 `*.postman_collection.json`；Apifox 中脚本在「后置操作」。团队流程见 [`postman/README.md`](../../../api-testcases/2026Q2_SP1/postman/README.md)。
+- **pytest ↔ 片段索引（可选）**：2515 示例 [`PAPI-2515-apifox-export-from-pytest.md`](../../../api-testcases/2026Q2_SP1/postman/PAPI-2515-apifox-export-from-pytest.md)。
 
 ## 依赖
 
 金样例依赖见仓库 [`tools/requirements.txt`](../../../tools/requirements.txt)（在套件 README 中引用 `pip install -r ...`）。
+
+## 自动造数与 Apifox 链路对照
+
+本附录配合主文档 [SKILL.md](SKILL.md) 中 **「自动造数（优先于手工 ID）」** 使用。
+
+### 映射原则
+
+1. **以 Apifox / 用例附件中的请求顺序为权威**，在 `*_helpers.py` 中实现同序调用（或拆成可复用函数再在 session 造数函数中组合）。
+2. 每一步对应 **一次** `RequestWithAllure`（或封装它的 `Post*`/`Get*` 函数）；需要报告可读性时，用 `allure.step("…")` 包裹一整段子链，并在用例里用 `ScenarioSteps` + `_StepKw` 生成 `step_code` / `step_title`。
+3. **可复用业务断言**：在 `*_helpers.py` 中实现 **`Assert*`** 时，与金样例一致使用 **`from papi2548_helpers import _RunAllureAssertionStep`**，在 **`def _Do() -> str`** 内写 `assert`，成功则 `return` 摘要，外层 **`_RunAllureAssertionStep("PAPI-xxxx: …", _Do)`**。这样会生成 **Allure 子步骤** 与 **`断言结果_*`** 附件；不要只写裸 `assert`。若断言必须出现在某一 HTTP 步骤**内部**，在该请求的 **`after_response`** 回调里调用该 `Assert*`。
+4. **会话造数**（`conftest.py` 中 `scope="session"`）适合「整条套件共用的主体数据」；若单测必须隔离数据，可改为 function scope 或每条用例内注册（注意耗时与沙箱配额）。
+
+### 典型步骤与金样例对应关系（示例）
+
+| Apifox 步骤（示例） | pytest / helpers 落点 |
+|---------------------|------------------------|
+| 取 Token | `GetAccessToken()`（`papi2548_helpers`） |
+| 注册会籍 | `RegisterMembershipSuccessDetail` + `BuildMinimalMembershipPayload`（可合并 `extra` JSON） |
+| 注册后 search 权益 | `PostEntitlementsSearch`（`papi2515_helpers`） |
+| 单品类 update → 再 search | `PostEntitlementsUpdate` 后接 `PostEntitlementsSearch`（见 `RunP2515Attach2Scenario`） |
+| 按 pool 更新 | `PostEntitlementsUpdateByPoolId`；`poolId` 常由上一包 search 响应解析 |
+| details | `PostEntitlementsDetails`；请求体字段以 OpenAPI 为准 |
+
+### 健壮性建议
+
+- **Program 策略拒绝**（如某 `module` 不可编辑）时：可对「候选请求体」**循环尝试**（见 `ListP2515ModuleExclusiveUpdateBodies` 一类写法），仍失败则 **不写**入可复用上下文，后续变更类用例 **skip** 并说明原因。
+- **手工覆盖**：环境变量指向的 JSON 文件应 **优先于** 自动生成的体，便于本地复现与 CI 稳定账号。
+
+### 参考实现文件
+
+- [`api-testcases/2026Q2_SP1/papi2515_helpers.py`](../../../api-testcases/2026Q2_SP1/papi2515_helpers.py)：`BuildP2515SandboxContext`、`RunP2515Attach2Scenario`
+- [`api-testcases/2026Q2_SP1/conftest.py`](../../../api-testcases/2026Q2_SP1/conftest.py)：`P2515Sandbox` 及相关 fixture
