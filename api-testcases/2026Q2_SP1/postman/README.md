@@ -6,10 +6,10 @@
 
 | 文件 | 用途 |
 |------|------|
-| [`PAPI-2548-membership-extensions.postman_collection.json`](PAPI-2548-membership-extensions.postman_collection.json) | **主文件**：Postman / Apifox → **Import** → 选择本文件。内容与 [`test_papi_2548_extensions.py`](../test_papi_2548_extensions.py) / [`papi2548_helpers.py`](../papi2548_helpers.py) 对齐（文件夹 `01 Register`～`04 E2E` 对应各类 `Test*`）。 |
+| [`PAPI-2548-membership-extensions.postman_collection.json`](PAPI-2548-membership-extensions.postman_collection.json) | **主文件**：Postman / Apifox → **Import** → 选择本文件。内容与 [`tests/test_papi_2548_extensions.py`](../tests/test_papi_2548_extensions.py) / [`services/papi2548_service.py`](../services/papi2548_service.py) 对齐（文件夹 `01 Register`～`04 E2E` 对应各类 `Test*`）。 |
 | [`GeneratePostmanCollectionPapi2548.py`](GeneratePostmanCollectionPapi2548.py) | **生成器**：修改后执行 `python api-testcases/2026Q2_SP1/postman/GeneratePostmanCollectionPapi2548.py` 重新写出上方 JSON。 |
 | [`PAPI-2548-sandbox.postman_environment.json`](PAPI-2548-sandbox.postman_environment.json) | **可选**：Postman → Import → Environment；在右上角环境下拉框选中后，`baseUrl` / `programId` / `clientId` / `clientSecret` 会覆盖同名集合变量（未填的仍以集合为准）。 |
-| [`PAPI-2515-cross-module-entitlements.postman_collection.json`](PAPI-2515-cross-module-entitlements.postman_collection.json) | **PAPI-2515**：与 [`PAPI-2548-membership-extensions.postman_collection.json`](PAPI-2548-membership-extensions.postman_collection.json) 同构——多文件夹对齐 `test_papi_2515_cross_module_entitlements.py`；公共 JS 内联于 [`GeneratePostmanCollectionPapi2515.py`](GeneratePostmanCollectionPapi2515.py) 的 `BuildP2515JsHelpersLines()`（与 2548 的 `BuildHelpersJsLines()` 同模式）。 |
+| [`PAPI-2515-cross-module-entitlements.postman_collection.json`](PAPI-2515-cross-module-entitlements.postman_collection.json) | **PAPI-2515**：与 [`PAPI-2548-membership-extensions.postman_collection.json`](PAPI-2548-membership-extensions.postman_collection.json) 同构——多文件夹对齐 [`tests/test_papi_2515_cross_module_entitlements.py`](../tests/test_papi_2515_cross_module_entitlements.py)；公共 JS 内联于 [`GeneratePostmanCollectionPapi2515.py`](GeneratePostmanCollectionPapi2515.py) 的 `BuildP2515JsHelpersLines()`（与 2548 的 `BuildHelpersJsLines()` 同模式）。 |
 | [`GeneratePostmanCollectionPapi2515.py`](GeneratePostmanCollectionPapi2515.py) | 运行后写出上方 PAPI-2515 集合 JSON。 |
 
 ## 变量与自动化（`DP_*`）对应
@@ -27,13 +27,13 @@
 
 ## 断言（Tests）与导入 Apifox
 
-- 集合内每个请求均带有 **Postman Tests（JavaScript）**，使用 `pm.test` / `pm.expect`，语义对齐 `papi2548_helpers` 与 `test_papi_2548_extensions`。
+- 集合内每个请求均带有 **Postman Tests（JavaScript）**，使用 `pm.test` / `pm.expect`，语义对齐 `services/papi2548_service.py` 与 `tests/test_papi_2548_extensions.py`。
 - **导入 Apifox** 后，这些内容通常出现在接口的 **「后置操作 / 后置脚本」** 中，**不会**自动变成 Apifox 自带的「可视化断言」卡片；若团队要求可视化断言，需在 Apifox 内按脚本逻辑手工补录。
 - **权威执行**仍以本地 **pytest + Allure** 为准；Postman/Apifox 用于联调、演示与导入共享。
 
 ## JS 断言与 Python 对应（维护时同步改两处）
 
-| JavaScript（`BuildHelpersJsLines` 内） | Python（`papi2548_helpers`） |
+| JavaScript（`BuildHelpersJsLines` 内） | Python（`services/papi2548_service.py` / `framework`） |
 |----------------------------------------|------------------------------|
 | `normalizeExtensionsForCompare` | `NormalizeExtensionsForCompare` |
 | `extractExtensionsList` | `ExtractExtensionsList` |
@@ -42,7 +42,7 @@
 | `getInnerData` | `ParseResponseEnvelope` 得到的 `data` 对象 |
 | `normalizedPairsEqual` | 元组列表 `==` 比对 |
 
-金样例回归：[`test_p2548_normalize_parity.py`](../test_p2548_normalize_parity.py)（仅 Python 侧归一化向量；改 JS 时请人工对照）。
+金样例回归：[`tests/test_p2548_normalize_parity.py`](../tests/test_p2548_normalize_parity.py)（仅 Python 侧归一化向量；改 JS 时请人工对照）。
 
 ## 使用顺序
 

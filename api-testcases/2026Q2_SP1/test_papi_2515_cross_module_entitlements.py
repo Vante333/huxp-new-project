@@ -17,8 +17,14 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, cast
 import allure
 import pytest
 from requests import Response
+from test_data_loader import LoadP2515DatasetCsvRow
 
-from papi2515_helpers import (
+from clients import GetAccessToken, PostEntitlementsSearch, PostEntitlementsUpdate
+from framework.assertions import AssertHttpAndBusinessOk
+from framework.http import ParseResponseEnvelope
+from framework.reporting import AllureHttpScenarioSteps
+from scenarios.papi2515_scenarios import RunP2515MainE2EScenario
+from services.papi2515_service import (
     AssertCrossModuleAtLeastTwoDistinctGroupsOrSkip,
     AssertCrossModuleContract,
     AssertCrossModuleMetricsEqualBetweenDataInners,
@@ -43,20 +49,11 @@ from papi2515_helpers import (
     IntDetail,
     MaybeAttach2515SearchDetails,
     MembershipsSearchSuccessEntitlements,
-    PostEntitlementsSearch,
-    PostEntitlementsUpdate,
     RequireNonEmptyCrossModule,
     RequireP2515ProgramIdForRegisterOrSkip,
     RunP2515CrossModuleAndModuleExclusiveFromInner,
-    RunP2515MainE2EScenario,
 )
-from papi2548_helpers import (
-    AllureHttpScenarioSteps,
-    AssertHttpAndBusinessOk,
-    GetAccessToken,
-    ParseResponseEnvelope,
-    RegisterMembershipSuccessDetail,
-)
+from services.papi2548_service import RegisterMembershipSuccessDetail
 
 
 def _StepKw(steps: AllureHttpScenarioSteps, brief: str) -> Dict[str, str]:
@@ -83,6 +80,8 @@ class TestP2515SearchCrossModuleContract:
         ScenarioSteps: AllureHttpScenarioSteps,
     ) -> None:
         mid = os.environ.get("DP_P2515_PROBE_MEMBERSHIP_ID", "").strip()
+        if not mid:
+            mid = LoadP2515DatasetCsvRow().probe_membership_id.strip()
         if not mid:
             pytest.skip("未设置 DP_P2515_PROBE_MEMBERSHIP_ID，跳过只读探测用例")
 

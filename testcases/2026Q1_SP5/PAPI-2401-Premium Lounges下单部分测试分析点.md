@@ -1,5 +1,7 @@
 # Premium Lounges 下单部分（PAPI-2401）测试用例
 
+> **`testcases/` 路径记法**：文中 `/v2/resources/options_prebookings_availability` 等为下划线复合段；网关/APIFOX 常见为 `/v2/resources/options/prebookings/availability`，**实际请求以 APIFOX 为准**。
+
 ## 查可用性接口
 
 ### 资源可预约性校验
@@ -95,7 +97,7 @@
 
 #### 正向场景验证
 
-- tc-P2-AVAIL-005：通过 `/v2/resources/options/prebookings/availability` 查询 Option 级可用性，正常返回
+- tc-P2-AVAIL-005：通过 `/v2/resources/options_prebookings_availability` 查询 Option 级可用性，正常返回
   - tc-P2: HTTP 状态码为 200，`code` = 0
   - tc-P2: 返回 `available`、`prebookingToken`、`validUntil`、`price` 字段
   - **请求参数**:

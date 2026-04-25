@@ -1,8 +1,4 @@
----
-description: PAPI-2515 crossModule 排障——summary/pools、双 update、软断言、Allure、探测用例 Skip/默认不收集、无 ID 对拍误区、serve 端口
-globs: api-testcases/**/papi2515*.py,api-testcases/**/test_papi_2515*.py
-alwaysApply: false
----
+> **放置与读取方式**：本文件位于 **`.cursor/skills/api-testcase-pack/`**，与 [`SKILL.md`](./SKILL.md) 中「PAPI-2515 排障（Agent 先读）」互链。处理 PAPI-2515 crossModule 相关自动化或 Allure 排障时，请先读本说明（§0～§7）。**不再**使用 `.cursor/rules/*.mdc` 的 glob 自动注入；若仍希望「仅打开 `papi2515*.py` 就自动带上简短提醒」，可在 `.cursor/rules/` 保留一条 **数行** 的指针型 `.mdc`（正文仍指向本文件）。
 
 # PAPI-2515 crossModule：Agent 自检与自助处理
 
@@ -33,19 +29,23 @@ alwaysApply: false
 
 ---
 
-## 1. `summary` 与 `pools` 逐池加总（缺键当 0）不一致，尤其 `sharedEntitlements`
+## 1. `summary` 与 `pools` 四指标聚合（缺键当 0、`-1` 传播）不一致，尤其 `sharedEntitlements`
 
-**脚本语义**：对每个 `pools[].details`，某指标键缺失则按 **0** 累加，再与 `summary` 同名字段比较（`DetailMetricOrZero` / `SumPoolDetailsMetrics`）。
+**脚本语义**（`AggregatePoolDetailsMetric` / `SumPoolDetailsMetrics` / Postman `p2515SumPoolDetailsMetrics`）：对每组 `crossModuleEntitlements`，四类指标（`cardholderExclusiveEntitlements`、`guestsExclusiveEntitlements`、`sharedEntitlements`、`purchasedEntitlements`）将 `summary` 与由各池 `pools[].details` 推出的**组级聚合值**比较：
 
-**常见根因（非算错）**：网关返回的 `summary` 为 **组级合并**；各池 `details` 常被 **裁剪**，例如 **`sharedEntitlements` 仅出现在 `summary`，各池 `details` 无该键**，则加总为 0，与 `summary` 不一致。
+- 某池 **缺键**或值不可解析为整数：该池对该指标贡献 **0**。
+- 某池该指标为 **`-1`**：该指标在**整组**上的聚合结果为 **`-1`**（不再与其它池数值做代数和，例如不会是 `-1 + 1 = 0`）。
+- 否则：聚合值为各池该指标（缺键按 0）之和。
+
+**常见根因（非算错）**：网关返回的 `summary` 为 **组级合并**；各池 `details` 常被 **裁剪**，例如 **`sharedEntitlements` 仅出现在 `summary`，各池 `details` 无该键**，则脚本侧聚合为 0，与 `summary` 不一致。
 
 **自助**：
 
-1. 看 Allure 附件 **`p2515_summary_vs_details_*`** 逐项对照四字段。
+1. 看 Allure 附件 **`p2515_summary_vs_details_*`** 逐项对照四字段（`details_sum` 已按上述聚合规则计算）。
 2. 沙箱需先跑通、接受裁剪现状：设 **`DP_P2515_RELAX_SUMMARY_POOL_SUM=1`**（关闭严格恒等式）。
-3. 产品要求「必须可加总」：推动接口/文档与断言一致，勿强行在客户端伪造加总逻辑。
+3. 产品要求「必须与 pools 可对齐」：推动接口/文档与断言一致，勿在客户端伪造与网关不同的合并规则。
 
-**代码锚点**：`RelaxSummaryPoolSumFromEnv`、`ResolveStrictSummaryEqualsPoolSums`、`AssertCrossModuleContract`、`AttachAllureP2515SummaryVsPoolDetailsBreakdown`。
+**代码锚点**：`AggregatePoolDetailsMetric`、`RelaxSummaryPoolSumFromEnv`、`ResolveStrictSummaryEqualsPoolSums`、`AssertCrossModuleContract`、`AttachAllureP2515SummaryVsPoolDetailsBreakdown`。
 
 ## 2. 两个 `update` 接口勿混淆
 
@@ -145,11 +145,11 @@ allure serve reports/papi2515-allure-results --host 127.0.0.1 --port 0
 
 **Agent 动作**：用户提出「自动探测 ID」时，先核对 OAS/网关是否提供**按客户号、分页列表**等入口；若无，应说明限制并指向 **E2E 注册** 或 **`DP_P2515_PROBE_MEMBERSHIP_ID`**，勿假设两 search 可枚举。
 
-### 7.3 跑全套 PAPI-2515 自动化后「大量失败」：summary 与 pools 加总不一致
+### 7.3 跑全套 PAPI-2515 自动化后「大量失败」：summary 与 pools 聚合不一致
 
 | 现象 | 与 §1 相同根因，会话中典型数字 |
 |------|-------------------------------|
-| **断言** | `crossModule[i] summary 与 pools 加总不一致`，例如 **`sharedEntitlements`**：`summary` 为 2，各池 `details` 加总为 0（池内缺该键按 0 计）。 |
+| **断言** | `crossModule[i] summary 与 pools 聚合不一致`，例如 **`sharedEntitlements`**：`summary` 为 2，由各池 `details` 按 §1 规则算出的聚合值为 0（池内普遍缺该键按 0 计）。若某池显式为 `-1` 而 `summary` 非 `-1`，亦会失败。 |
 | **处置** | 沙箱接受网关裁剪时设 **`DP_P2515_RELAX_SUMMARY_POOL_SUM=1`**；再跑 pytest；Allure 附件 **`p2515_summary_vs_details_*`** 对照。 |
 | **E2E 软断言** | 主链末尾 **`soft.RaiseIfAnyFailure()`** 汇总多步业务断言；首步注册响应若已触发 summary/pools 严格断言，会进入 `errors` 列表，需结合 §1 一并处理。 |
 

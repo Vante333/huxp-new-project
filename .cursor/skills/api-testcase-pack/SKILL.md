@@ -46,9 +46,23 @@ description: >-
 
 **边界**：负向、边界、单接口用例仍可 **直接** 调用原子级 `Post*` / `Assert*`；不必为每条用例各写一个编排函数，**仅主链路/附件链**强制单一入口。
 
+## 跨迭代维护与历史回归
+
+同一接口在**不同迭代 / 不同 Jira 需求**下重复演进时，默认目标不是“按迭代复制一套自动化”，而是以**接口能力**为长期资产持续扩展：复用既有 HTTP 封装、公共断言、主链路编排与用例映射，在其上**增量补测试**并**保留历史回归**。
+
+1. **优先复用同一 `*_helpers.py`**：同一接口跨迭代新增能力时，优先在既有 helpers 中补 **`Post*` / `Assert*` / `Run…MainE2EScenario`** 或新增独立编排函数；**不要**仅因迭代变化就平移复制一份 `*_helpers_v2.py` / `*_helpers_<迭代>.py`。若目录仍按 `api-testcases/<迭代>/` 组织，逻辑上也应优先复用同一接口能力设计，避免双份真相源。
+2. **区分“新增需求验证”与“历史最小回归”**：新需求接入时，除新增对应用例外，至少保留该接口的最小回归集合，建议按语义分层维护：**`contract`**（结构/字段/核心语义）、**`smoke`**（老主流程/关键成功链路）、**`regression`**（历史缺陷与关键业务回归点）。新增需求不应替代这三类旧验证。
+3. **兼容非破坏性新增字段**：若接口只是**新增字段 / 新增节点 / 放宽返回结构**，历史用例应优先断言其原始需求关心的**核心字段、核心结构与关键语义**，避免一味做“全量响应完全相等”导致兼容新增误报失败；新增字段、分支或新语义由**新需求用例**单独覆盖。
+4. **新增需求优先补公共能力与独立回归点**：当需求影响同一接口时，优先判断应补在哪一层：公共断言、主链路编排、独立 doc gap / 对拍 / 边界回归用例。**不要**为了让新需求通过而直接改写旧用例语义；旧用例继续守护旧需求，新用例负责验证新行为。
+
+**对照金样例**：
+
+- [`papi2515_helpers.py`](../../../api-testcases/2026Q2_SP1/papi2515_helpers.py) 中 **`RunP2515MainE2EScenario`** 体现“主链路单一入口，后续需求在 helpers 中持续演进”的模式。
+- [`test_papi_2515_cross_module_entitlements.py`](../../../api-testcases/2026Q2_SP1/test_papi_2515_cross_module_entitlements.py) 中主 E2E、doc gap、隔离回归分层组织，体现“新增需求验证”与“历史/补缺回归”并存，而非互相覆盖。
+
 ## PAPI-2515 排障（Agent 先读）
 
-处理 **`summary` vs `pools` 加总**、**两个 `entitlements/update` 混淆**、**断言失败后链路中断**、**Allure 断言与 HTTP 步骤同屏**、**脑图用例数 vs pytest 覆盖**、**`allure serve` 端口占用**、**与用户约定是否加环境开关**、**探测用例 Skipped / `DP_P2515_PROBE_MEMBERSHIP_ID` / `DP_P2515_INCLUDE_PROBE`、误以为 memberships+entitlements search 可无 ID 枚举会籍** 时，必须先读 Cursor 规则 **[`.cursor/rules/papi-2515-crossmodule-troubleshooting.mdc`](../../rules/papi-2515-crossmodule-troubleshooting.mdc)**（含 §0～§7），再改 `papi2515_helpers` / `papi2548_helpers` / E2E 或环境变量。
+处理 **`summary` vs `pools` 四指标聚合（缺键按 0、任池 `-1` 则该指标为 `-1`）**、**两个 `entitlements/update` 混淆**、**断言失败后链路中断**、**Allure 断言与 HTTP 步骤同屏**、**脑图用例数 vs pytest 覆盖**、**`allure serve` 端口占用**、**与用户约定是否加环境开关**、**探测用例 Skipped / `DP_P2515_PROBE_MEMBERSHIP_ID` / `DP_P2515_INCLUDE_PROBE`、误以为 memberships+entitlements search 可无 ID 枚举会籍** 时，必须先读本 Skill 附属文档 **[`papi2515-crossmodule-troubleshooting.md`](./papi2515-crossmodule-troubleshooting.md)**（含 §0～§7），再改 `papi2515_helpers` / `papi2548_helpers` / E2E 或环境变量。
 
 ## 自动造数（优先于手工 ID）
 
@@ -100,6 +114,7 @@ description: >-
 - [ ] 套件 README.md：DP_* 表、PYTHONPATH（Windows）、pytest/allure 命令
 - [ ] postman/Generate*.py → v2.1 Collection JSON（**2548/2515 形态**：多文件夹、`Build*JsHelpersLines` 内联于 .py、主链路对齐 `Run…MainE2EScenario`）；可选 *.postman_environment.json；postman/README.md（变量与 DP_* 映射、JS↔Python）；改毕运行 `python …/GeneratePostmanCollection*.py` 更新 JSON
 - [ ] testcases/ 下维护「用例 ↔ pytest」对照表，并从套件 README 链到该表
+- [ ] 同一接口新增需求时：确认**历史最小回归集**（至少 contract / smoke / regression）仍保留、仍可收集，并纳入本轮回归运行
 - [ ] 造数：session/fixture 优先自动完成前置接口链；手工 DP_*_ID / JSON 文件为可选覆盖；README 写明开关与副作用（是否改沙箱数据）
 ```
 

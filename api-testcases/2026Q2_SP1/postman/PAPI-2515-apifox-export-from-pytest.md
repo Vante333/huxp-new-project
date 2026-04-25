@@ -16,7 +16,7 @@
 
 | 集合变量 | 含义 |
 |----------|------|
-| `DP_RELAX_SUMMARY_POOL_SUM` | 设为 `1` / `true` 时放宽 summary 与 pools 四指标加总（对齐 `DP_P2515_RELAX_SUMMARY_POOL_SUM`） |
+| `DP_RELAX_SUMMARY_POOL_SUM` | 设为 `1` / `true` 时放宽 summary 与 pools 四指标聚合（缺键按 0、任池 `-1` 则该指标为 `-1`；对齐 `DP_P2515_RELAX_SUMMARY_POOL_SUM`） |
 | `DP_P2515_SUMMARY_GUEST_KEY_ALLOWED` | 可选，默认 `allowedGuestsPerUsage` |
 | `DP_P2515_SUMMARY_GUEST_KEY_MAX` | 可选，默认 `maxGuestsNextUse` |
 

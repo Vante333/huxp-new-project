@@ -1,0 +1,87 @@
+Jira summary: 【Aero Blue】价格查询接口新增字段支持获取用户价
+
+remotelink count: 0
+
+CQL 'type=page AND text~"PAPI-2346"' -> 0 hits
+
+CQL 'type=page AND title~"2346"' -> 0 hits
+
+CQL 'type=page AND text~"价格查询"' -> 20 hits
+  id=998146103 title=Sixt 供应商对接技术设计
+  id=988578014 title=速通成本价格计划
+  id=988217345 title=10/13~10/19 Platform Weekly Report
+  id=984383499 title=High pass 对接
+  id=983203860 title=价格计划接口分析结果
+  id=983072822 title=代驾接入SaaS平台
+  id=970129437 title=Q4-SP2 技术方案
+  id=960397361 title=10/06~10/12 Platform Weekly Report
+  id=95846730 title=2023-QA质量总结
+  id=95846603 title=Scoping 文档
+  id=957743501 title=高铁餐食操作流程
+  id=951812177 title=城市编码变更后更新表
+  id=915406942 title=礼宾秘书-境外礼宾车指引
+  id=915243239 title=龙腾礼宾车供应商对账结算流程
+  id=914915403 title=新加坡车辆合规调研
+  id=914522665 title=如何上线一家礼宾车供应商
+  id=913080329 title=机高资源-特定套餐
+  id=912133426 title=常用sql汇总202509-
+  id=912065420 title=龙腾国际供应商BD宝典
+  id=912065239 title=韩国车辆合规
+
+CQL 'type=page AND text~"Aero Blue" AND text~"价格"' -> 0 hits
+
+CQL 'type=page AND text~"用户价"' -> 20 hits
+  id=998146103 title=Sixt 供应商对接技术设计
+  id=996278818 title=初始化数据-DML-青岛银行项目需求(酒店,卡券,票务,健康,服务）
+  id=990511529 title=周报 Weekly Report 2025-10-20
+  id=990511138 title=DP - Standard H5 PRD -Lounge prebooking
+  id=988578014 title=速通成本价格计划
+  id=988217345 title=10/13~10/19 Platform Weekly Report
+  id=984383499 title=High pass 对接
+  id=983203860 title=价格计划接口分析结果
+  id=983072822 title=代驾接入SaaS平台
+  id=982286448 title=酒店Agoda订单流相关-创建表
+  id=982155346 title=[Investec]LoungePrebooking接入方案
+  id=970129437 title=Q4-SP2 技术方案
+  id=962953274 title=[20251010][P3] Service Accesses AWS Blocked
+  id=961839209 title=(BOSS2.0)餐食体验厅成本价格计划(2025-08-21)
+  id=960954645 title=V1110 AI行程礼遇备案版本发布文档
+  id=960954630 title=(BOSS1.0)餐食体验厅成本价格计划(2025-08-21)
+  id=960397361 title=10/06~10/12 Platform Weekly Report
+  id=95846730 title=2023-QA质量总结
+  id=95846603 title=Scoping 文档
+  id=957808850 title=发布说明-国际综合卡券-核销端-boss2相关api迁移
+
+CQL 'type=page AND text~"价格查询接口"' -> 20 hits
+  id=998146103 title=Sixt 供应商对接技术设计
+  id=988578014 title=速通成本价格计划
+  id=988217345 title=10/13~10/19 Platform Weekly Report
+  id=983203860 title=价格计划接口分析结果
+  id=983072822 title=代驾接入SaaS平台
+  id=970129437 title=Q4-SP2 技术方案
+  id=960397361 title=10/06~10/12 Platform Weekly Report
+  id=95846730 title=2023-QA质量总结
+  id=957743501 title=高铁餐食操作流程
+  id=914522665 title=如何上线一家礼宾车供应商
+  id=913080329 title=机高资源-特定套餐
+  id=912065420 title=龙腾国际供应商BD宝典
+  id=911674127 title=DMC项目上线
+  id=911674024 title=阿里云500报警监控
+  id=911674019 title=23年已上线需求/优化/BUG
+  id=911673927 title=商品是怎么来的
+  id=911673813 title=V4.2.3 市内网约车
+  id=911673193 title=V4.2.17 浦发乐园/文博馆 优化
+  id=911673051 title=项目周会-20210425
+  id=911672693 title=V7.1.3 DMC票务品类支持多种票务供应商
+
+CQL 'type=page AND title~"Aero Blue"' -> 10 hits
+  id=1787789384 title=Aero Blue Issue and Risk Log
+  id=1762197511 title=Aero Blue需求澄清
+  id=1749188892 title=VISA Aero Blue Week2 H5 SSO
+  id=1715273729 title=01/04/26 VISA Aero Blue API Delta List
+  id=1706426379 title=VISA Aero Blue API Delta List
+  id=1552941058 title=Non Functional Security Requirements  - Visa Aero Blue
+  id=1461485588 title=Traditional H5 vs Hybrid Enhanced SDK approach Aero Blue
+  id=1445626075 title=Aero Blue Agenda
+  id=1419378716 title=❌ Enhanced VCES logic to support Aero Blue (OLD AB Solution)
+  id=1418756179 title=New payment logic to support Aero Blue

@@ -11,19 +11,20 @@ from typing import Dict
 
 import allure
 import pytest
+from test_data_loader import LoadP2424DatasetCsvRow
 
-from papi2424_helpers import (
+from clients import GetAccessTokenForEpass, PostOrdersEPassesDetails
+from framework.reporting import AllureHttpScenarioSteps
+from services.papi2424_service import (
     AssertHttp200MsUsageOrderHintEnvelope,
     AssertHttp200NotMsUsageOrderHint,
     AssertLowercaseMsPrefixBehavior,
     AssertUsageOrderRegressionNotMsHint,
     AttachP2424ResponseSummary,
     GetV2OrdersEPassesDetailsPath,
-    PostOrdersEPassesDetails,
     RequireP2424EpassTokenEnvOrSkip,
     ResolveV1OrdersEPassesDetailsPathOrEmpty,
 )
-from papi2548_helpers import AllureHttpScenarioSteps, GetAccessTokenForEpass
 
 
 def _StepKw(steps: AllureHttpScenarioSteps, brief: str) -> Dict[str, str]:
@@ -88,6 +89,8 @@ class TestP2424NonMsSubstringAndUsage:
         ScenarioSteps: AllureHttpScenarioSteps,
     ) -> None:
         oid = os.environ.get("DP_P2424_USAGE_ORDER_ID", "").strip()
+        if not oid:
+            oid = LoadP2424DatasetCsvRow().usage_order_id.strip()
         if not oid:
             pytest.skip("未设置 DP_P2424_USAGE_ORDER_ID（须为环境已知的非 MS 开头 usage 订单号）")
         if oid.upper().startswith("MS"):

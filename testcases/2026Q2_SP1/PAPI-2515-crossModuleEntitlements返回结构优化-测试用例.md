@@ -4,6 +4,8 @@
 
 ### summary与pools结构契约
 
+> **与自动化断言对齐（pytest / Postman）**：同组 `applicableModules` 下，四类指标 `cardholderExclusiveEntitlements`、`guestsExclusiveEntitlements`、`sharedEntitlements`、`purchasedEntitlements` 须满足——各池 `pools[].details` **缺键按 0**；**任池该指标为 `-1` 则组级 `summary` 该指标为 `-1`**（不再与其它池数值做代数和）。四类指标彼此独立计算。
+
 #### 正向场景验证
 
 ##### tc-P1-GEN-001：Search成功返回crossModuleEntitlements含applicableModules与summary与pools

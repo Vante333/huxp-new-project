@@ -1,5 +1,5 @@
 """
-根据 test_papi_2424_ePasses_details_ms_order_hint.py / papi2424_helpers.py 生成 Postman Collection v2.1 JSON。
+根据 tests/test_papi_2424_ePasses_details_ms_order_hint.py / services/papi2424_service.py 生成 Postman Collection v2.1 JSON。
 
 ePass 鉴权与 ``GetAccessTokenForEpass`` 对齐；Tests 内联 ``BuildP2424JsHelpersLines()``（与 papi2424_helpers 断言语义对齐）。
 
@@ -17,7 +17,6 @@ JsonObject = Dict[str, Any]
 
 POSTMAN_SCHEMA: Final[str] = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 OUT_NAME: Final[str] = "PAPI-2424-ePasses-details-ms-order-hint.postman_collection.json"
-_POSTMAN_ID: Final[str] = "a1b2c3d4-papi-2424-pytest-parity"
 
 # 与 papi2424_helpers 一致
 P2424_MS_HINT_ERR: Final[str] = "500.000.024"
@@ -156,6 +155,23 @@ def BearerEpassJsonHeaders() -> List[JsonObject]:
     ]
 
 
+def PostmanUrl(url_path: str) -> JsonObject:
+    """尽量贴近 Postman 客户端导出结构，兼容 Apifox 对 `url` 形态的严格校验。"""
+    raw: str = "{{baseUrl}}" + url_path
+    path_parts: List[str] = [part for part in url_path.split("/") if part]
+    return {"raw": raw, "host": ["{{baseUrl}}"], "path": path_parts}
+
+
+def PostmanJsonRawBody(raw: str) -> JsonObject:
+    """与 Postman 导出一致，便于 Apifox 识别 JSON Body。"""
+    return {"mode": "raw", "raw": raw, "options": {"raw": {"language": "json"}}}
+
+
+def CollectionVariable(key: str, value: str) -> JsonObject:
+    """与 Postman/Apifox 示例一致，显式标注集合变量类型。"""
+    return {"key": key, "value": value, "type": "string"}
+
+
 def RequestItem(
     *,
     name: str,
@@ -170,11 +186,11 @@ def RequestItem(
     req: JsonObject = {
         "method": method,
         "header": headers,
-        "url": "{{baseUrl}}" + url_path,
+        "url": PostmanUrl(url_path),
         "description": description,
     }
     if body is not None:
-        req["body"] = {"mode": "raw", "raw": body}
+        req["body"] = PostmanJsonRawBody(body)
     out: JsonObject = {"name": name, "request": req}
     out["event"] = MakeP2424TestEvent(save_token=save_token, extra_lines=test_lines)
     return out
@@ -326,8 +342,7 @@ def BuildCollection() -> JsonObject:
     )
 
     info: JsonObject = {
-        "_postman_id": _POSTMAN_ID,
-        "name": "PAPI-2424 ePasses/details MS 订单提示（对齐 test_papi_2424 + papi2424_helpers）",
+        "name": "PAPI-2424 ePasses/details MS 订单提示（对齐 tests/test_papi_2424 + services/papi2424_service）",
         "description": (
             "由 GeneratePostmanCollectionPapi2424.py 生成；Tests 内联 BuildP2424JsHelpersLines。\n"
             "环境变量对照：DP_EPASS_PROGRAM_ID→epassProgramId，DP_EPASS_CLIENT_ID→epassClientId，"
@@ -340,21 +355,21 @@ def BuildCollection() -> JsonObject:
     }
 
     variables: List[JsonObject] = [
-        {"key": "baseUrl", "value": "https://developer-sandbox.dragonpass.com/api"},
-        {"key": "epassProgramId", "value": ""},
-        {"key": "epassClientId", "value": ""},
-        {"key": "epassClientSecret", "value": ""},
-        {"key": "epassTokenRequestBearer", "value": ""},
-        {"key": "accessToken", "value": ""},
-        {"key": "p2424V2DetailsPath", "value": "/v2/orders/ePasses/details"},
-        {"key": "p2424V1DetailsPath", "value": "/v1/orders/ePasses/details"},
-        {"key": "p2424OrderIdMsShort", "value": "MS"},
-        {"key": "p2424OrderIdMsTypical", "value": "MS00000000000001"},
-        {"key": "p2424OrderIdLowerMs", "value": "ms00000000000001"},
-        {"key": "p2424OrderIdSubstringDp", "value": "DP000MS00000001"},
-        {"key": "p2424OrderIdSubstringSl", "value": "SL20260129BBMSXV9"},
-        {"key": "p2424UsageOrderId", "value": ""},
-        {"key": "DP_P2424_MS_PREFIX_CASE_INSENSITIVE", "value": ""},
+        CollectionVariable("baseUrl", "https://developer-sandbox.dragonpass.com/api"),
+        CollectionVariable("epassProgramId", ""),
+        CollectionVariable("epassClientId", ""),
+        CollectionVariable("epassClientSecret", ""),
+        CollectionVariable("epassTokenRequestBearer", ""),
+        CollectionVariable("accessToken", ""),
+        CollectionVariable("p2424V2DetailsPath", "/v2/orders/ePasses/details"),
+        CollectionVariable("p2424V1DetailsPath", "/v1/orders/ePasses/details"),
+        CollectionVariable("p2424OrderIdMsShort", "MS"),
+        CollectionVariable("p2424OrderIdMsTypical", "MS00000000000001"),
+        CollectionVariable("p2424OrderIdLowerMs", "ms00000000000001"),
+        CollectionVariable("p2424OrderIdSubstringDp", "DP000MS00000001"),
+        CollectionVariable("p2424OrderIdSubstringSl", "SL20260129BBMSXV9"),
+        CollectionVariable("p2424UsageOrderId", ""),
+        CollectionVariable("DP_P2424_MS_PREFIX_CASE_INSENSITIVE", ""),
     ]
 
     root: JsonObject = {

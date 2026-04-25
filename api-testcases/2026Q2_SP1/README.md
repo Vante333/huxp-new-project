@@ -2,13 +2,64 @@
 
 ## PAPI-2548 会籍 extensions
 
-**用例与代码对照**：pytest / `papi2548_helpers` 逐条索引见 [`testcases/2026Q2_SP1/PAPI-2548-自动化用例与pytest对应表.md`](../../testcases/2026Q2_SP1/PAPI-2548-自动化用例与pytest对应表.md)。
+**用例与代码对照**：pytest / `services/papi2548_service.py` 逐条索引见 [`testcases/2026Q2_SP1/PAPI-2548-自动化用例与pytest对应表.md`](../../testcases/2026Q2_SP1/PAPI-2548-自动化用例与pytest对应表.md)。
 
 **Postman / Apifox 导入**：生成集合含与 helpers 对齐的 Tests（JavaScript），说明与 JS↔Python 对照表见 [`postman/README.md`](postman/README.md)。
 
 分层配置与运行前置约定见 [`.cursor/skills/api-testcase-pack/SKILL.md`](../../.cursor/skills/api-testcase-pack/SKILL.md)、[`env/README.md`](../../env/README.md)。
 
 **新增需求 helpers 风格**：模块 docstring 写清 **主链路**（HTTP 顺序），产品主场景提供 **`Run…MainE2EScenario`**，主 E2E 用例只调该入口；见 Skill 中「主链路与单一编排函数」与金样例 `RunPapi2548MainE2EScenario`、`RunP2515MainE2EScenario`。
+
+## 当前框架分层
+
+当前目录已按“框架层 + 业务层”重构，推荐从这些目录理解与扩展：
+
+- `framework/`：公共配置、HTTP、Allure 报告、基础断言、数据加载
+- `clients/`：接口域客户端入口（auth / memberships / entitlements / ePass orders）
+- `services/`：业务语义、断言、payload 构造与结果处理
+- `scenarios/`：主链路编排入口
+- `tests/`：pytest 收集入口；`pytest.ini` 已指向该目录
+- `datasets/`：常用请求体工厂与数据构造入口
+
+兼容说明：`papi*_helpers.py` 现为**纯重导出壳**（实现分别在 `services/papi2548_memberships_extensions_impl.py`、`services/papi2515_cross_module_impl.py`、`services/papi2424_epasses_impl.py`）；根目录 `test_*.py` 与 `test_data_loader.py` 仍保留，作为迁移期兼容入口。
+
+## 环境与 CSV 数据集
+
+本套件把“环境凭据”和“业务测试数据”拆成两层：
+
+- `DP_PROFILE`：选择环境凭据（仍走 `env/.env.<profile>`）。
+- `DP_TEST_DATASET`：选择 `testdata/<profile>/*.csv` 中的一条数据行。
+
+当前 CSV 目录：
+
+- [`testdata/canary/membership_register.csv`](testdata/canary/membership_register.csv)
+- [`testdata/canary/p2515_dataset.csv`](testdata/canary/p2515_dataset.csv)
+- [`testdata/canary/p2424_dataset.csv`](testdata/canary/p2424_dataset.csv)
+- [`testdata/pre/membership_register.csv`](testdata/pre/membership_register.csv)
+- [`testdata/pre/p2515_dataset.csv`](testdata/pre/p2515_dataset.csv)
+- [`testdata/pre/p2424_dataset.csv`](testdata/pre/p2424_dataset.csv)
+
+约定：
+
+- 每个 CSV 必有 `datasetKey` 列。
+- `DP_TEST_DATASET` 设为某个 key 时，加载器优先取同名行；若缺失则回退该 CSV 的 `default` 行。
+- 未设置 `DP_TEST_DATASET` 时，也会优先尝试 `default` 行；若 CSV 或默认行都不存在，则回退旧的 `DP_*` 变量和代码默认值。
+- 复杂字段放在 `...Json` 列中，例如 `registerExtraJson`、`moduleUpdateJson`，其内容必须是 **JSON 对象字符串**。
+
+当前接入点：
+
+- `membership_register.csv`：`BuildMinimalMembershipPayload()` 的注册模板。
+- `p2515_dataset.csv`：PAPI-2515 的 `probeMembershipId`、注册扩展体、update 默认值、summary 携伴字段名。
+- `p2424_dataset.csv`：PAPI-2424 的 `usageOrderId`、V1/V2 path、`msPrefixCaseInsensitive`。
+
+PowerShell 示例：
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path "api-testcases\2026Q2_SP1").Path
+$env:DP_PROFILE = "canary"
+$env:DP_TEST_DATASET = "p2515-cross-write-a"
+pytest api-testcases/2026Q2_SP1/tests/test_papi_2515_cross_module_entitlements.py -v --alluredir=reports/papi2515-allure-results
+```
 
 ## 安装依赖
 
@@ -24,14 +75,14 @@ pip install -r ../../tools/requirements.txt
 
 ```bash
 cd api-testcases/2026Q2_SP1
-pytest . -v --alluredir=../../reports/papi2548-allure-results
+pytest tests -v --alluredir=../../reports/papi2548-allure-results
 ```
 
 从仓库根执行时仍需设置 `PYTHONPATH` 指向本目录，例如：
 
 ```bash
 $env:PYTHONPATH = (Resolve-Path "api-testcases\2026Q2_SP1").Path
-pytest api-testcases/2026Q2_SP1 -m "not manual" --alluredir=reports/papi2548-allure-results
+pytest api-testcases/2026Q2_SP1/tests -m "not manual" --alluredir=reports/papi2548-allure-results
 ```
 
 ## 查看 Allure 报告（含每步请求/响应 JSON 附件）
@@ -62,13 +113,13 @@ allure serve ../../reports/papi2548-allure-results
 
 **HTTP 步骤附件规范（与 Allure 模板一致）**：凡走 `RequestWithAllure` 的步骤，在步骤内依次为 **`request_step_meta`**（仅当传入 `step_code`/`step_title`）、**`request_meta`**、**`response_body_json`**（非 JSON 时为 **`response_body_text`**）、**`response_status`**。附件类型均为 **`text/plain`**（含 JSON 内容亦为格式化文本），避免 Allure 2.x 对 `application/json` 内嵌预览空白。`GetAccessToken` 无场景序号时不生成 `request_step_meta`。
 
-**步骤层级（search / PATCH 与断言同屏）**：`RegisterMembershipSuccessDetail` 已在注册请求的 `after_response` 内完成成功断言。对 **search、PATCH**，用例统一通过 **`after_response`** 调用 `RunSearchResponseAssertions`、`RunPatchExtensionsAssertions`、`RunSearchSnapshotForDeleteAssertions` 等（见 `papi2548_helpers.py`），保证 **HTTP 附件之后立刻跟对应断言**，避免断言落在顶层步骤、与请求脱节。
+**步骤层级（search / PATCH 与断言同屏）**：`RegisterMembershipSuccessDetail` 已在注册请求的 `after_response` 内完成成功断言。对 **search、PATCH**，用例统一通过 **`after_response`** 调用 `RunSearchResponseAssertions`、`RunPatchExtensionsAssertions`、`RunSearchSnapshotForDeleteAssertions` 等（见 `services/papi2548_memberships_extensions_impl.py`），保证 **HTTP 附件之后立刻跟对应断言**，避免断言落在顶层步骤、与请求脱节。
 
 **步骤标题与序列码**：`RequestWithAllure` 支持 `step_code`（如 `S01`）、`step_title`（如 `步骤1 · 注册会籍`），步骤名为 `[S01] 步骤1 · 注册会籍 · POST /v2/memberships`。用例中可使用 fixture **`ScenarioSteps`** 与 **`_StepKw(ScenarioSteps, "简述")`** 展开传入各 HTTP 封装。
 
 ## 精细字段断言（响应新增 key 时）
 
-在 `papi2548_helpers.py` 中可使用：
+在 `services/papi2548_memberships_extensions_impl.py` 中可使用：
 
 | 函数 | 用途 |
 |------|------|
@@ -85,7 +136,7 @@ allure serve ../../reports/papi2548-allure-results
 | `AssertBusinessFailureEnvelope` | 负面用例：不得 HTTP 200 + 业务成功 |
 | `AssertRootBusinessCodeIndicatesFailure` | 根 JSON `code != 0`（非法 membershipId 等） |
 
-`test_papi_2548_extensions.py` 中已按**每条用例的测试重点**组合上述断言，并用 `allure.step` 区分步骤。
+`tests/test_papi_2548_extensions.py` 中已按**每条用例的测试重点**组合上述断言，并用 `allure.step` 区分步骤。
 
 示例：需求约定响应新增 `extensionsSchemaVersion: 1` 时，在拿到 `body_reg` 后增加：
 
@@ -99,13 +150,13 @@ allure serve ../../reports/papi2548-allure-results
 - **失败体**：`$.errCode`、`$.msg`（英文文案）。
 - **funcChina**：响应全文不出现 CJK 汉字（`\u4e00-\u9fa5`）。
 
-Python 侧对应函数（`papi2548_helpers.py`）：
+Python 侧对应函数（`services/papi2548_memberships_extensions_impl.py`）：
 
 | Postman 习惯 | 函数 |
 |--------------|------|
 | `$.code == 0` 及若干路径 | `AssertPostmanStyleSuccessResponse(resp, extra_json_paths={...})` |
 | 单路径比对 | `AssertJsonPathEquals(root, "$.data.extensions[0]", {"type":"aa","value":"12"})` |
-| `$.errCode` + `$.msg` 子串 | `AssertPostmanStyleErrorResponse(resp, expect_err_code="500.030.033", msg_contains="…")` 或 `AssertPapi2548DuplicateTypeErrorResponse` / `AssertPapi2548MaxFiveTypesErrorResponse`（整句 msg 与 `papi2548_helpers` 中常量一致） |
+| `$.errCode` + `$.msg` 子串 | `AssertPostmanStyleErrorResponse(resp, expect_err_code="500.030.033", msg_contains="…")` 或 `AssertPapi2548DuplicateTypeErrorResponse` / `AssertPapi2548MaxFiveTypesErrorResponse`（整句 msg 与实现模块中常量一致） |
 | 响应体无中文 | 环境变量 `DP_POSTMAN_NO_CJK_BODY=1`，或对 `AssertPostmanStyleSuccessResponse(..., strict_no_cjk_body=True)` |
 
 ### PAPI-2548 业务错误 errCode / msg（根节点）
@@ -116,17 +167,17 @@ Python 侧对应函数（`papi2548_helpers.py`）：
 | `500.030.033` | `A maximum of 5 extension types is allowed per membership.` |
 | `500.030.034` | `Failed to update membership extensions. Please try again later.` |
 
-常量名：`PAPI2548_EXT_ERR_*`、`PAPI2548_EXT_MSG_*`（见 `papi2548_helpers.py`）。历史沙箱可能用 `500.030.033`/`500.030.034` 分别表示「重复 type」「超 5 条」，断言函数已兼容。
+常量名：`PAPI2548_EXT_ERR_*`、`PAPI2548_EXT_MSG_*`（见 `services/papi2548_memberships_extensions_impl.py`）。历史沙箱可能用 `500.030.033`/`500.030.034` 分别表示「重复 type」「超 5 条」，断言函数已兼容。
 
 底层路径解析使用 `JsonPathEvaluate(root, path)`，覆盖集合里出现的 `$.data.*`、`[0]` 等形式即可；更复杂 JSONPath 可再扩展或改用专用库。
 
 ## PAPI-2515 crossModuleEntitlements
 
-**代码**：[`papi2515_helpers.py`](papi2515_helpers.py)、[`test_papi_2515_cross_module_entitlements.py`](test_papi_2515_cross_module_entitlements.py)。**手工用例**：[PAPI-2515-crossModuleEntitlements返回结构优化-测试用例.md](../../testcases/2026Q2_SP1/PAPI-2515-crossModuleEntitlements返回结构优化-测试用例.md)。
+**代码**：[`services/papi2515_service.py`](services/papi2515_service.py)、[`scenarios/papi2515_scenarios.py`](scenarios/papi2515_scenarios.py)、[`tests/test_papi_2515_cross_module_entitlements.py`](tests/test_papi_2515_cross_module_entitlements.py)。**手工用例**：[PAPI-2515-crossModuleEntitlements返回结构优化-测试用例.md](../../testcases/2026Q2_SP1/PAPI-2515-crossModuleEntitlements返回结构优化-测试用例.md)。**排障长文（Agent）**：[papi2515-crossmodule-troubleshooting.md](../../.cursor/skills/api-testcase-pack/papi2515-crossmodule-troubleshooting.md)（summary/pools、软断言、Allure、探测用例等）。
 
 **OpenAPI 契约（Default module）**：`POST /v2/entitlements/search`；**两个不同的 update**：`POST /v2/entitlements/update`（按 body 定位，典型 moduleExclusive）与 `POST /v2/entitlements/{entitlementPoolId}/update`（路径带池 ID，cross 单池更新）。与 MCP OAS 一致。
 
-**summary 与 pools 加总**：默认 **严格** 断言每组 `summary` 等于各池 `details` 同类字段之和；**某池缺该键按 0 计入**。严格断言时 Allure 会附带 `p2515_summary_vs_details_*.json.txt`（四字段的 `summary`、`pools_breakdown`、`details_sum` 对照表）。若仍与网关不一致，可设 `DP_P2515_RELAX_SUMMARY_POOL_SUM=1`。
+**summary 与 pools 四指标聚合**：默认 **严格** 断言每组 `summary` 与由各池 `details` 推出的组级聚合一致：**某池缺该键按 0**；**任池该指标为 `-1` 则整组该指标聚合为 `-1`**（四类字段各自独立：`cardholderExclusiveEntitlements`、`guestsExclusiveEntitlements`、`sharedEntitlements`、`purchasedEntitlements`）。严格断言时 Allure 会附带 `p2515_summary_vs_details_*.json.txt`（四字段的 `summary`、`pools_breakdown`、`details_sum` 对照表）。若仍与网关不一致，可设 `DP_P2515_RELAX_SUMMARY_POOL_SUM=1`。
 
 ### 环境变量（摘要）
 
@@ -147,21 +198,21 @@ Python 侧对应函数（`papi2548_helpers.py`）：
 
 ```powershell
 $env:PYTHONPATH = (Resolve-Path "api-testcases\2026Q2_SP1").Path
-pytest api-testcases/2026Q2_SP1/test_papi_2515_cross_module_entitlements.py -m "not needs_cross_module_write" -v
+pytest api-testcases/2026Q2_SP1/tests/test_papi_2515_cross_module_entitlements.py -m "not needs_cross_module_write" -v
 ```
 
 只跑注册造数主 E2E（单条，**会改写**权益）：
 
 ```powershell
 $env:PYTHONPATH = (Resolve-Path "api-testcases\2026Q2_SP1").Path
-pytest "api-testcases/2026Q2_SP1/test_papi_2515_cross_module_entitlements.py::TestP2515CrossModuleE2E::test_e2e_register_search_module_update_pool_updates" -v --alluredir=reports/papi2515-allure-results
+pytest "api-testcases/2026Q2_SP1/tests/test_papi_2515_cross_module_entitlements.py::TestP2515CrossModuleE2E::test_e2e_register_search_module_update_pool_updates" -v --alluredir=reports/papi2515-allure-results
 ```
 
 全链路（**会改写**新注册会籍的权益数值，同文件内全部 `needs_cross_module_write`）：
 
 ```powershell
 $env:PYTHONPATH = (Resolve-Path "api-testcases\2026Q2_SP1").Path
-pytest api-testcases/2026Q2_SP1/test_papi_2515_cross_module_entitlements.py -m needs_cross_module_write -v --alluredir=reports/papi2515-allure-results
+pytest api-testcases/2026Q2_SP1/tests/test_papi_2515_cross_module_entitlements.py -m needs_cross_module_write -v --alluredir=reports/papi2515-allure-results
 ```
 
 **跳过条件**：模板无跨模块权益时 `crossModuleEntitlements` 为空，主场景会 `pytest.skip`；单池 `details` 均为 `-1` 时无可执行池更新亦会跳过。若按池更新返回 ``errCode=500.030.024``（program 禁止按池编辑），单池链路会以 skip 结束并提示换模板。
@@ -170,7 +221,7 @@ pytest api-testcases/2026Q2_SP1/test_papi_2515_cross_module_entitlements.py -m n
 
 **为何某步断言失败后 Allure 里看不到后续 HTTP 步骤**：pytest 中普通 `assert` 失败会抛出 `AssertionError` 并**立即结束当前用例函数**。**PAPI-2515 主 E2E**（`test_e2e_register_search_module_update_pool_updates`）已改用 ``P2515E2ESoftAssert``：业务断言失败会记入列表，**仍继续**后续 HTTP，最后用 ``pytest.fail`` 汇总；取 token / 注册 / search 等**前置 HTTP 仍硬失败即停**（无数据则无法继续）。其它用例仍为硬断言。
 
-**注册与 entitlements/update**：若响应 `data.entitlements` 中带 `crossModuleEntitlements` / `moduleExclusiveEntitlements`，自动化会对 **cross** 使用与 search 相同的 `summary` vs `pools`（缺键按 0）及 Allure 分解附件；对 **moduleExclusive** 仅校验各条 `details` 不含携伴聚合字段（无 summary/pools 恒等式）。
+**注册与 entitlements/update**：若响应 `data.entitlements` 中带 `crossModuleEntitlements` / `moduleExclusiveEntitlements`，自动化会对 **cross** 使用与 search 相同的 `summary` vs `pools` 聚合规则（缺键按 0；任池 `-1` 则该指标为 `-1`）及 Allure 分解附件；对 **moduleExclusive** 仅校验各条 `details` 不含携伴聚合字段（无 summary/pools 恒等式）。
 
 ### Postman
 
@@ -180,7 +231,7 @@ pytest api-testcases/2026Q2_SP1/test_papi_2515_cross_module_entitlements.py -m n
 
 **手工用例**：[PAPI-2424-ePasses-details-MS订单提示-测试用例.md](../../testcases/2026Q2_SP1/PAPI-2424-ePasses-details-MS订单提示-测试用例.md)。
 
-**代码**：[`papi2424_helpers.py`](papi2424_helpers.py)、[`test_papi_2424_ePasses_details_ms_order_hint.py`](test_papi_2424_ePasses_details_ms_order_hint.py)。
+**代码**：[`services/papi2424_service.py`](services/papi2424_service.py)、[`clients/orders_epasses_client.py`](clients/orders_epasses_client.py)、[`tests/test_papi_2424_ePasses_details_ms_order_hint.py`](tests/test_papi_2424_ePasses_details_ms_order_hint.py)。
 
 **OpenAPI（MCP · Default module）**：`POST /v2/orders/ePasses/details`（Retrieve E-pass Usage Order Details）；MS 主单应使用 `POST /v2/orders/ePasses/search`（文档称 order ID 可以 MS 开头）。
 
@@ -199,7 +250,7 @@ pytest api-testcases/2026Q2_SP1/test_papi_2515_cross_module_entitlements.py -m n
 
 ```powershell
 $env:PYTHONPATH = (Resolve-Path "api-testcases\2026Q2_SP1").Path
-pytest api-testcases/2026Q2_SP1/test_papi_2424_ePasses_details_ms_order_hint.py -v --alluredir=reports/papi2424-allure-results
+pytest api-testcases/2026Q2_SP1/tests/test_papi_2424_ePasses_details_ms_order_hint.py -v --alluredir=reports/papi2424-allure-results
 ```
 
 默认不配置 `DP_P2424_USAGE_ORDER_ID` 时，tc-P1 回归条会 **skip**；可用 `-m "not needs_p2424_usage_order_id"` 只跑不依赖该 ID 的用例。

@@ -10,7 +10,7 @@ from typing import List, Optional, Tuple
 
 import pytest
 
-from papi2548_helpers import NormalizeExtensionsForCompare
+from services.papi2548_service import NormalizeExtensionsForCompare
 
 
 @pytest.mark.parametrize(

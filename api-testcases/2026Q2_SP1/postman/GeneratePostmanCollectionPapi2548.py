@@ -1,5 +1,5 @@
 """
-根据 test_papi_2548_extensions.py / papi2548_helpers.py 生成 Postman Collection v2.1 JSON。
+根据 tests/test_papi_2548_extensions.py / services/papi2548_service.py 生成 Postman Collection v2.1 JSON。
 
 含与 helpers 对齐的 Tests（JavaScript），导入 Apifox 后位于接口「后置脚本」。
 
@@ -164,6 +164,23 @@ def BearerJsonHeaders() -> List[JsonObject]:
     ]
 
 
+def PostmanUrl(url_path: str) -> JsonObject:
+    """尽量贴近 Postman 客户端导出结构，兼容 Apifox 对 `url` 形态的严格校验。"""
+    raw: str = "{{baseUrl}}" + url_path
+    path_parts: List[str] = [part for part in url_path.split("/") if part]
+    return {"raw": raw, "host": ["{{baseUrl}}"], "path": path_parts}
+
+
+def PostmanJsonRawBody(raw: str) -> JsonObject:
+    """与 Postman 导出一致，便于 Apifox 识别 JSON Body。"""
+    return {"mode": "raw", "raw": raw, "options": {"raw": {"language": "json"}}}
+
+
+def CollectionVariable(key: str, value: str) -> JsonObject:
+    """与 Postman/Apifox 示例一致，显式标注集合变量类型。"""
+    return {"key": key, "value": value, "type": "string"}
+
+
 def RequestItem(
     *,
     name: str,
@@ -179,11 +196,11 @@ def RequestItem(
     req: JsonObject = {
         "method": method,
         "header": headers,
-        "url": "{{baseUrl}}" + url_path,
+        "url": PostmanUrl(url_path),
         "description": description,
     }
     if body is not None:
-        req["body"] = {"mode": "raw", "raw": body}
+        req["body"] = PostmanJsonRawBody(body)
     out: JsonObject = {"name": name, "request": req}
     out["event"] = MakeTestEvent(save_token=save_token, save_mid=save_mid, extra_lines=test_lines)
     return out
@@ -1066,10 +1083,9 @@ def BuildCollection() -> JsonObject:
     )
 
     info: JsonObject = {
-        "_postman_id": "a1b2c3d4-papi-2548-pytest-parity",
-        "name": "PAPI-2548 extensions（对齐 test_papi_2548_extensions + papi2548_helpers）",
+        "name": "PAPI-2548 extensions（对齐 tests/test_papi_2548_extensions + services/papi2548_service）",
         "description": (
-            "由 GeneratePostmanCollectionPapi2548.py 生成；含与 papi2548_helpers 对齐的 Tests（JavaScript）。\n"
+            "由 GeneratePostmanCollectionPapi2548.py 生成；含与 services/papi2548_service.py 对齐的 Tests（JavaScript）。\n"
             "导入 Apifox 后位于「后置脚本」；非可视化断言组件。\n\n"
             "变量：baseUrl、programId、clientId、clientSecret、accessToken、membershipId、fakeMembershipId、"
             "u07aExtNorm、u03bExtNorm、e3patchNorm。"
@@ -1078,16 +1094,16 @@ def BuildCollection() -> JsonObject:
     }
 
     variables: List[JsonObject] = [
-        {"key": "baseUrl", "value": "https://developer-sandbox.dragonpass.com/api"},
-        {"key": "programId", "value": ""},
-        {"key": "clientId", "value": ""},
-        {"key": "clientSecret", "value": ""},
-        {"key": "accessToken", "value": ""},
-        {"key": "membershipId", "value": ""},
-        {"key": "fakeMembershipId", "value": "999999999999999999"},
-        {"key": "u07aExtNorm", "value": ""},
-        {"key": "u03bExtNorm", "value": ""},
-        {"key": "e3patchNorm", "value": ""},
+        CollectionVariable("baseUrl", "https://developer-sandbox.dragonpass.com/api"),
+        CollectionVariable("programId", ""),
+        CollectionVariable("clientId", ""),
+        CollectionVariable("clientSecret", ""),
+        CollectionVariable("accessToken", ""),
+        CollectionVariable("membershipId", ""),
+        CollectionVariable("fakeMembershipId", "999999999999999999"),
+        CollectionVariable("u07aExtNorm", ""),
+        CollectionVariable("u03bExtNorm", ""),
+        CollectionVariable("e3patchNorm", ""),
     ]
 
     root: JsonObject = {

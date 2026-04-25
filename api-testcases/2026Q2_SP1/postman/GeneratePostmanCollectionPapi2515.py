@@ -1,5 +1,5 @@
 """
-根据 test_papi_2515_cross_module_entitlements.py / papi2515_helpers.py 生成 Postman Collection v2.1 JSON。
+根据 tests/test_papi_2515_cross_module_entitlements.py / services/papi2515_service.py 生成 Postman Collection v2.1 JSON。
 
 风格对齐 ``GeneratePostmanCollectionPapi2548.py``：多文件夹、请求名对应 pytest、Tests 内联完整 P2515 公共 JS
 （``BuildP2515JsHelpersLines()``，与 ``papi2515_helpers`` / ``BuildP2515PoolUpdatePlan`` 语义对齐）。
@@ -18,7 +18,6 @@ JsonObject = Dict[str, Any]
 
 POSTMAN_SCHEMA: Final[str] = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 OUT_NAME: Final[str] = "PAPI-2515-cross-module-entitlements.postman_collection.json"
-_POSTMAN_ID: Final[str] = "e5f6a1b2-papi-2515-pytest-parity"
 
 # E2E 多按池：``postman.setNextRequest`` 参数须与本请求 ``name`` 字符串完全一致（含 ``{{entitlementPoolId}}`` 字面量）。
 P2515_E2E_S05_REQUEST_NAME: Final[str] = (
@@ -167,14 +166,20 @@ function p2515SummaryMetrics(summary) {
 function p2515SumPoolDetailsMetrics(pools) {
   var sums = {};
   P2515_METRIC_KEYS.forEach(function (k) {
-    sums[k] = 0;
-  });
-  (pools || []).forEach(function (p) {
-    var d =
-      p && p.details && typeof p.details === "object" ? p.details : {};
-    P2515_METRIC_KEYS.forEach(function (k) {
-      sums[k] += p2515DetailMetricOrZero(d, k);
+    var acc = 0;
+    var anyNeg = false;
+    (pools || []).forEach(function (p) {
+      var d =
+        p && p.details && typeof p.details === "object" ? p.details : {};
+      var iv = p2515IntDetail(d, k);
+      if (iv === null || iv === undefined) return;
+      if (iv === -1) {
+        anyNeg = true;
+        return;
+      }
+      acc += iv;
     });
+    sums[k] = anyNeg ? -1 : acc;
   });
   return sums;
 }
@@ -238,7 +243,7 @@ function p2515ShouldStrictSummaryPoolSum(pm, options) {
 }
 
 /**
- * 对齐 ``AssertCrossModuleContract``：结构 + 可选 summary/pools 四指标加总。
+ * 对齐 ``AssertCrossModuleContract``：结构 + 可选 summary/pools 四指标聚合（缺键按 0；任池 -1 则该指标为 -1）。
  * @param {object} pm Postman / Apifox pm
  * @param {Array} cross crossModuleEntitlements
  * @param {{context?: string, strictSummaryPoolSum?: boolean}} options
@@ -285,19 +290,19 @@ function p2515AssertCrossModuleContract(pm, cross, options) {
       });
     });
     if (strict) {
-      pm.test(ctx + "：组[" + idx + "] summary 与 pools 四指标加总一致（缺键按 0）", function () {
+      pm.test(ctx + "：组[" + idx + "] summary 与 pools 四指标聚合一致（缺键按 0；任池 -1 则该指标为 -1）", function () {
         var sm = p2515SummaryMetrics(g.summary);
         var pmSum = p2515SumPoolDetailsMetrics(g.pools);
         var ok = p2515MetricsObjectsEqual(sm, pmSum);
         var lines = P2515_METRIC_KEYS.map(function (k) {
-          return k + ": summary=" + sm[k] + " pools_Σ=" + pmSum[k];
+          return k + ": summary=" + sm[k] + " pools_agg=" + pmSum[k];
         });
         pm.expect(
           ok,
           ctx +
             " 组[" +
             idx +
-            "]：预期每组 summary 四类指标等于各池 details 同类之和（缺键按 0）。\n" +
+            "]：预期每组 summary 四类指标等于各池 details 跨池聚合（缺键按 0；任池 -1 则该指标为 -1）。\n" +
             lines.join("\n") +
             "\n完整: summary_metrics=" +
             JSON.stringify(sm) +
@@ -1131,6 +1136,23 @@ def BearerJsonHeaders() -> List[JsonObject]:
     ]
 
 
+def PostmanUrl(url_path: str) -> JsonObject:
+    """尽量贴近 Postman 客户端导出结构，兼容 Apifox 对 `url` 形态的严格校验。"""
+    raw: str = "{{baseUrl}}" + url_path
+    path_parts: List[str] = [part for part in url_path.split("/") if part]
+    return {"raw": raw, "host": ["{{baseUrl}}"], "path": path_parts}
+
+
+def PostmanJsonRawBody(raw: str) -> JsonObject:
+    """与 Postman 导出一致，便于 Apifox 识别 JSON Body。"""
+    return {"mode": "raw", "raw": raw, "options": {"raw": {"language": "json"}}}
+
+
+def CollectionVariable(key: str, value: str) -> JsonObject:
+    """与 Postman/Apifox 示例一致，显式标注集合变量类型。"""
+    return {"key": key, "value": value, "type": "string"}
+
+
 def RequestItem(
     *,
     name: str,
@@ -1147,11 +1169,11 @@ def RequestItem(
     req: JsonObject = {
         "method": method,
         "header": headers,
-        "url": "{{baseUrl}}" + url_path,
+        "url": PostmanUrl(url_path),
         "description": description,
     }
     if body is not None:
-        req["body"] = {"mode": "raw", "raw": body}
+        req["body"] = PostmanJsonRawBody(body)
     out: JsonObject = {"name": name, "request": req}
     if prerequest_lines is not None:
         out["event"] = [
@@ -1839,10 +1861,9 @@ def BuildCollection() -> JsonObject:
     )
 
     info: JsonObject = {
-        "_postman_id": _POSTMAN_ID,
-        "name": "PAPI-2515 crossModule（对齐 test_papi_2515_cross_module_entitlements + papi2515_helpers）",
+        "name": "PAPI-2515 crossModule（对齐 tests/test_papi_2515_cross_module_entitlements + services/papi2515_service）",
         "description": (
-            "由 GeneratePostmanCollectionPapi2515.py 生成；Tests 内联 BuildP2515JsHelpersLines（与 papi2515_helpers 语义对齐）。\n"
+            "由 GeneratePostmanCollectionPapi2515.py 生成；Tests 内联 BuildP2515JsHelpersLines（与 services/papi2515_service.py 语义对齐）。\n"
             "导入 Apifox 后位于「后置脚本」。\n\n"
             "变量：baseUrl、programId、clientId、clientSecret、accessToken、membershipId、probeMembershipId、"
             "entitlementPoolId、p2515_pool_update_body_raw、p2515_touched_am_key、p2515_norm_cross_baseline、"
@@ -1859,25 +1880,25 @@ def BuildCollection() -> JsonObject:
     )
 
     variables: List[JsonObject] = [
-        {"key": "baseUrl", "value": "https://developer-sandbox.dragonpass.com/api"},
-        {"key": "programId", "value": ""},
-        {"key": "clientId", "value": ""},
-        {"key": "clientSecret", "value": ""},
-        {"key": "accessToken", "value": ""},
-        {"key": "membershipId", "value": ""},
-        {"key": "probeMembershipId", "value": ""},
-        {"key": "entitlementPoolId", "value": ""},
-        {"key": "p2515_pool_update_body_raw", "value": default_pool_body},
-        {"key": "p2515_touched_am_key", "value": ""},
-        {"key": "p2515_norm_cross_baseline", "value": ""},
-        {"key": "p2515_norm_cross_es", "value": ""},
-        {"key": "p2515_cross_before_json", "value": ""},
-        {"key": "p2515_json_after_update", "value": ""},
-        {"key": "DP_RELAX_SUMMARY_POOL_SUM", "value": ""},
-        {"key": "DP_P2515_ATTACH2_POOL_QUANTITY", "value": "2"},
-        {"key": "DP_P2515_ATTACH2_POOL_PURCHASED_QTY", "value": "1"},
-        {"key": "DP_P2515_SUMMARY_GUEST_KEY_ALLOWED", "value": ""},
-        {"key": "DP_P2515_SUMMARY_GUEST_KEY_MAX", "value": ""},
+        CollectionVariable("baseUrl", "https://developer-sandbox.dragonpass.com/api"),
+        CollectionVariable("programId", ""),
+        CollectionVariable("clientId", ""),
+        CollectionVariable("clientSecret", ""),
+        CollectionVariable("accessToken", ""),
+        CollectionVariable("membershipId", ""),
+        CollectionVariable("probeMembershipId", ""),
+        CollectionVariable("entitlementPoolId", ""),
+        CollectionVariable("p2515_pool_update_body_raw", default_pool_body),
+        CollectionVariable("p2515_touched_am_key", ""),
+        CollectionVariable("p2515_norm_cross_baseline", ""),
+        CollectionVariable("p2515_norm_cross_es", ""),
+        CollectionVariable("p2515_cross_before_json", ""),
+        CollectionVariable("p2515_json_after_update", ""),
+        CollectionVariable("DP_RELAX_SUMMARY_POOL_SUM", ""),
+        CollectionVariable("DP_P2515_ATTACH2_POOL_QUANTITY", "2"),
+        CollectionVariable("DP_P2515_ATTACH2_POOL_PURCHASED_QTY", "1"),
+        CollectionVariable("DP_P2515_SUMMARY_GUEST_KEY_ALLOWED", ""),
+        CollectionVariable("DP_P2515_SUMMARY_GUEST_KEY_MAX", ""),
     ]
 
     root: JsonObject = {

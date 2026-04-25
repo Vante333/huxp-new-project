@@ -1,4 +1,0 @@
-# 复制为 env/.local_profile（勿提交）。首条非注释行 = profile 名，将自动加载 env/.env.<该名>
-# 例如本文件首行写 canary，且存在 env/.env.canary，则运行 pytest 时无需再设 $env:DP_PROFILE
-
-canary

@@ -1,50 +1,59 @@
 {
   "info": {
-    "_postman_id": "a1b2c3d4-papi-2548-pytest-parity",
-    "name": "PAPI-2548 extensions（对齐 test_papi_2548_extensions + papi2548_helpers）",
-    "description": "由 GeneratePostmanCollectionPapi2548.py 生成；含与 papi2548_helpers 对齐的 Tests（JavaScript）。\n导入 Apifox 后位于「后置脚本」；非可视化断言组件。\n\n变量：baseUrl、programId、clientId、clientSecret、accessToken、membershipId、fakeMembershipId、u07aExtNorm、u03bExtNorm、e3patchNorm。",
+    "name": "PAPI-2548 extensions（对齐 tests/test_papi_2548_extensions + services/papi2548_service）",
+    "description": "由 GeneratePostmanCollectionPapi2548.py 生成；含与 services/papi2548_service.py 对齐的 Tests（JavaScript）。\n导入 Apifox 后位于「后置脚本」；非可视化断言组件。\n\n变量：baseUrl、programId、clientId、clientSecret、accessToken、membershipId、fakeMembershipId、u07aExtNorm、u03bExtNorm、e3patchNorm。",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://developer-sandbox.dragonpass.com/api"
+      "value": "https://developer-sandbox.dragonpass.com/api",
+      "type": "string"
     },
     {
       "key": "programId",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "clientId",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "clientSecret",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "accessToken",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "membershipId",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "fakeMembershipId",
-      "value": "999999999999999999"
+      "value": "999999999999999999",
+      "type": "string"
     },
     {
       "key": "u07aExtNorm",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "u03bExtNorm",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "e3patchNorm",
-      "value": ""
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -73,11 +82,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/auth/token",
+            "url": {
+              "raw": "{{baseUrl}}/v2/auth/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "auth",
+                "token"
+              ]
+            },
             "description": "与 papi2548_helpers.GetAccessToken 一致；勿带 Authorization: undefined。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientId\": \"{{clientId}}\",\n  \"secret\": \"{{clientSecret}}\"\n}"
+              "raw": "{\n  \"clientId\": \"{{clientId}}\",\n  \"secret\": \"{{clientSecret}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -207,11 +231,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "TestMembershipsRegisterExtensions::test_register_with_extensions_echo",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"ailasId\",\n      \"value\": \"123456\"\n    },\n    {\n      \"type\": \"cardId\",\n      \"value\": \"abcdef\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"ailasId\",\n      \"value\": \"123456\"\n    },\n    {\n      \"type\": \"cardId\",\n      \"value\": \"abcdef\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -349,11 +387,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "两条相同 type；AssertBusinessFailureEnvelope 或 search 持久化。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"cardId\",\n      \"value\": \"a\"\n    },\n    {\n      \"type\": \"cardId\",\n      \"value\": \"b\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"cardId\",\n      \"value\": \"a\"\n    },\n    {\n      \"type\": \"cardId\",\n      \"value\": \"b\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -481,11 +533,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "BuildMinimalMembershipPayload(extensions=None)。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\"\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -609,11 +675,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "extensions: []",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": []\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -743,11 +823,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "t0..t4",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"t0\",\n      \"value\": \"0\"\n    },\n    {\n      \"type\": \"t1\",\n      \"value\": \"1\"\n    },\n    {\n      \"type\": \"t2\",\n      \"value\": \"2\"\n    },\n    {\n      \"type\": \"t3\",\n      \"value\": \"3\"\n    },\n    {\n      \"type\": \"t4\",\n      \"value\": \"4\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"t0\",\n      \"value\": \"0\"\n    },\n    {\n      \"type\": \"t1\",\n      \"value\": \"1\"\n    },\n    {\n      \"type\": \"t2\",\n      \"value\": \"2\"\n    },\n    {\n      \"type\": \"t3\",\n      \"value\": \"3\"\n    },\n    {\n      \"type\": \"t4\",\n      \"value\": \"4\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -885,11 +979,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "s0..s5；AssertPapi2548MaxFiveTypesErrorResponse。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"s0\",\n      \"value\": \"0\"\n    },\n    {\n      \"type\": \"s1\",\n      \"value\": \"1\"\n    },\n    {\n      \"type\": \"s2\",\n      \"value\": \"2\"\n    },\n    {\n      \"type\": \"s3\",\n      \"value\": \"3\"\n    },\n    {\n      \"type\": \"s4\",\n      \"value\": \"4\"\n    },\n    {\n      \"type\": \"s5\",\n      \"value\": \"5\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"s0\",\n      \"value\": \"0\"\n    },\n    {\n      \"type\": \"s1\",\n      \"value\": \"1\"\n    },\n    {\n      \"type\": \"s2\",\n      \"value\": \"2\"\n    },\n    {\n      \"type\": \"s3\",\n      \"value\": \"3\"\n    },\n    {\n      \"type\": \"s4\",\n      \"value\": \"4\"\n    },\n    {\n      \"type\": \"s5\",\n      \"value\": \"5\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1014,11 +1122,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "边界成功",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt\",\n      \"value\": \"v\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt\",\n      \"value\": \"v\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1156,11 +1278,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "边界成功",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"t\",\n      \"value\": \"vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"t\",\n      \"value\": \"vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1298,11 +1434,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "边界失败",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt\",\n      \"value\": \"v\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"ttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt\",\n      \"value\": \"v\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1419,11 +1569,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "边界失败",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"t\",\n      \"value\": \"vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"t\",\n      \"value\": \"vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1546,11 +1710,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/search",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "search"
+              ]
+            },
             "description": "先 R01；RunSearchResponseAssertions。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1681,11 +1860,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/search",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "search"
+              ]
+            },
             "description": "先 R03；RunSearchOmitExtensionsSemanticsAssertions。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1814,11 +2008,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "test_extensions_upsert_add_new_type 前置。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"keepA\",\n      \"value\": \"1\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"keepA\",\n      \"value\": \"1\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1956,11 +2164,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/extensions",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/extensions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "extensions"
+              ]
+            },
             "description": "RunPatchExtensionsAssertions expected keepA+newB。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"newB\",\n      \"value\": \"2\"\n    }\n  ]\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"newB\",\n      \"value\": \"2\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -2084,11 +2307,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "UPSERT 更新 value 前置。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"k1\",\n      \"value\": \"old\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"k1\",\n      \"value\": \"old\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -2226,11 +2463,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/extensions",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/extensions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "extensions"
+              ]
+            },
             "description": "单条 k1=newval。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"k1\",\n      \"value\": \"newval\"\n    }\n  ]\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"k1\",\n      \"value\": \"newval\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -2354,11 +2606,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "DELETE a1 前置。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"a1\",\n      \"value\": \"1\"\n    },\n    {\n      \"type\": \"b2\",\n      \"value\": \"2\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"a1\",\n      \"value\": \"1\"\n    },\n    {\n      \"type\": \"b2\",\n      \"value\": \"2\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -2496,11 +2762,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/extensions",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/extensions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "extensions"
+              ]
+            },
             "description": "仅 b2。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"DELETE\",\n      \"type\": \"a1\"\n    }\n  ]\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"DELETE\",\n      \"type\": \"a1\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -2624,11 +2905,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "DELETE nosuch 幂等。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"only\",\n      \"value\": \"x\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"only\",\n      \"value\": \"x\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -2766,11 +3061,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/search",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "search"
+              ]
+            },
             "description": "RunSearchSnapshotForDeleteAssertions。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -2892,11 +3202,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/extensions",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/extensions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "extensions"
+              ]
+            },
             "description": "与快照一致。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"DELETE\",\n      \"type\": \"nosuch\"\n    }\n  ]\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"DELETE\",\n      \"type\": \"nosuch\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -3016,11 +3341,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "混合操作前置。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"delMe\",\n      \"value\": \"1\"\n    },\n    {\n      \"type\": \"keepMe\",\n      \"value\": \"2\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"delMe\",\n      \"value\": \"1\"\n    },\n    {\n      \"type\": \"keepMe\",\n      \"value\": \"2\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -3158,11 +3497,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/extensions",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/extensions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "extensions"
+              ]
+            },
             "description": "RunPatchExtensionsAssertions 混合。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"DELETE\",\n      \"type\": \"delMe\"\n    },\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"addMe\",\n      \"value\": \"3\"\n    }\n  ]\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"DELETE\",\n      \"type\": \"delMe\"\n    },\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"addMe\",\n      \"value\": \"3\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -3282,11 +3636,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/extensions",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/extensions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "extensions"
+              ]
+            },
             "description": "RunPatchInvalidMembershipIdAssertions。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{fakeMembershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"x\",\n      \"value\": \"y\"\n    }\n  ]\n}"
+              "raw": "{\n  \"membershipId\": \"{{fakeMembershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"x\",\n      \"value\": \"y\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -3403,11 +3772,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "非法 operation 链。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"stable\",\n      \"value\": \"1\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"stable\",\n      \"value\": \"1\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -3545,11 +3928,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/search",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "search"
+              ]
+            },
             "description": "快照 extensions。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -3671,11 +4069,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/extensions",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/extensions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "extensions"
+              ]
+            },
             "description": "RunPatchInvalidOperationGatewayAssertions。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPDATE\",\n      \"type\": \"x\",\n      \"value\": \"y\"\n    }\n  ]\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPDATE\",\n      \"type\": \"x\",\n      \"value\": \"y\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -3790,11 +4203,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/search",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "search"
+              ]
+            },
             "description": "与 U07a 一致。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -3913,11 +4341,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "UPSERT 缺 value。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"base\",\n      \"value\": \"1\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"base\",\n      \"value\": \"1\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -4055,11 +4497,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/extensions",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/extensions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "extensions"
+              ]
+            },
             "description": "RunUpsertMissingValueDocumentedAssertions。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"noval\"\n    }\n  ]\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"noval\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -4175,11 +4632,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/extensions",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/extensions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "extensions"
+              ]
+            },
             "description": "POST 网关。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"postMethod\",\n      \"value\": \"1\"\n    }\n  ]\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"postMethod\",\n      \"value\": \"1\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -4301,11 +4773,25 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships"
+              ]
+            },
             "description": "test_e2e_register_search_extensions_search",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"e1\",\n      \"value\": \"1\"\n    },\n    {\n      \"type\": \"e2\",\n      \"value\": \"2\"\n    }\n  ]\n}"
+              "raw": "{\n  \"clientUserId\": \"{{$guid}}\",\n  \"firstName\": \"Lann\",\n  \"lastName\": \"Testn\",\n  \"phoneNumber\": \"8081966002\",\n  \"callingCode\": \"44\",\n  \"email\": \"p2548_{{$timestamp}}@yahoo.com.cn\",\n  \"expirationDate\": \"2027-12-31T10:10:33+00:00\",\n  \"extensions\": [\n    {\n      \"type\": \"e1\",\n      \"value\": \"1\"\n    },\n    {\n      \"type\": \"e2\",\n      \"value\": \"2\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -4443,11 +4929,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/search",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "search"
+              ]
+            },
             "description": "RunSearchResponseAssertions e1,e2。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -4578,11 +5079,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/extensions",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/extensions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "extensions"
+              ]
+            },
             "description": "expected e2+e3。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"e3\",\n      \"value\": \"3\"\n    },\n    {\n      \"operation\": \"DELETE\",\n      \"type\": \"e1\"\n    }\n  ]\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\",\n  \"extensions\": [\n    {\n      \"operation\": \"UPSERT\",\n      \"type\": \"e3\",\n      \"value\": \"3\"\n    },\n    {\n      \"operation\": \"DELETE\",\n      \"type\": \"e1\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -4703,11 +5219,26 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}/v2/memberships/search",
+            "url": {
+              "raw": "{{baseUrl}}/v2/memberships/search",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "memberships",
+                "search"
+              ]
+            },
             "description": "与 E3 归一化一致。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}"
+              "raw": "{\n  \"membershipId\": \"{{membershipId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [

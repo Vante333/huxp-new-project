@@ -5,6 +5,7 @@
 ## 当前结构
 
 - **2026Q1_SP3/**：本迭代功能测试用例与 xmind 源文件（`xmind/`）
+- **2026Q2_SP2/**：含 Aero Blue 本地需求（`requirements/Aero Blue/`）对应 Markdown 用例，如 `PAPI-2636-*`、`PAPI-2657-*`、`PAPI-2644-*`、`PAPI-2204-*`、`PAPI-2576-*` 等
 - **assets/**：辅助文件（如 Excel 矩阵表、配置表等）
 
 ## 迁移说明

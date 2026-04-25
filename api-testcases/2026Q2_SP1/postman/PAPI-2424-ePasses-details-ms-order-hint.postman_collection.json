@@ -1,70 +1,84 @@
 {
   "info": {
-    "_postman_id": "a1b2c3d4-papi-2424-pytest-parity",
-    "name": "PAPI-2424 ePasses/details MS 订单提示（对齐 test_papi_2424 + papi2424_helpers）",
+    "name": "PAPI-2424 ePasses/details MS 订单提示（对齐 tests/test_papi_2424 + services/papi2424_service）",
     "description": "由 GeneratePostmanCollectionPapi2424.py 生成；Tests 内联 BuildP2424JsHelpersLines。\n环境变量对照：DP_EPASS_PROGRAM_ID→epassProgramId，DP_EPASS_CLIENT_ID→epassClientId，DP_EPASS_CLIENT_SECRET→epassClientSecret；DP_P2424_USAGE_ORDER_ID→p2424UsageOrderId；DP_P2424_V1_ORDERS_EPASSES_DETAILS_PATH→p2424V1DetailsPath；DP_P2424_V2_ORDERS_EPASSES_DETAILS_PATH→p2424V2DetailsPath；DP_P2424_MS_PREFIX_CASE_INSENSITIVE 同名集合变量。",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://developer-sandbox.dragonpass.com/api"
+      "value": "https://developer-sandbox.dragonpass.com/api",
+      "type": "string"
     },
     {
       "key": "epassProgramId",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "epassClientId",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "epassClientSecret",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "epassTokenRequestBearer",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "accessToken",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "p2424V2DetailsPath",
-      "value": "/v2/orders/ePasses/details"
+      "value": "/v2/orders/ePasses/details",
+      "type": "string"
     },
     {
       "key": "p2424V1DetailsPath",
-      "value": "/v1/orders/ePasses/details"
+      "value": "/v1/orders/ePasses/details",
+      "type": "string"
     },
     {
       "key": "p2424OrderIdMsShort",
-      "value": "MS"
+      "value": "MS",
+      "type": "string"
     },
     {
       "key": "p2424OrderIdMsTypical",
-      "value": "MS00000000000001"
+      "value": "MS00000000000001",
+      "type": "string"
     },
     {
       "key": "p2424OrderIdLowerMs",
-      "value": "ms00000000000001"
+      "value": "ms00000000000001",
+      "type": "string"
     },
     {
       "key": "p2424OrderIdSubstringDp",
-      "value": "DP000MS00000001"
+      "value": "DP000MS00000001",
+      "type": "string"
     },
     {
       "key": "p2424OrderIdSubstringSl",
-      "value": "SL20260129BBMSXV9"
+      "value": "SL20260129BBMSXV9",
+      "type": "string"
     },
     {
       "key": "p2424UsageOrderId",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "DP_P2424_MS_PREFIX_CASE_INSENSITIVE",
-      "value": ""
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -99,11 +113,26 @@
                 "disabled": true
               }
             ],
-            "url": "{{baseUrl}}/v2/auth/token",
+            "url": {
+              "raw": "{{baseUrl}}/v2/auth/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "auth",
+                "token"
+              ]
+            },
             "description": "与 papi2548_helpers.GetAccessTokenForEpass 一致；集合变量 epassProgramId / epassClientId / epassClientSecret。\n若网关要求父级 Bearer，启用 Authorization 头并填入完整值（与 DP_EPASS_TOKEN_REQUEST_BEARER 或 DP_TOKEN_REQUEST_BEARER 对应）。\n与 pytest 一致不传 X-Program-ID 时：不在本集合实现 DP_TOKEN_OMIT_PROGRAM_ID，请在环境按需删头或改生成器。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientId\": \"{{epassClientId}}\",\n  \"secret\": \"{{epassClientSecret}}\"\n}"
+              "raw": "{\n  \"clientId\": \"{{epassClientId}}\",\n  \"secret\": \"{{epassClientSecret}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -224,11 +253,24 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}{{p2424V2DetailsPath}}",
+            "url": {
+              "raw": "{{baseUrl}}{{p2424V2DetailsPath}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{p2424V2DetailsPath}}"
+              ]
+            },
             "description": "参数化 orderId=MS；对齐 test_ms_prefix_returns_search_hint。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"{{p2424OrderIdMsShort}}\"\n}"
+              "raw": "{\n  \"orderId\": \"{{p2424OrderIdMsShort}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -337,11 +379,24 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}{{p2424V2DetailsPath}}",
+            "url": {
+              "raw": "{{baseUrl}}{{p2424V2DetailsPath}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{p2424V2DetailsPath}}"
+              ]
+            },
             "description": "参数化 orderId=MS00000000000001。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"{{p2424OrderIdMsTypical}}\"\n}"
+              "raw": "{\n  \"orderId\": \"{{p2424OrderIdMsTypical}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -455,11 +510,24 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}{{p2424V2DetailsPath}}",
+            "url": {
+              "raw": "{{baseUrl}}{{p2424V2DetailsPath}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{p2424V2DetailsPath}}"
+              ]
+            },
             "description": "对齐 test_usage_order_id_not_ms_hint；须为非 MS 开头的真实 usage 订单号（DP_P2424_USAGE_ORDER_ID）。\n未填写时请求体会无效，请先填集合变量。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"{{p2424UsageOrderId}}\"\n}"
+              "raw": "{\n  \"orderId\": \"{{p2424UsageOrderId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -568,11 +636,24 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}{{p2424V2DetailsPath}}",
+            "url": {
+              "raw": "{{baseUrl}}{{p2424V2DetailsPath}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{p2424V2DetailsPath}}"
+              ]
+            },
             "description": "含 MS 子串但非前缀。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"{{p2424OrderIdSubstringDp}}\"\n}"
+              "raw": "{\n  \"orderId\": \"{{p2424OrderIdSubstringDp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -681,11 +762,24 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}{{p2424V2DetailsPath}}",
+            "url": {
+              "raw": "{{baseUrl}}{{p2424V2DetailsPath}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{p2424V2DetailsPath}}"
+              ]
+            },
             "description": "SL 样例。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"{{p2424OrderIdSubstringSl}}\"\n}"
+              "raw": "{\n  \"orderId\": \"{{p2424OrderIdSubstringSl}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -799,11 +893,24 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}{{p2424V2DetailsPath}}",
+            "url": {
+              "raw": "{{baseUrl}}{{p2424V2DetailsPath}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{p2424V2DetailsPath}}"
+              ]
+            },
             "description": "大写 MS 前缀恒为 500.000.024 信封。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"{{p2424OrderIdMsTypical}}\"\n}"
+              "raw": "{\n  \"orderId\": \"{{p2424OrderIdMsTypical}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -912,11 +1019,24 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}{{p2424V2DetailsPath}}",
+            "url": {
+              "raw": "{{baseUrl}}{{p2424V2DetailsPath}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{p2424V2DetailsPath}}"
+              ]
+            },
             "description": "小写 ms：集合变量 DP_P2424_MS_PREFIX_CASE_INSENSITIVE 为 1/true/yes/on 时期望与大写相同；否则期望非 MS 专用码/全文 msg。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"{{p2424OrderIdLowerMs}}\"\n}"
+              "raw": "{\n  \"orderId\": \"{{p2424OrderIdLowerMs}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1030,11 +1150,24 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}{{p2424V1DetailsPath}}",
+            "url": {
+              "raw": "{{baseUrl}}{{p2424V1DetailsPath}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{p2424V1DetailsPath}}"
+              ]
+            },
             "description": "须将 p2424V1DetailsPath 设为网关真实 V1 路径（如 /v1/orders/ePasses/details）。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"{{p2424OrderIdMsTypical}}\"\n}"
+              "raw": "{\n  \"orderId\": \"{{p2424OrderIdMsTypical}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1143,11 +1276,24 @@
                 "value": "*/*"
               }
             ],
-            "url": "{{baseUrl}}{{p2424V2DetailsPath}}",
+            "url": {
+              "raw": "{{baseUrl}}{{p2424V2DetailsPath}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "{{p2424V2DetailsPath}}"
+              ]
+            },
             "description": "默认 V2；可用 DP_P2424_V2_ORDERS_EPASSES_DETAILS_PATH 覆盖路径时同步改集合变量。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderId\": \"{{p2424OrderIdMsTypical}}\"\n}"
+              "raw": "{\n  \"orderId\": \"{{p2424OrderIdMsTypical}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
