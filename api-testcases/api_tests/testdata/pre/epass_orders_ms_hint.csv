@@ -1,0 +1,3 @@
+datasetKey,usageOrderId,v1Path,v2Path,msPrefixCaseInsensitive
+default,,,/v2/orders/ePasses/details,false
+p2424-default,,,/v2/orders/ePasses/details,false

@@ -28,6 +28,20 @@
         "309343"
       ]
     },
+    "Q2 local offer": {
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "d:\\interface\\interface_cursor\\.cursor\\run-apifox-mcp.ps1",
+        "-ProjectId",
+        "345747",
+        "-BranchId",
+        "309401"
+      ]
+    },
     "mysql": {
       "type": "stdio",
       "command": "powershell",

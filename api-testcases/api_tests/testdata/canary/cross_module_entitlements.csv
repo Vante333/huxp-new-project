@@ -1,0 +1,3 @@
+datasetKey,probeMembershipId,registerExtraJson,moduleUpdateJson,updateModule,updateTier,updateUsageRestriction,updateQuantity,poolQuantity,poolPurchasedQuantity,summaryGuestKeyAllowed,summaryGuestKeyMax
+default,,,,1,2,1,2,2,1,allowedGuestsPerUsage,maxGuestsNextUse
+p2515-cross-write-a,,,,1,2,1,2,2,1,allowedGuestsPerUsage,maxGuestsNextUse

@@ -7,31 +7,35 @@ description: >-
   或本仓库接口测试相关）、「api-testcases」「Allure」「Postman」「接口测试自动化」、**显式「Postman 导出」
   「生成 collection」「导出 Postman」「Postman 集合 JSON」** 或按
   PAPI-2548/PAPI-2515/2026Q2_SP1 模式新建/扩展套件、与 testcases 用例表对齐时使用；Agent 应先读取本
-  Skill 再产出目录结构与命令，与 api-testcases/2026Q2_SP1 一致。
+  Skill 再产出目录结构与命令，与 api-testcases/api_tests 主线一致。
 ---
 
 # 接口自动化套件（api-testcase-pack）
 
+## 当前主线
+
+`api-testcases/api_tests/` 是接口自动化长期主线目录；后续新增需求、大改、公共断言、回归分层和 Postman 生成器默认维护在该目录。`api-testcases/2026Q2_SP1/` 保留为历史金样例与迁移参考，修复历史样例时应判断是否需要同步回 `api_tests/`，避免同一接口能力出现两份真相源。
+
 ## 触发条件
 
-用户只要提到 **接口自动化**，或在与 API/pytest/Allure/Postman/`api-testcases`/本仓库接口测试相关的语境下提到 **自动化**，或上列 description 中的其它触发词，即应 **先读取并遵循本 Skill**，再生成或修改代码与文档，使结构与金样例 `api-testcases/2026Q2_SP1/` 对齐。
+用户只要提到 **接口自动化**，或在与 API/pytest/Allure/Postman/`api-testcases`/本仓库接口测试相关的语境下提到 **自动化**，或上列 description 中的其它触发词，即应 **先读取并遵循本 Skill**，再生成或修改代码与文档，使结构与长期主线 `api-testcases/api_tests/` 对齐。
 
 以下表述**显式触发** Postman/集合相关流程（含 2548/2515 形态、`GeneratePostmanCollection*.py`）：**「Postman 导出」**、**「生成 collection」**、**「导出 Postman」**、**「Postman 集合 JSON」**、**「生成 Postman」**。
 
-## 金样例（必读）
+## 主线样例（必读）
 
-先阅读并对齐目录 [`api-testcases/2026Q2_SP1/`](../../../api-testcases/2026Q2_SP1/)：
+先阅读并对齐长期主线目录 [`api-testcases/api_tests/`](../../../api-testcases/api_tests/)；必要时再对照历史样例 [`api-testcases/2026Q2_SP1/`](../../../api-testcases/2026Q2_SP1/)：
 
 | 文件/目录 | 作用 |
 |-----------|------|
-| [`README.md`](../../../api-testcases/2026Q2_SP1/README.md) | 环境变量表、运行命令、Allure/断言约定、与 curl 对照 |
-| [`conftest.py`](../../../api-testcases/2026Q2_SP1/conftest.py) | 分层 `.env`、`DP_PROFILE`、`pytest` markers、Allure fixture |
-| [`pytest.ini`](../../../api-testcases/2026Q2_SP1/pytest.ini) | `addopts = --clean-alluredir`（与 `--alluredir` 配合防结果翻倍） |
-| [`papi2548_helpers.py`](../../../api-testcases/2026Q2_SP1/papi2548_helpers.py) | HTTP + Allure 步骤、断言、与 Postman 共享语义；**主链路 docstring** + **`RunPapi2548MainE2EScenario`** |
-| [`papi2515_helpers.py`](../../../api-testcases/2026Q2_SP1/papi2515_helpers.py) | 权益 crossModule 与 **自动造数链**；**主链路 docstring** + **`RunP2515MainE2EScenario`** |
-| [`test_papi_2548_extensions.py`](../../../api-testcases/2026Q2_SP1/test_papi_2548_extensions.py) | `@allure`、`ScenarioSteps`、用例组织方式 |
-| [`test_papi_2515_cross_module_entitlements.py`](../../../api-testcases/2026Q2_SP1/test_papi_2515_cross_module_entitlements.py) | 造数 fixture 与变更类用例注入示例 |
-| [`postman/`](../../../api-testcases/2026Q2_SP1/postman/) | 生成脚本、`.postman_collection.json`、环境 JSON、`README.md` |
+| [`README.md`](../../../api-testcases/api_tests/README.md) | 环境变量表、运行命令、回归分层、长期主线约定 |
+| [`conftest.py`](../../../api-testcases/api_tests/conftest.py) | 分层 `.env`、`DP_PROFILE`、`pytest` markers、Allure fixture |
+| [`pytest.ini`](../../../api-testcases/api_tests/pytest.ini) | `addopts = --clean-alluredir`（与 `--alluredir` 配合防结果翻倍） |
+| [`services/`](../../../api-testcases/api_tests/services/) | 业务语义、断言、payload 构造与结果处理 |
+| [`scenarios/`](../../../api-testcases/api_tests/scenarios/) | 主链路编排入口，主 E2E 只调用 `Run...MainE2EScenario` |
+| [`tests/`](../../../api-testcases/api_tests/tests/) | `contract` / `features` / `regression` / `smoke` 分层用例 |
+| [`postman/`](../../../api-testcases/api_tests/postman/) | 生成脚本、`.postman_collection.json`、环境 JSON、`README.md` |
+| [`api-main-call-chains.md`](../../../api-testcases/docs/api-main-call-chains.md) | Membership / EPass / ESIM 主调用链、字段流转、`{module}` 变体；新增或扩展接口自动化主链路前必读 |
 
 更细的命令与模板见同目录 [`reference.md`](reference.md)（含 **Apifox 链路与 pytest 步骤对照**）。
 
@@ -42,7 +46,7 @@ description: >-
 1. **模块 docstring（简体中文）**：在契约、环境变量之外，增加 **主链路** 小节——按 **真实 HTTP 先后顺序** 列出关键步骤（方法 + path 或统一描述）；注明 **鉴权**（如 `POST /v2/auth/token`）是否由用例 **`Token` fixture** 提供而不在编排队列内；注明 **Allure `S01/S02/…`** 由 **`AllureHttpScenarioSteps.Next`** 按每次请求递增，分支或可变步数时序列码会平移、勿死记固定 `Sxx`；若有「只读探测 / 单步用例」与「写侧 E2E」之分，在 docstring 中分开说明。
 2. **单一编排入口**：为产品 **附件链或主场景 E2E** 提供 **`Run<需求缩写>MainE2EScenario`**（PascalCase），参数至少包含 **`token`**、**`steps: AllureHttpScenarioSteps`**，按需增加 **`flags`**、沙箱上下文等；**对应主 E2E 的 `test_*` 函数体内仅调用该编排函数**，不在测试文件再展开一长串 HTTP。
 3. **辅助约定**：多处复用的 **`pytest.skip`** 条件封装为 **`Require…OrSkip`** 并放在 helpers；与 `RequestWithAllure` 配套的 **`step_code` / `step_title`** 可在 helpers 内用 **`_HttpStepKw(steps, brief)`**（与现有一致）。
-4. **对照实现**：[`RunPapi2548MainE2EScenario`](../../../api-testcases/2026Q2_SP1/papi2548_helpers.py)、[`RunP2515MainE2EScenario`](../../../api-testcases/2026Q2_SP1/papi2515_helpers.py)；测试侧见 [`test_papi_2548_extensions.py`](../../../api-testcases/2026Q2_SP1/test_papi_2548_extensions.py)、[`test_papi_2515_cross_module_entitlements.py`](../../../api-testcases/2026Q2_SP1/test_papi_2515_cross_module_entitlements.py) 中 E2E 用例。
+4. **对照实现**：[`RunPapi2548MainE2EScenario`](../../../api-testcases/api_tests/scenarios/papi2548_scenarios.py)、[`RunP2515MainE2EScenario`](../../../api-testcases/api_tests/scenarios/papi2515_scenarios.py)；测试侧见 [`test_membership_extensions.py`](../../../api-testcases/api_tests/tests/features/test_membership_extensions.py)、[`test_cross_module_entitlements.py`](../../../api-testcases/api_tests/tests/features/test_cross_module_entitlements.py) 中 E2E 用例。
 
 **边界**：负向、边界、单接口用例仍可 **直接** 调用原子级 `Post*` / `Assert*`；不必为每条用例各写一个编排函数，**仅主链路/附件链**强制单一入口。
 
@@ -55,10 +59,10 @@ description: >-
 3. **兼容非破坏性新增字段**：若接口只是**新增字段 / 新增节点 / 放宽返回结构**，历史用例应优先断言其原始需求关心的**核心字段、核心结构与关键语义**，避免一味做“全量响应完全相等”导致兼容新增误报失败；新增字段、分支或新语义由**新需求用例**单独覆盖。
 4. **新增需求优先补公共能力与独立回归点**：当需求影响同一接口时，优先判断应补在哪一层：公共断言、主链路编排、独立 doc gap / 对拍 / 边界回归用例。**不要**为了让新需求通过而直接改写旧用例语义；旧用例继续守护旧需求，新用例负责验证新行为。
 
-**对照金样例**：
+**对照主线样例**：
 
-- [`papi2515_helpers.py`](../../../api-testcases/2026Q2_SP1/papi2515_helpers.py) 中 **`RunP2515MainE2EScenario`** 体现“主链路单一入口，后续需求在 helpers 中持续演进”的模式。
-- [`test_papi_2515_cross_module_entitlements.py`](../../../api-testcases/2026Q2_SP1/test_papi_2515_cross_module_entitlements.py) 中主 E2E、doc gap、隔离回归分层组织，体现“新增需求验证”与“历史/补缺回归”并存，而非互相覆盖。
+- [`scenarios/papi2515_scenarios.py`](../../../api-testcases/api_tests/scenarios/papi2515_scenarios.py) 中 **`RunP2515MainE2EScenario`** 体现“主链路单一入口，后续需求在 services/scenarios 中持续演进”的模式。
+- [`tests/features/test_cross_module_entitlements.py`](../../../api-testcases/api_tests/tests/features/test_cross_module_entitlements.py) 中主 E2E、doc gap、隔离回归分层组织，体现“新增需求验证”与“历史/补缺回归”并存，而非互相覆盖。
 
 ## PAPI-2515 排障（Agent 先读）
 

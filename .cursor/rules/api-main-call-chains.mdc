@@ -1,0 +1,22 @@
+---
+description: 接口自动化生成前读取接口主调用链
+globs: api-testcases/**/*
+alwaysApply: false
+---
+
+# 接口自动化主调用链
+
+当用户要求生成、扩展或重构接口自动化代码时，必须先读取：
+
+- `api-testcases/docs/api-main-call-chains.md`
+
+再开始设计或修改以下内容：
+
+- helpers 中的 `Post*`、`Assert*`、`Run*MainE2EScenario`
+- pytest fixture、主链路用例、回归用例
+- Allure HTTP 步骤与断言步骤
+- Postman Collection 生成器与导出 JSON
+
+生成主链路代码时，应优先对齐该文档中的接口顺序、字段流转、`{module}` 变体和核心字段依赖。
+
+若需求文档、Apifox 或 OpenAPI 与该文档冲突，应先向用户说明冲突点，再按用户确认后的权威来源实现。

@@ -15,6 +15,24 @@
 - `DP_PROFILE`：选择环境凭据与 baseUrl / client / secret。
 - `DP_TEST_DATASET`：选择该环境目录下的一条 **CSV 测试数据**。
 
+同一个 `env/.env.<profile>` 里需要维护多套 `PROGRAM_ID` / `CLIENT_ID` / `CLIENT_SECRET` 时，可用
+`DP_CREDENTIAL_ALIAS` 做运行级选择。例如：
+
+```dotenv
+DP_CREDENTIAL_ALIAS=EPASS
+
+DP_CORE_PROGRAM_ID=...
+DP_CORE_CLIENT_ID=...
+DP_CORE_CLIENT_SECRET=...
+
+DP_EPASS_PROGRAM_ID=...
+DP_EPASS_CLIENT_ID=...
+DP_EPASS_CLIENT_SECRET=...
+```
+
+加载 profile 后，框架会把当前 alias 对应的三件套映射为标准
+`DP_PROGRAM_ID` / `DP_CLIENT_ID` / `DP_CLIENT_SECRET`。不设置 `DP_CREDENTIAL_ALIAS` 时保持旧行为，继续直接读取标准 `DP_*` 三件套。
+
 目录约定：
 
 - `api-testcases/2026Q2_SP1/testdata/<profile>/membership_register.csv`

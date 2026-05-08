@@ -1,5 +1,11 @@
 # api-testcases/2026Q2_SP1（PAPI-2548 + PAPI-2515 + PAPI-2424）
 
+## 历史样例与冻结说明
+
+本目录保留为历史金样例与迁移参考，后续新需求、大改、公共断言、回归分层和 Postman 生成器默认维护在 [`../api_tests/`](../api_tests/)。如必须修复本目录，请同时判断该修复是否属于长期接口能力；若属于，应优先同步到 `api_tests`。
+
+`pytest.ini` 已指向 `tests/`，根目录下遗留的 `test_*.py` 与 `test_data_loader.py` 仅作为迁移期兼容入口，不作为新增用例位置。新增或迁移用例请放入 `api_tests/tests/contract`、`api_tests/tests/features`、`api_tests/tests/regression` 或 `api_tests/tests/smoke`。
+
 ## PAPI-2548 会籍 extensions
 
 **用例与代码对照**：pytest / `services/papi2548_service.py` 逐条索引见 [`testcases/2026Q2_SP1/PAPI-2548-自动化用例与pytest对应表.md`](../../testcases/2026Q2_SP1/PAPI-2548-自动化用例与pytest对应表.md)。
@@ -29,6 +35,7 @@
 
 - `DP_PROFILE`：选择环境凭据（仍走 `env/.env.<profile>`）。
 - `DP_TEST_DATASET`：选择 `testdata/<profile>/*.csv` 中的一条数据行。
+- `DP_CREDENTIAL_ALIAS`：可选；同一 profile 内有多套三件套时，选择本次运行使用哪套。例如 `EPASS` 会把 `DP_EPASS_PROGRAM_ID` / `DP_EPASS_CLIENT_ID` / `DP_EPASS_CLIENT_SECRET` 映射为标准 `DP_PROGRAM_ID` / `DP_CLIENT_ID` / `DP_CLIENT_SECRET`。
 
 当前 CSV 目录：
 
