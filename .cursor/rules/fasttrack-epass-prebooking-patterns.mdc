@@ -1,0 +1,238 @@
+---
+description: fastTrack ePass 预约/bundle 下单 passengers 同步、姓名正则、P2839/P2722 专项集合与 Apifox 负向校验约定
+globs: api-testcases/**/*
+alwaysApply: false
+---
+
+# fastTrack ePass · 预约 / Bundle 下单自动化约定
+
+扩展或新建 **fastTrack（module=2）** 预约 / Bundle 相关 pytest、Postman 生成器或 scenario 时，**必须**按本节实现；与 lounge 经典链的差异见下表。
+
+## 一、与 lounge 的关键差异
+
+| 项 | lounge（module=1） | fastTrack（module=2） |
+|----|-------------------|----------------------|
+| 路径 | `/v2/orders/lounges/ePasses/...` | `/v2/orders/fastTrack/ePasses/...` |
+| MS / usage `category` | MS=3，usage=2 | **均为 2** |
+| 可用性 | 经典 `POST /v2/resources/prebookings/availability`（无 optionId） | 同 lounge |
+| `extra` | `prebookingToken` + `prebookingRequiredInfo` | 另加 **`passengers[]`**（`passengersType` + `leadPassenger`）；可选 `transportNumber`（P2722 无航班号场景不传） |
+| 姓名 | 创建用 `Auto`/`Test` | **passengers 姓名**须 `^[A-Za-z ]+$`（无数字）；**lead 与 `prebookingRequiredInfo.firstName/lastName` 一致**（`500.051.017`） |
+| `usedUsages` | usage 单 **= 1**（≠ 乘客人数） | **P0 主链路仍断言 1**；**P2839 等专项集合可关闭**（见 §七） |
+
+## 二、人数流转：可用性 → 下单 body
+
+1. **可用性**（E02-S02 / E03-S01）body 含 `adultCount`、`childCount`（默认 2 / 0）。
+2. 可用性 **Tests** 内 `ftSaveAvailabilityRequestFields()` 写入集合变量：
+   - `fastTrackAdultCount`
+   - `fastTrackChildCount`
+3. **预约 / Bundle 下单**（E02-S03 / E03-S02）**Pre-request** 调用 `ftSyncPrebookingPassengersBody()`：
+   - 读上述变量 → `ftBuildFastTrackPassengers(adultCount, childCount)`
+   - 写回 `body.extra.passengers`
+   - 将 **lead passenger** 姓名同步到 `body.extra.prebookingRequiredInfo.firstName/lastName`
+
+**不要**用 `adultCount+childCount` 断言 `usedUsages`；usage 单消耗 **1 次 entitlement**，与乘客人数无关（P0 断言语义；专项集合见 §七）。
+
+## 三、passengers 姓名池（Python + JS 双处配置）
+
+生成器常量（`GeneratePostmanCollectionFastTrackEpass.py`）：
+
+- 成人：`FASTTRACK_ADULT_PASSENGER_NAMES` → 默认 2 人时 **Auto Smith**（lead）、**Alex Jones**
+- 儿童：`FASTTRACK_CHILD_PASSENGER_NAMES` → Amy White、Ben Green、…
+- JS 侧：`ftAdultPassengerNames` / `ftChildPassengerNames` 由生成器 JSON 注入，**须与 Python 列表一致**
+
+规则：
+
+- 仅 **首位** `leadPassenger: true`（成人队列第一个）
+- 全表 **firstName+lastName 唯一**
+- 正则 **`^[A-Za-z ]+$`**（PAPI-2839；勿用 `Auto1`、`Adult` 等含数字或占位姓）
+
+## 四、Postman 步骤模板（P0 · E02-S03 / E03-S02）
+
+```text
+Pre-request:  ftSyncPrebookingPassengersBody();
+Tests:
+  ftAssertPrebookingPassengersShape('E02-S03');  // 或 E03-S02
+  ftAssertHttpBusinessOk('...');
+  ftAssertPrebookingOrderSuccess('...');         // 或 ftAssertBundleOrderSuccess
+```
+
+`ftAssertPrebookingPassengersShape` 校验：
+
+- `passengers.length === adultCount + childCount`
+- 恰好 **1** 个 `leadPassenger === true`
+- `prebookingRequiredInfo` 姓名与 lead 一致
+- 每条 passenger 姓名匹配正则、无重复
+
+**P0 默认**：`ftAssertUsageOrderCreateSuccess` / 列表项断言 `extra.usedUsages === 1`（**非**乘客数）。
+
+## 五、pytest 对齐
+
+- 主链路：`test_historical_epass_fasttrack.py` · `RunHistoricalEpass*MainE2EScenario(catalog_label='fastTrack')`
+- 服务层：`historical_epass_service` · `AssertHistoricalPrebookingOrderSuccessForCatalog` / `AssertHistoricalBundleOrderSuccess`
+- 重新生成 Postman P0：`python api-testcases/api_tests/postman/GeneratePostmanCollectionFastTrackEpass.py`
+- **勿**再跑 `_build_fasttrack_from_lounge.py` 覆盖手写差异（该脚本为一次性派生工具；日常改 `GeneratePostmanCollectionFastTrackEpass.py`）
+
+## 六、新建 / 扩展检查清单（P0 通用）
+
+- [ ] 可用性是否写入 `fastTrackAdultCount` / `fastTrackChildCount`？
+- [ ] prebooking / bundle 是否 **Pre-request** 调 `ftSyncPrebookingPassengersBody()`（或专项集合的等价逻辑）？
+- [ ] Tests 是否含 `ftAssertPrebookingPassengersShape`（正向）？
+- [ ] P0 是否仍断言 `usedUsages === 1`（非 `adultCount+childCount`）？
+- [ ] lead 姓名是否与 `prebookingRequiredInfo` 一致且无数字？
+- [ ] 改断言后是否重跑生成器写出 JSON？
+- [ ] Apifox 负向步是否说明关闭「校验响应」（§八）？
+
+---
+
+## 七、PAPI-2839 专项集合总结（姓名正则 · 可复用模板）
+
+**需求**：`PAPI-2839` · FT 联系人/乘客 `firstName`/`lastName` 正则 `^[A-Za-z ]+$`（`prebookingRequiredInfo` + `passengers[]`）。
+
+**权威文件**：
+
+| 文件 | 用途 |
+|------|------|
+| `testcases/2026Q2SP4/PAPI-2839-修复FT联系人firstName-lastName正则-测试分析-001.md` | 用例与场景 |
+| `GeneratePostmanCollectionPapi2839.py` | 生成器 |
+| `PAPI-2839-FastTrack-NameRegex-P1.postman_collection.json` | 导入 JSON |
+
+**生成命令**（仓库根）：
+
+```powershell
+python api-testcases/api_tests/postman/GeneratePostmanCollectionPapi2839.py
+```
+
+### 7.1 目录结构（ePass / membership 分组 + 前置）
+
+```text
+00 Auth
+P1 · ePass
+  00 前置/
+    SETUP-EP-S01  POST /v2/orders/fastTrack/ePasses
+  prebooking/
+    prebookingRequiredInfo/   P1-EP-* / P1-PX-EP-*
+    passengers/
+  bundle/
+    prebookingRequiredInfo/   P1-BU-* / P1-PX-BU-*
+    passengers/
+P1 · membership
+  00 前置/
+    SETUP-MS-S01  POST /v2/memberships          ← 不是 entitlements/update 加点
+  prebooking/
+    prebookingRequiredInfo/   P1-MS-* / P1-PX-MS-*
+    passengers/
+```
+
+- **前置必须独立文件夹 `00 前置`**，避免 Apifox 导入后造数步骤沉底或被跳过。
+- **membership 下单**：`cashPaymentApplied: false`；路径 `/v2/orders/fastTrack/memberships/prebooking`。
+- **资源**：默认 `fastTrackResourceId` 对齐 P2722「全部使用人·无航班号」场景。
+
+### 7.2 Pre-request 与 body 造数（与 P0 的差异）
+
+| 场景 | Pre-request | body 姓名来源 |
+|------|-------------|---------------|
+| P0 主链路 | `ftSyncPrebookingPassengersBody()` | 默认姓名池 + lead 同步 |
+| P2839 正向/负向 | `p39SyncPrebookingPassengersOnly()` + `p39ApplyNameOverrides(cfg)` | **Python 侧静态写入场景姓名**；Pre-request **只同步 passengers 人数**，**不**把 `prebookingRequiredInfo` 覆盖回默认 Auto |
+
+**可用性 token 策略**：
+
+- **合法（OK）**：每条用例各调一次可用性取新 `prebookingToken`。
+- **非法（NG）**：同组共用 **一次** 可用性（如 `P1-*-NG-AVL`），再连续下单。
+
+### 7.3 断言策略（正向 / 负向）
+
+**负向（姓名正则拒绝）** — 仅业务码，**不**断言 HTTP 200：
+
+```javascript
+function p39AssertNameRegexRejected(label) {
+  pm.test(label + ': 姓名正则拒绝 code=-1', function () {
+    var env = pm.response.json();
+    pm.expect(env.code).to.eql(-1);
+    pm.expect(env.msg, 'msg 非空').to.be.a('string').and.not.empty;
+  });
+}
+```
+
+- 接口正常行为：**HTTP 400** + `code=-1` + 字段级 `msg`（如 `extra.passengers[1].firstName`）。
+- **脚本断言通过 = 用例逻辑通过**（与 Apifox 平台校验无关，见 §八）。
+
+**正向**：
+
+```text
+ftAssertPrebookingPassengersShape(step);
+ftAssertHttpBusinessOk(step);
+ftAssertPrebookingOrderSuccess / ftAssertBundleOrderSuccess / p39AssertMembershipPrebookingSuccess
+```
+
+**P2839 刻意关闭的断言**（专项集合，非 P0 回归语义）：
+
+| 已关闭 | 原因 |
+|--------|------|
+| `extra.lastName 与入参一致` | 创建/下单回显与场景姓名无关 |
+| `extra.availableUsages 与入参一致` | 同上 |
+| `extra.usedUsages=1` | membership 等路径回显可能 ≠1；本集合只验姓名正则 |
+| membership `usedUsages` | `p39AssertMembershipPrebookingSuccess` 仅断言 `orderId` 非空 |
+
+**生成器开关**（`BuildFastTrackJsHelpersLines`）：
+
+```python
+BuildFastTrackJsHelpersLines(
+    assert_epass_status=False,
+    assert_create_extra_last_name=False,
+    assert_create_extra_available_usages=False,
+    assert_usage_used_usages_one=False,
+)
+```
+
+### 7.4 P2839 检查清单
+
+- [ ] ePass prebooking 是否有 `00 前置` · `POST /v2/orders/fastTrack/ePasses`？
+- [ ] membership 是否有 `00 前置` · `POST /v2/memberships`（非 entitlements 加点）？
+- [ ] 负向是否只用 `p39AssertNameRegexRejected`（无 `pm.response.to.have.status(200)`）？
+- [ ] 是否已关闭 §7.3 三项 extra 断言？
+- [ ] 负向 step `description` 是否提示 Apifox 关闭「校验响应」（可选，见 Local Offer `APIFOX_NEGATIVE_STEP_HINT`）？
+- [ ] 改生成器后是否重跑并 **删除旧集合再导入** JSON？
+
+---
+
+## 八、Apifox · 负向步骤「校验响应 HTTP 200」排障
+
+Postman Collection v2.1 **无法**在 JSON 里关闭 Apifox 自带「校验响应」或配置「200 或 400 均可」。
+
+**两层校验（勿混淆）**：
+
+| 区域 | 来源 | 负向期望 |
+|------|------|----------|
+| **校验响应结果** · HTTP 状态码应当是 200 | Apifox 平台（接口文档默认 200） | 可能 ❌（实际 HTTP 400） |
+| **断言结果** · `code=-1` 等 | 后置脚本 `pm.test` | ✅ 为准 |
+
+**操作（Apifox）**：
+
+1. **项目级**（负向多的集合推荐）：`项目设置` → `功能设置` / `响应校验设置` → 关闭测试步骤的 HTTP 状态码校验（或整个「校验响应」）。
+2. **单步**：打开测试步骤 → `校验响应` → 关闭「HTTP 状态码应当是 200」。
+3. **判定标准**：以 **断言结果（后置脚本）** 为准；HTTP 400 + `code=-1` 为正确接口行为。
+
+细则见 `.cursor/skills/api-testcase-pack/postman-apifox-troubleshooting.md`。
+
+---
+
+## 九、类似专项需求 · Agent 自动总结模板
+
+当新建 **fastTrack 专项 Postman 集合**（如 P2839 姓名正则、P2722 PII 缺字段）时，Agent 在完成实现后 **应更新本节或新增 § 子节**，至少包含：
+
+1. **需求 ID + 一句话目标**（链接 `testcases/...` 测试分析 md）。
+2. **生成器与导入 JSON 路径** + **PowerShell 生成命令**。
+3. **与 P0 的差异表**（Pre-request、body 造数、断言增删、前置链路）。
+4. **目录结构 ASCII 树**（含 `00 前置`、ePass/membership 分组）。
+5. **正向 / 负向断言清单**（含刻意 **不** 断言的项及原因）。
+6. **Apifox 特有问题**（负向 HTTP 400、关闭校验响应、重新导入方式）。
+7. **检查清单**（可复制勾选）。
+
+**禁止**：把 P0 E2E（`FastTrack-ePass-P0-e2e-core`）与专项 P1 集合混为一谈；集合名与步骤前缀须写清（如 `PAPI-2839 · FT 姓名正则` vs `P0 E2E 核心`）。
+
+**相关专项**：
+
+| 需求 | 生成器 | 备注 |
+|------|--------|------|
+| PAPI-2839 | `GeneratePostmanCollectionPapi2839.py` | 本节 §七 |
+| PAPI-2722 FT PII | `GeneratePostmanCollectionPapi2722FastTrackPii.py` | 缺字段负向；同样关闭 HTTP 200 / usedUsages 等平台冲突断言 |

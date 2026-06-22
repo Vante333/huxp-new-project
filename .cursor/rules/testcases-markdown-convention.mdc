@@ -30,3 +30,9 @@ globs: testcases/**/*.md
 ## 测试分析类文档
 
 - 允许在 `## 测试范围说明` 之后增加 **表格、Mermaid、编号小节**（如「需求语义归纳」），但 **凡含可执行分条用例（tc-）的章节** 仍须遵守上节 **步骤 → 单预期** 结构。
+
+## XMind 同步 Markdown（Agent 必遵）
+
+- 用户给出 **`.xmind` 路径**并要求 **替换/同步** 本目录下 `.md` 时：**直接运行** `tools/xmind_to_testcases_md.py`（`--xmind` + `--out`，可选 `--requirement`）；**禁止**新建转换代码或 Shell 解压解析。
+- 该脚本 **仅导出** 脑图树中 **`tc-p*` / `tc:` 用例节点**；判定表、枚举表等若未挂在用例树下不会出现在输出中——转换后核对范围，必要时补 `测试范围说明` 或告知用户差异。
+- 工具选型见 `tools/README.md` §3–4 与 `.cursor/skills/test-case-design-with-priority/SKILL.md`「XMind → testcases Markdown」节。

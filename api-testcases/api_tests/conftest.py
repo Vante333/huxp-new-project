@@ -22,6 +22,15 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "papi2515: PAPI-2515 crossModuleEntitlements 能力")
     config.addinivalue_line("markers", "papi2424: PAPI-2424 ePasses details 能力")
     config.addinivalue_line("markers", "local_offers: Local Offers options 能力")
+    config.addinivalue_line("markers", "local_offer_epass: Local Offer ePass 订单能力")
+    config.addinivalue_line(
+        "markers",
+        "historical_epass: 历史品类 ePass 回归（lounge/fastTrack/fitness/esim）",
+    )
+    config.addinivalue_line(
+        "markers",
+        "needs_saas_manual_verify: 接口链路自动跑通，Allure 输出 SaaS 人工核对检查点（不查库）",
+    )
     config.addinivalue_line("markers", "needs_write: 会写入或改写沙箱业务数据的用例")
     config.addinivalue_line("markers", "needs_extensions_read: 依赖 search/register 返回 extensions")
     config.addinivalue_line("markers", "needs_extensions_write: 依赖 PATCH /v2/memberships/extensions 可用")
@@ -64,6 +73,92 @@ def _ResetAllureAssertionAttachmentCounterPerTest() -> None:
     """避免 Allure 中断言附件同名覆盖：每条用例从序号 1 重新计数。"""
     ResetAllureAssertionAttachmentCounter()
     yield
+
+
+_LOCAL_OFFER_SOFT_ASSERT_MARKERS = frozenset({"local_offer_epass", "local_offers"})
+_LOCAL_OFFER_ORDER_CLEANUP_MARKERS = frozenset({"local_offer_epass", "local_offers", "historical_epass"})
+
+
+def _IsLocalOfferAutomatedTest(request: pytest.FixtureRequest) -> bool:
+    return any(request.node.get_closest_marker(name) for name in _LOCAL_OFFER_SOFT_ASSERT_MARKERS)
+
+
+def _NeedsLocalOfferOrderCleanup(request: pytest.FixtureRequest) -> bool:
+    return any(request.node.get_closest_marker(name) for name in _LOCAL_OFFER_ORDER_CLEANUP_MARKERS)
+
+
+@pytest.fixture(autouse=True)
+def LocalOfferPendingOrderCleanup(request: pytest.FixtureRequest) -> None:
+    """
+    ``local_offer_epass`` / ``local_offers`` / ``historical_epass`` 用例结束兜底：取消本用例登记且未显式收尾的订单。
+
+    与 ``CancelUsageOrderAndVerifyPostCancelRetrieve`` 互补，避免仅创建 ePass、负向用例中间态等残留沙箱订单。
+    """
+    if not _NeedsLocalOfferOrderCleanup(request):
+        yield
+        return
+    from services.local_offer_epass_service import (
+        CancelAllPendingLocalOfferOrdersBestEffort,
+        SetLocalOfferOrderCleanupTestKey,
+    )
+
+    test_key = request.node.nodeid
+    SetLocalOfferOrderCleanupTestKey(test_key)
+    yield
+    try:
+        from clients import GetAccessTokenForEpass
+        from framework.reporting import AllureHttpScenarioSteps
+        from services.local_offer_epass_service import RequireLocalOfferEpassEnvOrSkip
+
+        RequireLocalOfferEpassEnvOrSkip()
+        token = GetAccessTokenForEpass()
+        steps = AllureHttpScenarioSteps()
+        CancelAllPendingLocalOfferOrdersBestEffort(
+            token,
+            steps,
+            test_key=test_key,
+            context=f"teardown-{request.node.name}",
+        )
+    except Exception as exc:
+        import allure
+
+        with allure.step("Local Offer teardown 取消跳过（环境/凭据异常）"):
+            allure.attach(
+                str(exc),
+                name="teardown_cancel_skip_reason",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+        return
+
+
+@pytest.fixture(autouse=True)
+def LocalOfferSoftAssertScope(request: pytest.FixtureRequest):
+    """
+    ``local_offer_epass`` / ``local_offers`` 用例：断言失败仍继续后续 HTTP，末尾一次性 ``pytest.fail`` 汇总。
+    """
+    if not _IsLocalOfferAutomatedTest(request):
+        yield None
+        return
+    from framework.soft_assert import (
+        LocalOfferE2ESoftAssert,
+        ResetActiveLocalOfferSoftAssert,
+        SetActiveLocalOfferSoftAssert,
+    )
+
+    soft = LocalOfferE2ESoftAssert()
+    token = SetActiveLocalOfferSoftAssert(soft)
+    setattr(request.node, "_local_offer_soft_assert", soft)
+    yield soft
+    ResetActiveLocalOfferSoftAssert(token)
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_call(item: pytest.Item) -> None:
+    """在 call 阶段末尾汇总软断言，避免 teardown ERROR 掩盖真实失败。"""
+    yield
+    soft = getattr(item, "_local_offer_soft_assert", None)
+    if soft is not None:
+        soft.RaiseIfAnyFailure()
 
 
 @pytest.fixture

@@ -6,7 +6,8 @@
 
 | 脚本 | 一句话用途 |
 |------|------------|
-| `xmind_to_markdown_v2.py` | XMind（`tc-p*` 结构）→ 团队规范的功能测试用例 Markdown |
+| `xmind_to_testcases_md.py` | XMind `tc-p*` → `testcases/` 风格 Markdown（**替换 md 时默认用此脚本**） |
+| `xmind_to_markdown_v2.py` | XMind（`tc-p*` 结构）→ 另一套 tc 汇总 Markdown |
 | `xmind2md.py` | 通用脑图 → 标题 + 列表式 Markdown（无 tc-p* 专用结构） |
 | `md_tables_to_xmind_lists.py` | Markdown 管道表格 → 无序列表，便于 XMind「从 Markdown 导入」 |
 | `jira_sync.py` | 从 Jira 拉取 Issue 为 Markdown，可批量、可下图 |
@@ -30,18 +31,21 @@ python tools/GenerateRequirementsIndex.py
 
 ---
 
-## 3. XMind 测试用例脑图 → Markdown（xmind_to_markdown_v2.py）
+## 3. XMind 测试用例脑图 → Markdown（xmind_to_testcases_md.py）
 
-将带 **`tc-p*`** 优先级语义的 XMind（或导出的 `content.json`）转为 [`testcases/`](../testcases/) 风格的用例 Markdown。
+将带 **`tc-p*`** 优先级语义的 XMind 转为 [`testcases/`](../testcases/) 风格的用例 Markdown（`### tc-p1:` + `pc`/步骤/预期）。**用户要求用 XMind 替换 testcases 下 md 时优先用本脚本**，勿临时写转换代码。
 
 ```bash
-python tools/xmind_to_markdown_v2.py -i path/to/file.xmind -o testcases/2026Q2_SP1/out.md
-python tools/xmind_to_markdown_v2.py -i path/to/content.json -o testcases/out.md
+python tools/xmind_to_testcases_md.py \
+  --xmind path/to/file.xmind \
+  --out testcases/2026Q2SP4/PAPI-xxxx-测试用例-001.md \
+  --requirement requirements/2026Q2SP4/PAPI-xxxx.md
 ```
 
-无参数时脚本内另有默认输入/输出路径（见文件头注释）；建议显式传入 `-i` / `-o`。
+- **仅导出**脑图中 `tc-p*` / `tc:` 节点；判定表、分析表若未挂在用例树下不会出现在输出中。
+- `--requirement` 可选，用于生成正确的 `## 测试范围说明`（避免残留其他需求文案）。
 
----
+另见 `tools/xmind_to_markdown_v2.py`（另一套 tc 格式）、`tools/xmind2md.py`（通用大纲）。
 
 ## 4. XMind 通用大纲 → Markdown（xmind2md.py）
 

@@ -42,6 +42,7 @@
 | `papi2515` | crossModuleEntitlements |
 | `papi2424` | ePasses details / MS 订单提示 |
 | `local_offers` | local offers options |
+| `local_offer_epass` | Local Offer ePass 订单（创建/预约/查询） |
 
 原有细粒度 marker 继续可用，例如 `needs_cross_module_write`、`needs_extensions_write`、`needs_p2424_usage_order_id`、`p2515_probe_membership`。
 
@@ -94,6 +95,30 @@ pytest api-testcases/api_tests/tests -m "not manual and not needs_write" -v --al
 ```powershell
 $env:PYTHONPATH = (Resolve-Path "api-testcases\api_tests").Path
 pytest api-testcases/api_tests/tests -m "papi2548 and feature" -v --alluredir=reports/papi2548-allure-results
+```
+
+Local Offer ePass（写沙箱，建议 ``DP_PROFILE=canary``）：
+
+| Apifox / Postman | 环境变量（推荐） |
+|------------------|------------------|
+| `baseUrl` | `DP_BASE_URL` |
+| `programId` | `DP_EPASS_PROGRAM_ID` |
+| `clientId` | `DP_EPASS_CLIENT_ID` |
+| `clientSecret` | `DP_EPASS_CLIENT_SECRET` |
+| `resourceId` | `DP_LO_EPASS_RESOURCE_ID`（默认网点） |
+| `optionId` | `DP_LO_EPASS_OPTION_ID` |
+
+按券型覆盖：`DP_LO_EPASS_URL_*`、`DP_LO_EPASS_REDEMPTION_CODE_*`、`DP_LO_EPASS_CARD_SECRET_*`。  
+短别名（便于 Apifox 导入）：`PROGRAM_ID`、`CLIENT_ID`、`CLIENT_SECRET`、`RESOURCE_ID`、`OPTION_ID`。  
+模板文件：`env/.env.local-offer.example`；对照说明：`config/local_offer_epass_env.py`。
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path "api-testcases\api_tests").Path
+$env:DP_PROFILE = "canary"
+# 将 env/.env.local-offer.example 中的键合并进 env/.env.canary 后执行：
+pytest api-testcases/api_tests/tests/features/test_local_offer_epass.py -m "local_offer_epass" -v
+pytest api-testcases/api_tests/tests/features/test_local_offer_epass.py api-testcases/api_tests/tests/features/local_offer_epass -m "local_offer_epass and not manual" -v --alluredir=reports/local-offer-epass-allure-results
+allure serve reports/local-offer-epass-allure-results
 ```
 
 写类接口建议显式筛选：

@@ -44,24 +44,24 @@ def RequireP2424EpassTokenEnvOrSkip() -> None:
     """
     PAPI-2424 固定使用 ePass 专用三件套（项目 Program + clientId + secret）；缺任一项则跳过。
     """
-    required = (
-        "DP_EPASS_PROGRAM_ID",
-        "DP_EPASS_CLIENT_ID",
-        "DP_EPASS_CLIENT_SECRET",
-    )
-    missing = [name for name in required if not os.getenv(name, "").strip()]
+    from config.local_offer_epass_env import ListMissingRequiredLocalOfferEpassEnv
+
+    missing = ListMissingRequiredLocalOfferEpassEnv()
     if missing:
         pytest.skip(
             "PAPI-2424 须配置 ePass 三项（当前缺失: "
             + ", ".join(missing)
-            + "）：DP_EPASS_PROGRAM_ID、DP_EPASS_CLIENT_ID、DP_EPASS_CLIENT_SECRET。"
+            + "）：DP_EPASS_PROGRAM_ID、DP_EPASS_CLIENT_ID、DP_EPASS_CLIENT_SECRET"
+            + "（Apifox 可映射 programId / clientId / clientSecret，见 config/local_offer_epass_env.py）。"
             "若取 token 仍需父级 Bearer，另设 DP_EPASS_TOKEN_REQUEST_BEARER 或 DP_TOKEN_REQUEST_BEARER。"
         )
 
 
 def GetConfiguredEpassProgramId() -> str:
     """已配置场景下读取 ``DP_EPASS_PROGRAM_ID``（非空）。"""
-    pid = os.getenv("DP_EPASS_PROGRAM_ID", "").strip()
+    from config.local_offer_epass_env import GetEpassProgramId
+
+    pid = GetEpassProgramId()
     if not pid:
         raise RuntimeError("DP_EPASS_PROGRAM_ID 未设置")
     return pid

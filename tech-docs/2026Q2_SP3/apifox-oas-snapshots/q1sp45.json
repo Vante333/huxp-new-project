@@ -1,0 +1,310 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": " DragonPass API Developer Platform",
+    "description": "",
+    "version": "1.0.0",
+    "x-download-time": "2026-05-26T03:38:22.728Z"
+  },
+  "paths": {
+    "/v2/auth/token": {
+      "post": {
+        "summary": "Generate Access Token"
+      }
+    },
+    "/v2/transportHubs": {
+      "get": {
+        "summary": " Retrieve Transport Hub"
+      }
+    },
+    "/v2/transportHubs/{transportHubId}": {
+      "get": {
+        "summary": "Retrieve Transport Hub Details"
+      }
+    },
+    "/v2/search": {
+      "post": {
+        "summary": "Aggregated Search by Keyword"
+      }
+    },
+    "/v2/search/modules": {
+      "get": {
+        "summary": "Retrieve Available Modules by Location"
+      }
+    },
+    "/v2/resources": {
+      "get": {
+        "summary": "Retrieve Resources List"
+      }
+    },
+    "/v2/resources/prebookings/availability": {
+      "post": {
+        "summary": "Check Prebooking Resource Availability"
+      }
+    },
+    "/v2/resources/options/prebookings/availability": {
+      "post": {
+        "summary": "Check Prebooking Option Availability"
+      }
+    },
+    "/v2/resources/{resourceId}": {
+      "get": {
+        "summary": "Retrieve Resource Details"
+      }
+    },
+    "/v2/resources/updates": {
+      "get": {
+        "summary": "List Updated Resources"
+      }
+    },
+    "/v2/resources/fitness/{resourceId}/schedule": {
+      "get": {
+        "summary": "Retrieve Fitness Resources Schedule"
+      }
+    },
+    "/v2/resources/fitness/{resourceId}/options/{optionId}": {
+      "get": {
+        "summary": "Retrieve Fitness Resource Option Details"
+      }
+    },
+    "/v2/resources/esims/{resourceId}/options": {
+      "get": {
+        "summary": "Retrieve eSIM Resouces Options"
+      }
+    },
+    "/v2/resources/esims/{resourceId}/options/{optionId}": {
+      "get": {
+        "summary": "Retrieve eSIM Resource Option Details"
+      }
+    },
+    "/v2/resources/prices": {
+      "post": {
+        "summary": "Retrieve Resource Pricing Information"
+      }
+    },
+    "/v2/resources/options/prices": {
+      "post": {
+        "summary": "Retrieve Prebooking Option Pricing Information"
+      }
+    },
+    "/v2/entitlements/search": {
+      "post": {
+        "summary": "Retrieve Membership Entitlement Summary"
+      }
+    },
+    "/v2/entitlements/details": {
+      "post": {
+        "summary": "Retrieve Membership Entitlement Detalis"
+      }
+    },
+    "/v2/entitlements/update": {
+      "post": {
+        "summary": "Update Membership Entitlements"
+      }
+    },
+    "/v2/entitlements/{entitlementPoolId}/update": {
+      "post": {
+        "summary": "Update Membership Entitlements by Entitlement Pool ID"
+      }
+    },
+    "/v2/memberships": {
+      "post": {
+        "summary": "Membership Registration"
+      }
+    },
+    "/v2/memberships/update": {
+      "post": {
+        "summary": "Update A Membership"
+      }
+    },
+    "/v2/memberships/search": {
+      "post": {
+        "summary": "Retrieve Membership Information"
+      }
+    },
+    "/v2/memberships/qrCodes": {
+      "post": {
+        "summary": "Generate Membership Dynamic QR Codes"
+      }
+    },
+    "/v2/memberships/programChange": {
+      "post": {
+        "summary": "Change Membership Program(Upgrade/Downgrade)"
+      }
+    },
+    "/v2/orders/{modules}/memberships/prebooking/preview": {
+      "post": {
+        "summary": "Preview Membership Prebooking Order"
+      }
+    },
+    "/v2/orders/lounges/memberships/prebooking": {
+      "post": {
+        "summary": "Create Membership Prebooking Order - Lounge"
+      }
+    },
+    "/v2/orders/fastTrack/memberships/prebooking": {
+      "post": {
+        "summary": "Create Membership Prebooking Order - Fast Track"
+      }
+    },
+    "/v2/orders/fitness/memberships/prebooking": {
+      "post": {
+        "summary": "Create Membership Prebooking Order - Fitness"
+      }
+    },
+    "/v2/orders/esims/memberships/prebooking": {
+      "post": {
+        "summary": "Create Membership Prebooking Order - eSIM"
+      }
+    },
+    "/v2/orders/esims/memberships/topup": {
+      "post": {
+        "summary": "Top up eSIM data package - Membership"
+      }
+    },
+    "/v2/orders/ePasses": {
+      "post": {
+        "summary": "Retrieve E-pass Order List"
+      }
+    },
+    "/v2/orders/memberships": {
+      "post": {
+        "summary": "Retrieve Membership Order List"
+      }
+    },
+    "/v2/internal/orders/ePasses": {
+      "post": {
+        "summary": "Retrieve E-pass Order List - Internal"
+      }
+    },
+    "/v2/internal/orders/memberships": {
+      "post": {
+        "summary": "Retrieve Membership Order List - Internal"
+      }
+    },
+    "/v2/orders/memberships/details": {
+      "post": {
+        "summary": "Retrieve Membership Usage Order Details"
+      }
+    },
+    "/v2/users": {
+      "post": {
+        "summary": "User Creation"
+      }
+    },
+    "/v2/users/update": {
+      "post": {
+        "summary": "Update User Information "
+      }
+    },
+    "/v2/users/delete": {
+      "post": {
+        "summary": "Delete A User"
+      }
+    },
+    "/v2/users/search": {
+      "post": {
+        "summary": "Retrieve User Information"
+      }
+    },
+    "/v2/users/memberships": {
+      "post": {
+        "summary": "Retrieve User Memberships List"
+      }
+    },
+    "/v2/users/ePasses": {
+      "post": {
+        "summary": "Retrieve User E-passes List"
+      }
+    },
+    "/v2/orders": {
+      "patch": {
+        "summary": "Cancel an Order"
+      }
+    },
+    "/v2/orders/fitness/checkin": {
+      "post": {
+        "summary": "Fitness Order Check-In"
+      }
+    },
+    "/v2/orders/esims/details": {
+      "post": {
+        "summary": "Retrieve eSIM Order Live Extended Details"
+      }
+    },
+    "/v2/orders/esims/topup/availability": {
+      "post": {
+        "summary": "Check eSIM Top-up Availability"
+      }
+    },
+    "/v2/orders/esims/packages/query": {
+      "post": {
+        "summary": "Retrieve eSIM Data Packages"
+      }
+    },
+    "/v2/orders/{module}/ePasses": {
+      "post": {
+        "summary": "Create E-pass Order"
+      }
+    },
+    "/v2/orders/ePasses/search": {
+      "post": {
+        "summary": "Retrieve E-pass Details"
+      }
+    },
+    "/v2/orders/{module}/ePasses/prebooking": {
+      "post": {
+        "summary": "Create E-pass Prebooking Order - eSIM"
+      }
+    },
+    "/v2/orders/{module}/ePasses/bundle": {
+      "post": {
+        "summary": "Create E-pass with Prebooking Order - eSIM"
+      }
+    },
+    "/v2/orders/esims/ePasses/topup": {
+      "post": {
+        "summary": " Top up eSIM data package - E-pass"
+      }
+    },
+    "/v2/orders/ePasses/details": {
+      "post": {
+        "summary": "Retrieve E-pass Usage Order Details"
+      }
+    },
+    "/v2/event": {
+      "get": {
+        "summary": "Push Event Recovery"
+      }
+    },
+    "/v2/simulations/lounges/redemptions": {
+      "post": {
+        "summary": "Simulate Lounge Redemption - Walk in"
+      }
+    },
+    "/v2/simulations/lounges/prebookings/redemptions": {
+      "post": {
+        "summary": "Simulate Lounge Redemption - Prebooking"
+      }
+    },
+    "/v2/simulations/lounges/cancellation": {
+      "post": {
+        "summary": "Simulate Lounge Order Cancellation"
+      }
+    },
+    "/v2/simulations/fastTrack/prebookings/redemptions": {
+      "post": {
+        "summary": "Simulate Fast Track Redemption - Prebooking"
+      }
+    },
+    "/v2/simulations/fastTrack/cancellation": {
+      "post": {
+        "summary": "Simulate Fast Track Order Cancellation"
+      }
+    }
+  },
+  "webhooks": {},
+  "components": {},
+  "servers": [],
+  "security": []
+}

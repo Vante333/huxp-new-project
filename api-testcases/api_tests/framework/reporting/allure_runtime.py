@@ -109,6 +109,13 @@ def RecordAllureAssertionResult(detail: str, *, assertion_title: Optional[str] =
 
 
 def RunAllureAssertionStep(step_title: str, fn: Callable[[], str]) -> None:
+    from framework.soft_assert import GetActiveLocalOfferSoftAssert
+
+    if GetActiveLocalOfferSoftAssert() is not None:
+        from framework.soft_assert import RunSoftAwareAllureAssertionStep
+
+        RunSoftAwareAllureAssertionStep(step_title, fn)
+        return
     with allure.step(step_title):
         summary = fn()
         RecordAllureAssertionResult(summary, assertion_title=step_title)

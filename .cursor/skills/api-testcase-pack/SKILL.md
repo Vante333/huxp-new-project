@@ -5,9 +5,9 @@ description: >-
   生成器与可导入 JSON、团队协作文档；**优先会话级自动造数**（再用手工 ID/JSON 覆盖）。当用户消息出现
   「接口自动化」「API 自动化」「自动化」（且与 API、pytest、Allure、Postman、api-testcases
   或本仓库接口测试相关）、「api-testcases」「Allure」「Postman」「接口测试自动化」、**显式「Postman 导出」
-  「生成 collection」「导出 Postman」「Postman 集合 JSON」** 或按
-  PAPI-2548/PAPI-2515/2026Q2_SP1 模式新建/扩展套件、与 testcases 用例表对齐时使用；Agent 应先读取本
-  Skill 再产出目录结构与命令，与 api-testcases/api_tests 主线一致。
+  「生成 collection」「导出 Postman」「Postman 集合 JSON」**、**「测试目的前置」「目的前置命名」「Postman
+  请求命名」「步骤看不清断言目的」**、**「Apifox loading」「Apifox 卡顿」「后置脚本未定义」「Postman 排障」** 或按 PAPI-2548/PAPI-2515/2026Q2_SP1 模式新建/扩展套件、与 testcases
+  用例表对齐时使用；Agent 应先读取本 Skill 再产出目录结构与命令，与 api-testcases/api_tests 主线一致。
 ---
 
 # 接口自动化套件（api-testcase-pack）
@@ -20,7 +20,7 @@ description: >-
 
 用户只要提到 **接口自动化**，或在与 API/pytest/Allure/Postman/`api-testcases`/本仓库接口测试相关的语境下提到 **自动化**，或上列 description 中的其它触发词，即应 **先读取并遵循本 Skill**，再生成或修改代码与文档，使结构与长期主线 `api-testcases/api_tests/` 对齐。
 
-以下表述**显式触发** Postman/集合相关流程（含 2548/2515 形态、`GeneratePostmanCollection*.py`）：**「Postman 导出」**、**「生成 collection」**、**「导出 Postman」**、**「Postman 集合 JSON」**、**「生成 Postman」**。
+以下表述**显式触发** Postman/集合相关流程（含 2548/2515 形态、`GeneratePostmanCollection*.py`）：**「Postman 导出」**、**「生成 collection」**、**「导出 Postman」**、**「Postman 集合 JSON」**、**「生成 Postman」**、**「测试目的前置」**、**「目的前置」**、**「请求命名」**（在 Postman/Apifox/集合语境下）。
 
 ## 主线样例（必读）
 
@@ -67,6 +67,10 @@ description: >-
 ## PAPI-2515 排障（Agent 先读）
 
 处理 **`summary` vs `pools` 四指标聚合（缺键按 0、任池 `-1` 则该指标为 `-1`）**、**两个 `entitlements/update` 混淆**、**断言失败后链路中断**、**Allure 断言与 HTTP 步骤同屏**、**脑图用例数 vs pytest 覆盖**、**`allure serve` 端口占用**、**与用户约定是否加环境开关**、**探测用例 Skipped / `DP_P2515_PROBE_MEMBERSHIP_ID` / `DP_P2515_INCLUDE_PROBE`、误以为 memberships+entitlements search 可无 ID 枚举会籍** 时，必须先读本 Skill 附属文档 **[`papi2515-crossmodule-troubleshooting.md`](./papi2515-crossmodule-troubleshooting.md)**（含 §0～§7），再改 `papi2515_helpers` / `papi2548_helpers` / E2E 或环境变量。
+
+## Postman / Apifox 排障（Agent 先读）
+
+处理 **Postman Collection 生成器**、**Apifox 自动化卡顿 / 永久 loading / 后置脚本 `fp*`/`lo*` 未定义**、**取消重试**、**schedule 动态日期**、**fitness / historical ePass / Local Offer pytest-sync 集合** 时，必须先读 **[`postman-apifox-troubleshooting.md`](./postman-apifox-troubleshooting.md)**（含 §0 决策树），再改 `GeneratePostmanCollection*.py` 或让用户重新导入 JSON。典型坑：**Apifox 不继承集合 pre-request 到 test**、**禁止 `sendRequest`+`done` 取消重试**、**禁止 pre-request busy-wait 长等待**。
 
 ## 自动造数（优先于手工 ID）
 
@@ -116,7 +120,7 @@ description: >-
 - [ ] *_helpers.py：HTTP 封装、RequestWithAllure、共享断言/归一化；错误路径处理完整；**模块 docstring 主链路** + **`Run…MainE2EScenario`**（主 E2E 仅调编排入口）；**可复用 `Assert*` 一律用 `papi2548_helpers._RunAllureAssertionStep` 包装**（见下节「Allure」）
 - [ ] test_*.py：@allure.feature/story、ScenarioSteps、按需 skip/沙箱探测
 - [ ] 套件 README.md：DP_* 表、PYTHONPATH（Windows）、pytest/allure 命令
-- [ ] postman/Generate*.py → v2.1 Collection JSON（**2548/2515 形态**：多文件夹、`Build*JsHelpersLines` 内联于 .py、主链路对齐 `Run…MainE2EScenario`）；可选 *.postman_environment.json；postman/README.md（变量与 DP_* 映射、JS↔Python）；改毕运行 `python …/GeneratePostmanCollection*.py` 更新 JSON
+- [ ] postman/Generate*.py → v2.1 Collection JSON（**2548/2515 形态**：多文件夹、`Build*JsHelpersLines` 内联于 .py、主链路对齐 `Run…MainE2EScenario`）；**请求 `name` 一律测试目的前置**（`PurposeName` / `StepSpec.purpose`，见 [`postman-purpose-first-naming.md`](./postman-purpose-first-naming.md)）；可选 *.postman_environment.json；postman/README.md；改毕运行 `python …/GeneratePostmanCollection*.py` 更新 JSON
 - [ ] testcases/ 下维护「用例 ↔ pytest」对照表，并从套件 README 链到该表
 - [ ] 同一接口新增需求时：确认**历史最小回归集**（至少 contract / smoke / regression）仍保留、仍可收集，并纳入本轮回归运行
 - [ ] 造数：session/fixture 优先自动完成前置接口链；手工 DP_*_ID / JSON 文件为可选覆盖；README 写明开关与副作用（是否改沙箱数据）
@@ -151,15 +155,26 @@ description: >-
 | Postman 步骤少于 `Run…MainE2EScenario` | 按 helpers **模块 docstring 主链路**补全步骤（如 2515：**update 后再 search**、收尾多次 search）；多步用**集合变量**衔接。 |
 | 注册 `firstName` / `lastName` 校验失败 | 部分网关**仅允许拉丁字母**（`A–Z`/`a–z`）；勿中文/数字/符号；标识放 `email` 等字段。 |
 | 改 Python 断言后 Postman 未更新 | 同步改生成器内 JS 与各 `Lines_*`，再 **运行** `python postman/GeneratePostmanCollection*.py` 重写 JSON。 |
+| Apifox 列表看不清「这一步验什么」、仍用 `S02 POST …` 命名 | **测试目的前置**：`【目的】\| 步骤ID \| METHOD /path`；在生成器用 **`PurposeName()`** 或 **`StepSpec(purpose=...)`**，禁止只改 JSON 手改 name。详见 **[`postman-purpose-first-naming.md`](./postman-purpose-first-naming.md)**。 |
+| 补 Full/分模块步骤后生成器跑不起来 | 检查 `_CreateEpassStep` / `_PrebookStep` 等是否缺 **`purpose=`**；内联 `StepSpec` 勿用旧 positional 第一参数当 `name`。 |
+| Apifox **后置脚本 `fp*`/`lo*` 未定义**、或 **某步永久 loading** | **先读** [`postman-apifox-troubleshooting.md`](./postman-apifox-troubleshooting.md) §0～§2：test 内须注入 helpers；取消重试用线性 PATCH，禁止 `sendRequest`+`done`；勿 busy-wait。 |
+| fitness schedule 日期不对 / 无 query | URL 直接写 `{{$date.now\|addDays(5)\|format('yyyy-MM-dd')}}` 等 Apifox 表达式，勿仅依赖 pre-request 拼 `fitnessScheduleQuery`。见排障 doc §6。 |
+
+#### 测试目的前置命名（新建/扩展 Postman 生成器时默认执行）
+
+**格式**：`【测试目的（中文）】| 步骤ID | METHOD /path简写`  
+**实现**：在 `GeneratePostmanCollection<需求>.py` 中提供 **`PurposeName(purpose, step_id, method, path_hint)`**；`RequestItem.name=PurposeName(...)`；多模块集合用 **`StepSpec.purpose`（必填）** + `_DisplayName()`。  
+**对照**：Local Offer — [`GeneratePostmanCollectionLocalOfferEpass.py`](../../../api-testcases/api_tests/postman/GeneratePostmanCollectionLocalOfferEpass.py)、[`GeneratePostmanCollectionLocalOfferEpassFull.py`](../../../api-testcases/api_tests/postman/GeneratePostmanCollectionLocalOfferEpassFull.py)。  
+**细则与自检清单**：[`postman-purpose-first-naming.md`](./postman-purpose-first-naming.md)；[`postman/README.md`](../../../api-testcases/api_tests/postman/README.md) 同名小节。
 
 #### Agent 新建/更新 Postman 时的执行顺序
 
 1. **对照模板**：[`GeneratePostmanCollectionPapi2548.py`](../../../api-testcases/2026Q2_SP1/postman/GeneratePostmanCollectionPapi2548.py)（extensions）、[`GeneratePostmanCollectionPapi2515.py`](../../../api-testcases/2026Q2_SP1/postman/GeneratePostmanCollectionPapi2515.py)（crossModule）— 复用 **`Folder` / `RequestItem` / 头 / `Make*TestEvent`** 模式。
 2. **内联 Helpers JS**：在 `GeneratePostmanCollection<需求>.py` 中实现 **`Build<需求>JsHelpersLines()`**，不要把仓库级 `*.js` 当作与 2548 并列的规范源（除非团队明文要求双轨）。
-3. **顺序与命名**：文件夹与请求顺序对齐 **`Run…MainE2EScenario`** 与 **`test_*`**；`info.description` / `postman/README.md` 写明变量与 `DP_*`。
-4. **产出物**：生成 `*.postman_collection.json`；可选环境 JSON；改完**务必执行生成脚本**提交更新后的 collection。
+3. **顺序与命名**：文件夹与请求顺序对齐 **`Run…MainE2EScenario`** 与 **`test_*`**；每个请求 **`name` 用目的前置格式**（见上节）；`info.description` / `postman/README.md` 写明变量与 `DP_*`。
+4. **产出物**：生成 `*.postman_collection.json`；可选环境 JSON；改完**务必执行生成脚本**提交更新后的 collection；提醒 Apifox **重新导入**。
 
-更细的字段级说明见 [`reference.md`](reference.md) 中 **Postman 生成器（2548/2515 形态）**。
+更细的字段级说明见 [`reference.md`](reference.md) 中 **Postman 生成器（2548/2515 形态）** 与 **测试目的前置命名**。
 
 ### 协作与安全
 

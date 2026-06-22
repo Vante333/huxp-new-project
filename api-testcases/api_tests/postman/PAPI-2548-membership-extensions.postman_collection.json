@@ -1,28 +1,13 @@
 {
   "info": {
     "name": "PAPI-2548 extensions（对齐 tests/features/test_membership_extensions + services/papi2548_service）",
-    "description": "由 GeneratePostmanCollectionPapi2548.py 生成；含与 services/papi2548_service.py 对齐的 Tests（JavaScript）。\n导入 Apifox 后位于「后置脚本」；非可视化断言组件。\n\n变量：baseUrl、programId、clientId、clientSecret、accessToken、membershipId、fakeMembershipId、u07aExtNorm、u03bExtNorm、e3patchNorm。",
+    "description": "由 GeneratePostmanCollectionPapi2548.py 生成；含与 services/papi2548_service.py 对齐的 Tests（JavaScript）。\n导入 Apifox 后位于「后置脚本」；非可视化断言组件。\n\n**环境变量（Apifox/Postman Environment）**：``ProgramID``、``clientId``、``secret``（对齐 ``DP_PROGRAM_ID`` / ``DP_CLIENT_ID`` / ``DP_CLIENT_SECRET``；见 ``PAPI-2548-sandbox.postman_environment.json``）。\n**集合变量**：baseUrl、accessToken、membershipId、fakeMembershipId、u07aExtNorm、u03bExtNorm、e3patchNorm。",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "https://developer-sandbox.dragonpass.com/api",
-      "type": "string"
-    },
-    {
-      "key": "programId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "clientId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "clientSecret",
-      "value": "",
       "type": "string"
     },
     {
@@ -67,7 +52,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -96,7 +81,7 @@
             "description": "与 papi2548_helpers.GetAccessToken 一致；勿带 Authorization: undefined。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"clientId\": \"{{clientId}}\",\n  \"secret\": \"{{clientSecret}}\"\n}",
+              "raw": "{\n  \"clientId\": \"{{clientId}}\",\n  \"secret\": \"{{secret}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -212,7 +197,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -368,7 +353,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -514,7 +499,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -656,7 +641,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -804,7 +789,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -960,7 +945,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -1103,7 +1088,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -1259,7 +1244,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -1415,7 +1400,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -1550,7 +1535,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -1691,7 +1676,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -1841,7 +1826,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -1989,7 +1974,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -2145,7 +2130,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -2288,7 +2273,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -2444,7 +2429,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -2587,7 +2572,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -2743,7 +2728,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -2886,7 +2871,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -3042,7 +3027,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -3183,7 +3168,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -3322,7 +3307,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -3478,7 +3463,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -3617,7 +3602,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -3753,7 +3738,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -3909,7 +3894,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -4050,7 +4035,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -4184,7 +4169,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -4322,7 +4307,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -4478,7 +4463,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -4613,7 +4598,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -4754,7 +4739,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -4910,7 +4895,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -5060,7 +5045,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",
@@ -5200,7 +5185,7 @@
             "header": [
               {
                 "key": "X-Program-ID",
-                "value": "{{programId}}"
+                "value": "{{ProgramID}}"
               },
               {
                 "key": "X-Request-ID",

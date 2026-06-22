@@ -782,9 +782,9 @@ def GetAccessToken() -> str:
 
 def EpassTokenCredentialsConfigured() -> bool:
     """是否已配置 ePass 专用取 token 的 clientId/secret（两项均非空）。"""
-    c = os.getenv("DP_EPASS_CLIENT_ID", "").strip()
-    s = os.getenv("DP_EPASS_CLIENT_SECRET", "").strip()
-    return bool(c and s)
+    from config.local_offer_epass_env import GetEpassClientId, GetEpassClientSecret
+
+    return bool(GetEpassClientId() and GetEpassClientSecret())
 
 
 def GetAccessTokenForEpass() -> str:
@@ -796,14 +796,19 @@ def GetAccessTokenForEpass() -> str:
     - **父级 Bearer（可选）**：``DP_EPASS_TOKEN_REQUEST_BEARER`` 优先，否则 ``DP_TOKEN_REQUEST_BEARER``（仅 JWT 本体亦可，会自动加 ``Bearer ``）。
     - ``DP_TOKEN_OMIT_PROGRAM_ID=1`` 时与本仓库默认取 token 行为一致：不传 ``X-Program-ID``。
     """
-    cid = os.getenv("DP_EPASS_CLIENT_ID", "").strip()
-    sec = os.getenv("DP_EPASS_CLIENT_SECRET", "").strip()
+    from config.local_offer_epass_env import (
+        GetEpassClientId,
+        GetEpassClientSecret,
+        GetEpassProgramId,
+    )
+
+    cid = GetEpassClientId()
+    sec = GetEpassClientSecret()
     if not cid or not sec:
         raise RuntimeError(
             "ePass 专用取 token 需同时配置 DP_EPASS_CLIENT_ID 与 DP_EPASS_CLIENT_SECRET"
         )
-    ep_pid = os.getenv("DP_EPASS_PROGRAM_ID", "").strip()
-    pid_hdr = ep_pid if ep_pid else os.getenv("DP_PROGRAM_ID", "").strip()
+    pid_hdr = GetEpassProgramId()
     bear_ep = os.getenv("DP_EPASS_TOKEN_REQUEST_BEARER", "").strip()
     bear = bear_ep if bear_ep else os.getenv("DP_TOKEN_REQUEST_BEARER", "").strip()
     return _PostAccessTokenExchange(

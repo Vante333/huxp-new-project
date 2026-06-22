@@ -1,0 +1,58 @@
+---
+description: Local Offer ePass 预约下单后校验与可用性双路径（有/无 ePassId）编写约定
+globs: api-testcases/**/*
+alwaysApply: false
+---
+
+# Local Offer ePass · 预约下单自动化约定
+
+扩展或新建 **Local Offer（module=11）** 预约相关 pytest / helpers / scenario 时，**必须**按本节实现；与 `api-main-call-chains.md`、OAS 冲突时先说明再按用户确认来源实现。
+
+## 一、预约主链路：可用性双路径 + 下单
+
+凡涉及 ``POST /v2/orders/{module}/ePasses/prebooking``（Local Offer 为 ``/v2/orders/localOffers/ePasses/prebooking``）的成功/失败场景，**必须先遍历可用性两种入参**，再分别调预约：
+
+| 路径 | 可用性 ``POST /v2/resources/options/prebookings/availability`` | 预约 ``prebooking`` |
+|------|----------------------------------------------------------------|---------------------|
+| A | body **含** ``ePassId`` | 使用路径 A 返回的 ``prebookingToken`` + 同一 ``ePassId`` |
+| B | body **不含** ``ePassId`` | 使用路径 B 返回的 ``prebookingToken`` + 业务 ``ePassId`` |
+
+**实现要求**
+
+- Allure 步骤标题须区分 **「有 ePassId」/「无 ePassId」**（如 ``resourceIds-in-range · 有 ePassId``）。
+- 复用：``RequestPrebookingToken``（有 ePassId）、``RequestPrebookingTokenWithoutEpass``（无 ePassId）、``PostOrdersLocalOffersEPassesPrebookingWithToken``。
+- 参考实现：``tests/features/local_offer_epass/test_prebooking_restrictions.py`` 内 ``_PrebookAtTargetBothAvailabilityModes`` / ``_AssertOutOfRangeBothAvailabilityModes``。
+- 长场景（如权益矩阵）某条子路径断言失败时，可用 ``VerifyUsageOrderRetrieveModuleIsolation(..., soft=True)`` 收集失败、**跑完后**再 ``pytest.fail`` 汇总。
+
+## 二、下单成功后的必做收尾（取消 + 查询）
+
+每次 **下单成功**（usage 预订单 / Bundle / 会籍购买单）后，**先取消**再查询（与用例 md「取消后仍可查」一致）：
+
+| 订单类型 | 取消 | 统一收尾函数 |
+|----------|------|----------------|
+| usage 预订单 / Bundle usage | ``PATCH /v2/orders`` + usage ``orderId`` | ``CancelUsageOrderAndVerifyPostCancelRetrieve`` / ``FinalizeSuccessfulLocalOfferUsageOrder`` |
+| 会籍购买单（仅创建 ePass） | ``PATCH /v2/orders`` + MS ``orderId`` | ``CancelPurchaseOrderAndVerifyPostCancelRetrieve`` |
+
+取消后**依次**调用并断言：
+
+1. **订单详情** ``POST /v2/orders/ePasses/details``（仅 ``orderId``）— usage 单 ``status=3``、``orderCancelledDate`` 有值（``AssertUsageOrderDetailsShowsCancelled``）。
+2. **订单列表** ``POST /v2/orders/ePasses`` — 含该 usage ``orderId`` 且 ``status=3``（``AssertUsageOrderListContainsCancelled``）。
+3. **会籍卡详情** ``POST /v2/orders/ePasses/search``（``ePassId``）— usage 取消后 ePass 仍 Active（``ePassStatus=1``，``AssertEpassSearchActiveAfterUsageCancel``）；购买单取消后 ePass 注销（``AssertEpassSearchShowsCancelledAfterPurchaseCancel``）。
+
+**module 隔离**（``VerifyUsageOrderRetrieveModuleIsolation``）仅用于 **Retrieve 专测**（如 ``test_retrieve`` 中 ``_CreateLocalOfferUsageOrderMinimal`` **不取消**，保留未核销单做 ``module=8`` 负向）；**不要**与上述取消后收尾混用在同一成功预约路径。
+
+**兜底**：``local_offer_epass`` / ``local_offers`` 用例由 ``conftest.LocalOfferPendingOrderCleanup`` 在 teardown 调用 ``CancelAllPendingLocalOfferOrdersBestEffort``；``CreateLocalOfferEpass`` / ``Assert*OrderSuccess`` / ``ExtractCreateEpassIds`` 会自动 ``RegisterPending*``，显式收尾后 ``Mark*Cancelled`` 移出队列。
+
+## 三、新建/扩展代码检查清单
+
+- [ ] 预约场景是否 **有 ePassId / 无 ePassId** 两条可用性路径均已覆盖？
+- [ ] 每条 **成功** 下单是否 ``PATCH /v2/orders`` 取消后，再调 details / 列表 / search？
+- [ ] usage 取消后 search 是否断言 ``ePassStatus=1``（ePass 未注销）？
+- [ ] Retrieve **module 隔离** 专测是否仍用**未取消**订单（勿与取消收尾混用）？
+- [ ] Allure 是否走 ``_RunAllureAssertionStep`` / ``AllureHttpScenarioSteps`` 递增步骤号？
+
+## 四、负向与 skip
+
+- 可用性层失败：``AssertPrebookingStepRejected``（errCode 如 ``500.110.019`` 等）。
+- 可用性成功但业务应失败：再调 ``prebooking``，对预约响应 ``AssertPrebookingStepRejected``。
+- canary ``500.110.010`` 内部错误：``pytest.skip`` 并注明 context，勿与业务断言混淆。

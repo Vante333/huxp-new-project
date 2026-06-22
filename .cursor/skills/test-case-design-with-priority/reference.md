@@ -620,6 +620,33 @@ testcases/{需求名称}-测试用例-{序号}.md
 - **每个步骤最多有一个预期结果**，多个验证点应合并为一句话
 - 优先级标记（p1/p2/p3）便于在脑图中按颜色/标签筛选
 
+### 8.4 XMind 导出 → testcases Markdown（仓库脚本）
+
+**方向**：XMind（评审脑图）→ 覆盖 `testcases/**/*.md`。**不要**在对话中临时写 Python/JS 转换器。
+
+| 场景 | 脚本 | 说明 |
+| --- | --- | --- |
+| 团队 `tc-p*` 用例/测试分析（默认） | `tools/xmind_to_testcases_md.py` | 输出 `### tc-p1:` + `pc`/步骤/预期；与本文 §4.1 一致 |
+| 另一套 tc 汇总格式 | `tools/xmind_to_markdown_v2.py` | `##### tc-P1` 等，见脚本说明 |
+| 纯大纲、无 tc 结构 | `tools/xmind2md.py` | `#` 标题 + 列表，不解析优先级 |
+
+**推荐命令**（Windows PowerShell）：
+
+```powershell
+python tools/xmind_to_testcases_md.py `
+  --xmind "D:\path\PAPI-xxxx测试用例.xmind" `
+  --out "testcases/2026Q2SP4/PAPI-xxxx-测试用例-001.md" `
+  --requirement "requirements/2026Q2SP4/PAPI-xxxx.md"
+```
+
+**转换后检查**：
+
+1. `## 测试范围说明` 的 `- rc:` 是否指向 **当前需求**（勿残留其他 PAPI 文案）。
+2. 原 Markdown 中的 **判定表/分析表** 若不在脑图 `tc` 子树下，导出后会缺失——属脚本设计，非 bug；需保留则合并或把表挂到脑图。
+3. 历史 `tc-p0` 在脚本内映射为 `tc-p1`；碎片节点（是/否/不适用）不写入。
+
+**反向**（Markdown 表格 → 列表便于导入 XMind）：`tools/md_tables_to_xmind_lists.py`。
+
 ---
 
 ## 九、附录

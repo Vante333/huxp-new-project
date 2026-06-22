@@ -1,0 +1,391 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": " DragonPass API Developer Platform",
+    "description": "",
+    "version": "1.0.0",
+    "x-download-time": "2026-05-25T03:17:27.872Z"
+  },
+  "paths": {
+    "/v2/auth/token": {
+      "$ref": "/paths/_v2_auth_token.json",
+      "post": {
+        "summary": "Generate Access Token"
+      }
+    },
+    "/v2/search": {
+      "$ref": "/paths/_v2_search.json",
+      "post": {
+        "summary": "Aggregated Search by Keyword"
+      }
+    },
+    "/v2/search/modules": {
+      "$ref": "/paths/_v2_search_modules.json",
+      "get": {
+        "summary": "Retrieve Available Modules by Location"
+      }
+    },
+    "/v2/transportHubs": {
+      "$ref": "/paths/_v2_transportHubs.json",
+      "get": {
+        "summary": " Retrieve Transport Hub"
+      }
+    },
+    "/v2/transportHubs/{transportHubId}": {
+      "$ref": "/paths/_v2_transportHubs_%7BtransportHubId%7D.json",
+      "get": {
+        "summary": "Retrieve Transport Hub Details"
+      }
+    },
+    "/v2/resources": {
+      "$ref": "/paths/_v2_resources.json",
+      "get": {
+        "summary": "Retrieve Resources List"
+      }
+    },
+    "/v2/resources/{resourceId}": {
+      "$ref": "/paths/_v2_resources_%7BresourceId%7D.json",
+      "get": {
+        "summary": "Retrieve Resource Details"
+      }
+    },
+    "/v2/resources/prebookings/availability": {
+      "$ref": "/paths/_v2_resources_prebookings_availability.json",
+      "post": {
+        "summary": "Check Prebooking Resource Availability"
+      }
+    },
+    "/v2/resources/options/prebookings/availability": {
+      "$ref": "/paths/_v2_resources_options_prebookings_availability.json",
+      "post": {
+        "summary": "Check Prebooking Option Availability"
+      }
+    },
+    "/v2/resources/fitness/{resourceId}/options/{optionId}": {
+      "$ref": "/paths/_v2_resources_fitness_%7BresourceId%7D_options_%7BoptionId%7D.json",
+      "get": {
+        "summary": "Retrieve Fitness Resource Option Details"
+      }
+    },
+    "/v2/resources/fitness/{resourceId}/schedule": {
+      "$ref": "/paths/_v2_resources_fitness_%7BresourceId%7D_schedule.json",
+      "get": {
+        "summary": "Retrieve Fitness Resources Schedule"
+      }
+    },
+    "/v2/resources/esims/{resourceId}/options/{optionId}": {
+      "$ref": "/paths/_v2_resources_esims_%7BresourceId%7D_options_%7BoptionId%7D.json",
+      "get": {
+        "summary": "Retrieve eSIM Resource Option Details"
+      }
+    },
+    "/v2/resources/esims/{resourceId}/options": {
+      "$ref": "/paths/_v2_resources_esims_%7BresourceId%7D_options.json",
+      "get": {
+        "summary": "Retrieve eSIM Resouces Options"
+      }
+    },
+    "/v2/resources/localOffers/{resourceId}/options": {
+      "$ref": "/paths/_v2_resources_localOffers_%7BresourceId%7D_options.json",
+      "get": {
+        "summary": "Retrieve Local Offer Resouces Options"
+      }
+    },
+    "/v2/resources/localOffers/{resourceId}/options/{optionId}": {
+      "$ref": "/paths/_v2_resources_localOffers_%7BresourceId%7D_options_%7BoptionId%7D.json",
+      "get": {
+        "summary": "Retrieve Local Offer Resource Option Details"
+      }
+    },
+    "/v2/resources/prices": {
+      "$ref": "/paths/_v2_resources_prices.json",
+      "post": {
+        "summary": "Retrieve Resource Pricing Information"
+      }
+    },
+    "/v2/resources/options/prices": {
+      "$ref": "/paths/_v2_resources_options_prices.json",
+      "post": {
+        "summary": "Retrieve Prebooking Option Pricing Information"
+      }
+    },
+    "/v2/users": {
+      "$ref": "/paths/_v2_users.json",
+      "post": {
+        "summary": "User Creation"
+      }
+    },
+    "/v2/users/update": {
+      "$ref": "/paths/_v2_users_update.json",
+      "post": {
+        "summary": "Update User Information "
+      }
+    },
+    "/v2/users/delete": {
+      "$ref": "/paths/_v2_users_delete.json",
+      "post": {
+        "summary": "Delete A User"
+      }
+    },
+    "/v2/users/search": {
+      "$ref": "/paths/_v2_users_search.json",
+      "post": {
+        "summary": "Retrieve User Information"
+      }
+    },
+    "/v2/users/memberships": {
+      "$ref": "/paths/_v2_users_memberships.json",
+      "post": {
+        "summary": "Retrieve User Memberships List"
+      }
+    },
+    "/v2/users/ePasses": {
+      "$ref": "/paths/_v2_users_ePasses.json",
+      "post": {
+        "summary": "Retrieve User E-passes List"
+      }
+    },
+    "/v2/memberships": {
+      "$ref": "/paths/_v2_memberships.json",
+      "post": {
+        "summary": "Membership Registration(注册会籍)"
+      }
+    },
+    "/v2/memberships/update": {
+      "$ref": "/paths/_v2_memberships_update.json",
+      "post": {
+        "summary": "Update A Membership"
+      }
+    },
+    "/v2/memberships/search": {
+      "$ref": "/paths/_v2_memberships_search.json",
+      "post": {
+        "summary": "Retrieve Membership Information 查询会籍"
+      }
+    },
+    "/v2/memberships/qrCodes": {
+      "$ref": "/paths/_v2_memberships_qrCodes.json",
+      "post": {
+        "summary": "Generate Membership Dynamic QR Codes"
+      }
+    },
+    "/v2/entitlements/update": {
+      "$ref": "/paths/_v2_entitlements_update.json",
+      "post": {
+        "summary": "Update Membership Entitlements (权益更新)"
+      }
+    },
+    "/v2/entitlements/search": {
+      "$ref": "/paths/_v2_entitlements_search.json",
+      "post": {
+        "summary": "Retrieve Membership Entitlement Summary(权限概览（不支持tier，不支持swap）)"
+      }
+    },
+    "/v2/orders/{modules}/memberships/prebooking/preview": {
+      "$ref": "/paths/_v2_orders_%7Bmodules%7D_memberships_prebooking_preview.json",
+      "post": {
+        "summary": "Preview Membership Prebooking Order"
+      }
+    },
+    "/v2/orders/lounges/memberships/prebooking": {
+      "$ref": "/paths/_v2_orders_lounges_memberships_prebooking.json",
+      "post": {
+        "summary": "Create Membership Prebooking Order - Lounge"
+      }
+    },
+    "/v2/orders/fastTrack/memberships/prebooking": {
+      "$ref": "/paths/_v2_orders_fastTrack_memberships_prebooking.json",
+      "post": {
+        "summary": "Create Membership Prebooking Order - Fast Track"
+      }
+    },
+    "/v2/orders/fitness/memberships/prebooking": {
+      "$ref": "/paths/_v2_orders_fitness_memberships_prebooking.json",
+      "post": {
+        "summary": "Create Membership Prebooking Order - Fitness"
+      }
+    },
+    "/v2/orders/esims/memberships/topup": {
+      "$ref": "/paths/_v2_orders_esims_memberships_topup.json",
+      "post": {
+        "summary": "Top up eSIM data package - Membership"
+      }
+    },
+    "/v2/orders/localOffers/memberships/prebooking": {
+      "$ref": "/paths/_v2_orders_localOffers_memberships_prebooking.json",
+      "post": {
+        "summary": "Create Membership Prebooking Order - Local Offer"
+      }
+    },
+    "/v2/orders": {
+      "$ref": "/paths/_v2_orders.json",
+      "patch": {
+        "summary": "Cancel an Order"
+      }
+    },
+    "/v2/orders/memberships": {
+      "$ref": "/paths/_v2_orders_memberships.json",
+      "post": {
+        "summary": "Retrieve Membership Order List(查询membership订单列表)"
+      }
+    },
+    "/v2/orders/memberships/details": {
+      "$ref": "/paths/_v2_orders_memberships_details.json",
+      "post": {
+        "summary": "Retrieve Membership Usage Order Details(查询membership订单详情)"
+      }
+    },
+    "/v2/orders/fitness/checkin": {
+      "$ref": "/paths/_v2_orders_fitness_checkin.json",
+      "post": {
+        "summary": "Fitness Order Check-In"
+      }
+    },
+    "/v2/orders/esims/details": {
+      "$ref": "/paths/_v2_orders_esims_details.json",
+      "post": {
+        "summary": "Retrieve eSIM Order Live Extended Details"
+      }
+    },
+    "/v2/orders/esims/topup/availability": {
+      "$ref": "/paths/_v2_orders_esims_topup_availability.json",
+      "post": {
+        "summary": "Check eSIM Top-up Availability"
+      }
+    },
+    "/v2/orders/esims/packages/query": {
+      "$ref": "/paths/_v2_orders_esims_packages_query.json",
+      "post": {
+        "summary": "Retrieve eSIM Data Packages"
+      }
+    },
+    "/v2/orders/{module}/ePasses": {
+      "$ref": "/paths/_v2_orders_%7Bmodule%7D_ePasses.json",
+      "post": {
+        "summary": "Create E-pass Order"
+      }
+    },
+    "/v2/orders/ePasses/search": {
+      "$ref": "/paths/_v2_orders_ePasses_search.json",
+      "post": {
+        "summary": "Retrieve E-pass Details"
+      }
+    },
+    "/v2/orders/{module}/ePasses/prebooking": {
+      "$ref": "/paths/_v2_orders_%7Bmodule%7D_ePasses_prebooking.json",
+      "post": {
+        "summary": "Create E-pass Prebooking Order - Local Offer"
+      }
+    },
+    "/v2/orders/{module}/ePasses/bundle": {
+      "$ref": "/paths/_v2_orders_%7Bmodule%7D_ePasses_bundle.json",
+      "post": {
+        "summary": "Create E-pass with Prebooking Order - Local Offer"
+      }
+    },
+    "/v2/orders/esims/ePasses/topup": {
+      "$ref": "/paths/_v2_orders_esims_ePasses_topup.json",
+      "post": {
+        "summary": " Top up eSIM data package - E-pass"
+      }
+    },
+    "/v2/orders/ePasses": {
+      "$ref": "/paths/_v2_orders_ePasses.json",
+      "post": {
+        "summary": "Retrieve E-pass Order List"
+      }
+    },
+    "/v2/orders/ePasses/details": {
+      "$ref": "/paths/_v2_orders_ePasses_details.json",
+      "post": {
+        "summary": "Retrieve E-pass Usage Order Details"
+      }
+    },
+    "/v2/event": {
+      "$ref": "/paths/_v2_event.json",
+      "get": {
+        "summary": "Push Event Recovery"
+      }
+    },
+    "/v2/simulations/lounges/redemptions": {
+      "$ref": "/paths/_v2_simulations_lounges_redemptions.json",
+      "post": {
+        "summary": "Simulate Lounge Redemption - Walk in"
+      }
+    },
+    "/v2/simulations/lounges/prebookings/redemptions": {
+      "$ref": "/paths/_v2_simulations_lounges_prebookings_redemptions.json",
+      "post": {
+        "summary": "Simulate Lounge Redemption - Prebooking"
+      }
+    },
+    "/v2/simulations/lounges/cancellation": {
+      "$ref": "/paths/_v2_simulations_lounges_cancellation.json",
+      "post": {
+        "summary": "Simulate Lounge Order Cancellation"
+      }
+    },
+    "/v2/simulations/setMeals/redemptions": {
+      "$ref": "/paths/_v2_simulations_setMeals_redemptions.json",
+      "post": {
+        "summary": "Simulate Set Meal Redemption - Walk in"
+      }
+    },
+    "/v2/simulations/setMeals/cancellation": {
+      "$ref": "/paths/_v2_simulations_setMeals_cancellation.json",
+      "post": {
+        "summary": "Simulate Set Meal Order Cancellation"
+      }
+    },
+    "/v2/simulations/coupons/redemptions": {
+      "$ref": "/paths/_v2_simulations_coupons_redemptions.json",
+      "post": {
+        "summary": "Simulate Dining Coupon Redemption - Walk in"
+      }
+    },
+    "/v2/simulations/coupons/cancellation": {
+      "$ref": "/paths/_v2_simulations_coupons_cancellation.json",
+      "post": {
+        "summary": "Simulate Dining Coupon Order Cancellation"
+      }
+    },
+    "/v2/simulations/fastTrack/prebookings/redemptions": {
+      "$ref": "/paths/_v2_simulations_fastTrack_prebookings_redemptions.json",
+      "post": {
+        "summary": "Simulate Fast Track Redemption - Prebooking"
+      }
+    },
+    "/v2/simulations/fastTrack/cancellation": {
+      "$ref": "/paths/_v2_simulations_fastTrack_cancellation.json",
+      "post": {
+        "summary": "Simulate Fast Track Order Cancellation"
+      }
+    },
+    "/v2/entitlements/details": {
+      "$ref": "/paths/_v2_entitlements_details.json",
+      "post": {
+        "summary": "Retrieve Membership Entitlement Detalis(权益明细（不支持tier，不支持swap）)"
+      }
+    },
+    "/v2/orders/esims/memberships/prebooking": {
+      "$ref": "/paths/_v2_orders_esims_memberships_prebooking.json",
+      "post": {
+        "summary": "Create Membership Prebooking Order - lo(创建LO订单)"
+      }
+    }
+  },
+  "webhooks": {},
+  "components": {
+    "schemas": {
+      "$ref": "/components/schemas/index.json"
+    },
+    "responses": {
+      "$ref": "/components/responses/index.json"
+    },
+    "securitySchemes": {
+      "$ref": "/components/securitySchemes/index.json"
+    }
+  },
+  "servers": [],
+  "security": []
+}

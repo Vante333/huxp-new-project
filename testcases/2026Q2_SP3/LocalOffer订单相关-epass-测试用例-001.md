@@ -1,0 +1,940 @@
+# LocalOffer订单相关-epass测试用例
+
+## 测试范围说明
+
+- rc: 源脑图：`D:\fenxi\API\2026_Q2\评审后\Q2_SP3\local offer订单相关-epass.xmind`；结构与导入约定见 `.cursor/skills/test-case-design-with-priority/reference.md` 第四节及仓库 `testcases` Markdown 约定。
+- rc: 覆盖 **Local Offer** 品类（module=11）ePass 下单、查询、Bundle 预约、取消及可用性校验等接口；路径、错误码、字段枚举以 **Apifox/MCP** 与当前联调环境为准。
+- rc: 本文件由 `tools/xmind_workbook_to_testcase_md.py` 导出；**树形层级与 XMind 原图一致**；未打标识的「错误码」「入参校验」叶节点已自动补 ``tc-p1:``；内联/纯路径 ``/v2/...`` 已转为 ``v2_...``。
+
+## local offer订单相关-epass
+
+### CreateEpassOrder
+
+- 入参校验
+  - tc-p1: path:moudle 增加枚举值localOffers
+    - 可以用该值进行请求
+  - tc-p1: body：module增加枚举值 11
+    - 结果与 Apifox 及脑图描述一致
+  - allowedResources
+    - tc-p1: resourceIds
+      - 支持
+    - tc-p1: countryOrRegion
+      - 支持
+    - tc-p1: iata
+      - 不支持，弹出合理提示
+- 返回校验
+  - 与数据结构一致
+    - tc-p1: 特别关注字段
+      - moudle为11
+      - category 为2
+    - 其他字段
+      - tc-p1: clientUserId 传入的字段
+        - 与入参传入值一致
+      - tc-p1: orderId 生成的订单id
+        - 非空且为系统生成的有效订单标识
+      - tc-p1: orderCreatedDate 创建日期
+        - 为订单创建时间，格式与 Apifox 一致
+      - tc-p1: orderCancelledDate null
+        - 为 null
+      - extra
+        - tc-p1: ePassId
+          - 字段存在且取值与 Apifox/数据结构定义一致
+        - tc-p1: ePassStatus
+          - 字段存在且取值与 Apifox/数据结构定义一致
+        - tc-p1: firstName
+          - 字段存在且取值与 Apifox/数据结构定义一致
+        - tc-p1: lastName
+          - 字段存在且取值与 Apifox/数据结构定义一致
+        - tc-p1: activationDate
+          - 字段存在且取值与 Apifox/数据结构定义一致
+        - tc-p1: expirationDate
+          - 字段存在且取值与 Apifox/数据结构定义一致
+        - tc-p1: availableUsages
+          - 字段存在且取值与 Apifox/数据结构定义一致
+        - tc-p1: usedUsages
+          - 0
+        - tc-p1: allowedResources
+          - resourceIds;iata;countryOrRegion
+- 业务逻辑
+  - allowedResources
+    - resourceIds
+      - tc-p1: resourceIds不传，下单
+        - 下单成功，检查sass系统里面对应的权益是否正确
+      - tc-p1: resouce传对应的resouceid，下单
+        - 下单成功，检查sass系统里面对应的权益是否正确
+          - 用 projectId（会籍模板绑定权益里的项目）和 moduleType（品类）从缓存策略里取出当前模板允许出现的资源 ID 列表。
+            请求里每个 resourceId 必须出现在这个集合里，否则算无效
+      - tc-p1: 入参填写的是module=11,resourceId混合esim部分资源id和部分local offer的资源id
+        - 不可通过，弹出合理提示码：500.110.001
+    - countryOrRegion
+      - tc-p1: countryOrRegion不传，下单
+        - 下单成功，检查sass系统里面对应的权益是否正确
+      - tc-p1: countryOrRegion传对应的countryOrRegion，下单
+        - 下单成功，检查sass系统里面对应的权益是否正确
+          - 把入参的 IATA 列表或国家/地区列表交给搜索：searchService.getResourcesWithoutPage(searchReqDto)（分别 setIataList / setCountryOrRegionList）。
+            从返回的每条资源上取出 getIata() 或 getCountryOrRegion()，聚成集合 allowedIataCodes / allowedCountryOrRegions。
+            入参里的每个码必须落在这个集合里，否则认为不在范围内（无效列表非空则抛异常）。
+      - tc-p1: 入参填写的是module=11,countryOrRegion混合esim部分countryOrRegion和部分local offer的countryOrRegion
+        - 不可通过，弹出合理提示码：500.110.001
+    - iata
+      - tc-p1: 入参iata，弹出合理提示
+        - 结果与 Apifox 及脑图描述一致
+- 错误码
+  - tc-p1: resourceId中传了非这个接口对应品类的其他资源，例如创建local offer的Epass，传了esim的code
+    - 500.110.001
+      - The 'resourceId' array contains resources that are not associated with the expected module. Please verify and ensure the resource IDs match the correct module.
+  - tc-p1: resourceId中传了超过30个资源code
+    - 500.110.002
+      - The 'resourceId' array exceeds the maximum limit of 30 resource IDs. Please reduce the number of resource IDs and try again.
+  - tc-p1: clientUserId重复
+    - 500.080.011
+      - Sorry, this clientUserId already exists.
+  - tc-p1: 下单失败（内部原因）
+    - 500.110.010
+      - Sorry, we’re unable to process your order at the moment. Please try again later.
+  - tc-p1: 同时入参多个限制条件
+    - 500.110.015
+      - Only 1 restriction condition can be applied in the allowedResources field of the E-pass.
+  - tc-p1: 入参iata
+    - 500.110.026
+      - This module does not support using IATA Code as a restriction.
+### RetrieveEpassDetails
+
+- 出参特殊校验
+  - tc-p1: category
+    - 2
+  - tc-p1: module
+    - 11
+  - tc-p1: expirationDate
+    - 入参相同
+- 业务逻辑
+  - 通过orderId查询
+    - tc-p1: status
+      - 结果与 Apifox 及脑图描述一致
+    - tc-p1: orderId
+      - 非空且为系统生成的有效订单标识
+    - tc-p1: availableUsages
+      - 字段存在且取值与 Apifox/数据结构定义一致
+    - tc-p1: activationDate
+      - 字段存在且取值与 Apifox/数据结构定义一致
+    - tc-p1: expirationDate
+      - 字段存在且取值与 Apifox/数据结构定义一致
+    - tc-p1: category
+      - 2
+    - tc-p1: clientUserId
+      - 与入参传入值一致
+    - tc-p1: usedUsages
+      - 结果与 Apifox 及脑图描述一致
+    - tc-p1: allowedResources ：resourceIds
+      - 结果与 Apifox 及脑图描述一致
+    - tc-p1: orderCreatedDate
+      - 为订单创建时间，格式与 Apifox 一致
+    - tc-p1: module
+      - 11
+    - extra
+      - tc-p1: ePassId
+        - 字段存在且取值与 Apifox/数据结构定义一致
+      - tc-p1: lastName
+        - 字段存在且取值与 Apifox/数据结构定义一致
+      - tc-p1: firstName
+        - 字段存在且取值与 Apifox/数据结构定义一致
+      - ePassStatus
+        - tc-p1: Expired 过期
+          - 9
+        - tc-p1: Suspended暂停
+          - 2
+        - tc-p1: Active
+          - 1
+        - tc-p1: Cancelled
+          - 3
+        - tc-p1: Pending Activation
+          - 0
+  - 通过epassId查询
+    - tc-p1: status
+      - 结果与 Apifox 及脑图描述一致
+    - tc-p1: orderId
+      - 非空且为系统生成的有效订单标识
+    - tc-p1: availableUsages
+      - 字段存在且取值与 Apifox/数据结构定义一致
+    - tc-p1: activationDate
+      - 字段存在且取值与 Apifox/数据结构定义一致
+    - tc-p1: expirationDate
+      - 字段存在且取值与 Apifox/数据结构定义一致
+    - tc-p1: category
+      - 2
+    - tc-p1: clientUserId
+      - 与入参传入值一致
+    - tc-p1: usedUsages
+      - 结果与 Apifox 及脑图描述一致
+    - tc-p1: allowedResources ：resourceIds
+      - 结果与 Apifox 及脑图描述一致
+    - tc-p1: orderCreatedDate
+      - 为订单创建时间，格式与 Apifox 一致
+    - tc-p1: module
+      - 11
+    - extra
+      - tc-p1: ePassId
+        - 字段存在且取值与 Apifox/数据结构定义一致
+      - tc-p1: lastName
+        - 字段存在且取值与 Apifox/数据结构定义一致
+      - tc-p1: firstName
+        - 字段存在且取值与 Apifox/数据结构定义一致
+      - ePassStatus
+        - tc-p1: Expired 过期
+          - 9
+        - tc-p1: Suspended暂停
+          - 2
+        - tc-p1: Active
+          - 1
+        - tc-p1: Cancelled
+          - 3
+        - tc-p1: Pending Activation
+          - 0
+- 错误码
+  - tc-p1: 订单号不存在
+    - 500.080.004
+      - The specified order ID does not exist. Please verify the order ID and try again.
+  - tc-p1: 订单号不属于当前program
+    - 500.080.005
+      - The specified order ID does not belong to the current program.
+  - tc-p1: 获取订单详情失败
+    - 500.080.009
+      - Sorry, we’re unable to retrieve the order details at the moment. Please try again later.
+### RetrieveUserEpassesList
+
+- tc-p1: 返回参数
+  - module=11
+### Create E-pass with Prebooking Order - localOffer
+
+- 参数校验
+  - body
+    - tc-p1: module
+      - 11，path.module传入localOffer
+      - 必传
+    - tc-p1: clientUserId
+      - 必传
+    - extra
+      - tc-p1: prebookingToken
+        - 必填
+      - tc-p1: prebookingRequiredInfo
+        - 非必填
+  - Path
+    - tc-p1: module
+      - localOffer
+        - 支持使用
+  - async
+    - tc-p1: true
+      - 不等待：立刻 getOrderInfoMq(orderNo) 返回；
+    - tc-p1: false（默认）
+      - 同步等待：用 Redis + MQ 监听 Boss 侧订单状态更新，最多约 15 秒（ORDER_TIME_OUT_15），再查 getOrderInfoMq，尽量在响应里带上已就绪的订单/券等信息。
+- 返回校验
+  - tc-p1: 预约失败
+    - 返回错误码
+    - 不生成订单
+  - tc-p1: 中文字符串返回检查
+    - 不应该有中文返回
+      - 只查英文的信息
+  - 预约成功
+    - tc-p1: status
+      - 返回对应状态
+        - 返回1 CONFIRMED
+    - tc-p1: module
+      - 返回对应品类
+        - 11
+    - tc-p1: category
+      - 返回对应分类
+        - 2,
+    - tc-p1: ePassId
+      - 使用的epassid
+    - tc-p1: orderId
+      - 休息室预约单单号
+    - tc-p1: orderCreatedDate
+      - 当前下单时间
+    - tc-p1: orderCancelledDate
+      - 空
+    - extra
+      - tc-p1: clientUserId
+        - ePass对应的
+      - tc-p1: prebookingDate
+        - 与查询可用性传入的一致
+      - tc-p1: usageDate
+        - 空
+      - tc-p1: usedUsages
+        - 空
+      - tc-p1: resourceId
+        - 与查询可用性传入的一致
+      - tc-p1: resourceName
+        - 对应网点的名称
+      - tc-p1: prebookingRequiredInfo
+        - null
+      - vouchersList
+        - voucherType=1  转二维码  卡密
+          （取值card_coupon_type）
+          - 是客户会转成二维码，对于我们来说都是string
+          - 要通过网页使用
+            - tc-p1: voucher显示saas的券码
+              - 取值assignment_id
+            - tc-p1: localOfferOptions.redemptionUrl显示对应的url
+              - 结果与 Apifox 及脑图描述一致
+          - 无需通过网页使用
+            - tc-p1: voucher显示saas的券码
+              - 结果与 Apifox 及脑图描述一致
+            - tc-p1: localOfferOptions.redemptionUrl显示null
+              - 为 null
+        - voucherType=4  兑换码
+          - 要通过网页使用
+            - tc-p1: rvoucher显示saas的券码
+              - 结果与 Apifox 及脑图描述一致
+            - tc-p1: localOfferOptions.redemptionUrl显示对应的url
+              - 结果与 Apifox 及脑图描述一致
+          - 无需通过网页使用
+            - tc-p1: voucher显示saas的券码
+              - 结果与 Apifox 及脑图描述一致
+            - tc-p1: localOfferOptions.redemptionUrl显示null
+              - 为 null
+        - voucherType=5  链接
+          - tc-p1: voucher显示对应得url
+            - 结果与 Apifox 及脑图描述一致
+          - tc-p1: localOfferOptions.redemptionUrl显示对应的url
+            - 结果与 Apifox 及脑图描述一致
+        - 取值确定
+          - select assignment_id as 流量包id,card_coupon_type as 卡券类型,activation_code as 激活码,use_url as 使用url from `business-saas`.ord_order_common_voucher_esim_record aa
+            where sub_type='OFFER';
+            兑换码：取值流量包id  assignment_id
+            卡密：取assignment_id
+            链接：取值 use_url
+            voucherValidUntil  取值end_time
+        - tc-p1: 订单状态=取消订单
+          - voucher=INVALID
+        - tc-p1: 订单状态=待发放
+          - voucher=null
+        - tc-p1: 订单状态=订单关闭
+          - voucher=null
+      - localOfferOptions
+        - tc-p1: optionId
+          - 显示正确
+            - 取值可用性缓存
+        - tc-p1: optionName
+          - 显示正确
+            - 取值可用性缓存
+        - tc-p1: redemptionUrl
+          - 见vouchersList里面的校验
+        - tc-p1: voucherValidUntil
+          - 取值saas赶回
+- 业务功能校验
+  - 生成epass
+    - 会籍
+      - tc-p1: 生成一个新会籍
+        - clientUserId未使用过
+          - 生成新会籍
+        - clientUserId使用过
+          - 新会籍挂在原会员下
+      - tc-p1: 类型检查
+        - 检查会籍权益类型
+          - 休息室类型
+      - tc-p1: 点数检查
+        - 检查会籍点数
+          - 与会籍模版一致
+      - tc-p1: 新生成Epass的有效期检查
+        - 结果与 Apifox 及脑图描述一致
+      - tc-p1: ePass状态检查
+        - 检查ePass状态
+          - 正常可用状态
+      - tc-p1: 订单检查
+        - 会籍订单生成
+          - 可用状态
+      - tc-p1: 限制网点
+        - 检查限制网点
+          - 不做限制
+    - epass生成成功，预约失败
+      - tc-p1: 会籍注销
+        - 检查新注册的epass会籍
+          - 会籍被取消
+      - tc-p1: epass订单不取消
+        - 检查epass订单
+          - 订单不取消
+    - tc-p1: clientUserId没local offer的权益,有clientUserId权益
+      - 可以下local offer的bundle单
+    - 未指定ePassId/memberid的prebookingToken
+      - ePassId
+        - 预订单下单
+          - tc-p1: sass系统核对
+            - 会籍列表 查看扣减 点数
+            - 预定订单 查看 商品信息、权益扣减信息、交易等信息
+          - tc-p1: 核销商品订单核实
+            - 确定供应商订单
+    - 指定epassid/memberid的prebookingToken
+      - ePassId
+        - tc-p1: 核对容量查询的ePassId与接口传入的是否一致
+          - 容量查询的ePassId与接口传入的是不同
+            - 返回预约失败
+          - 容量查询的ePassId与接口传入的是相同
+            - 继续下单
+        - 预订单下单
+          - tc-p1: sass系统核对
+            - 会籍列表 查看扣减 点数
+            - 预定订单 查看 商品信息、权益扣减信息、交易等信息
+          - tc-p1: 核销商品订单核实
+            - 确定供应商订单
+    - Bundle补偿链路
+      - tc-p2: ePass创建成功后预约失败触发异步disableOrder
+        - 构造有效prebookingToken并调用localOffers/ePasses/bundle，使ePass购买单创建成功、预约单创建失败
+          - 接口返回预约失败对应错误码，不返回成功预约单
+        - 轮询查询新生成的ePass会籍状态
+          - 会籍最终被注销或置为不可用状态
+        - 查询ePass购买订单状态
+          - 购买订单最终与disableOrder补偿结果一致，不作为可用订单继续履约
+        - 查询会籍权益或用户权益点数
+          - 权益扣减已回滚，不因失败Bundle产生实际扣减
+        - 查询LocalOffer预约订单详情或订单列表
+          - 未生成有效预约单
+      - tc-p2: prebookingToken无效或过期导致Bundle预约失败后补偿注销ePass
+        - 使用无效或已过期prebookingToken调用localOffers/ePasses/bundle
+          - 返回500.110.028或500.110.027
+        - 轮询查询ePass会籍、购买订单、权益和预约单
+          - ePass被补偿注销，购买订单不可继续履约，权益回滚且无有效预约单
+      - tc-p2: 预约侧资源或权益不可用导致Bundle预约失败后补偿注销ePass
+        - 使用资源不可用、ePass无LocalOffer权益或权益点数不足的数据调用localOffers/ePasses/bundle
+          - 返回资源不可用或权益不足对应错误码
+        - 轮询查询ePass会籍、购买订单、权益和预约单
+          - ePass被补偿注销，购买订单不可继续履约，权益回滚且无有效预约单
+    - invalid prebookingToken校验
+      - tc-p1: 已下单过prebookingToken，再次下单用相同prebookingToken
+        - 下单失败
+      - tc-p1: 指定membershipId的prebookingToken
+        - 直接返回失败
+      - tc-p1: 用esim的网点生成prebookingToken去下预订单localoffer
+        - 直接返回失败
+      - tc-p1: 相同ePassId+相同的optionId+prebookingDate可以生成多个prebookingToken
+        - 可分别下单成功
+          - 不测
+    - 价格限制
+      - tc-p1: basePrice 必须 > 0 且币种非空
+        - 可下单
+      - tc-p1: basePrice =0 且币种非空
+        - 不可下单
+    - tc-p1: 销售商品：状态为售卖 能下单
+      - 状态为售卖可以下单
+      - 状态为已售卖、待上架、已下架 不能下单
+- 错误码
+  - tc-p1: bookingToken过期
+    - 500.110.027
+      - Sorry, the prebookingToken has expired. Please request a new token to proceed.
+  - tc-p1: bookingToken无效
+    - 500.110.028
+      - Invalid prebookingToken
+  - tc-p1: Epass可用点数不足
+    - 500.110.029
+      - Sorry, the Epass usage is insufficient.
+  - tc-p1: 尝试下单该epass不可用的网点
+    - 500.110.019
+      - Sorry, this resource is not accessible with your E-pass.
+  - tc-p1: E-pass不属于当前program
+    - 500.110.020
+      - The specified E-pass does not belong to the current program.
+  - tc-p1: 下单失败（内部原因）
+    - 500.110.010
+      - Sorry, we’re unable to process your order at the moment. Please try again later.
+  - tc-p1: clientUserId 与已有会员信息冲突（clientUserId 相同，用户名不相同则会抛这个错）
+    - 500.110.011
+      - Sorry, this clientUserId already exists.
+### Create E-pass Prebooking Order - localOffer
+
+- 参数校验
+  - body
+    - tc-p1: module
+      - 11，path.module传入11 Local Offer
+      - 必传
+    - tc-p1: ePassId
+      - 必传
+      - 数字类型
+    - extra
+      - tc-p1: prebookingRequiredInfo
+        - 此版本无
+      - tc-p1: prebookingToken
+        - 必填
+    - async
+      - tc-p1: true
+        - 不等待：立刻 getOrderInfoMq(orderNo) 返回；
+      - tc-p1: false（默认）
+        - 同步等待：用 Redis + MQ 监听 Boss 侧订单状态更新，最多约 15 秒（ORDER_TIME_OUT_15），再查 getOrderInfoMq，尽量在响应里带上已就绪的订单/券等信息。
+  - Path
+    - tc-p1: module
+      - Local Offer
+        - 支持使用
+- 返回校验
+  - tc-p1: 预约失败
+    - 返回错误码
+    - 不生成订单
+  - tc-p1: 中文字符串返回检查
+    - 不应该有中文返回
+      - 只查英文的信息
+  - 预约成功
+    - tc-p1: status
+      - 返回对应状态
+        - 返回1 CONFIRMED
+    - tc-p1: module
+      - 返回对应品类
+        - 返回Local Offer：11
+    - tc-p1: category
+      - 返回对应分类
+        - 2,Prebooking
+    - tc-p1: ePassId
+      - 使用的epassid
+    - tc-p1: orderId
+      - 休息室预约单单号
+    - tc-p1: orderCreatedDate
+      - 当前下单时间
+    - tc-p1: orderCancelledDate
+      - 空
+    - extra
+      - tc-p1: clientUserId
+        - ePass对应的
+      - tc-p1: prebookingDate
+        - 与查询可用性传入的一致
+      - tc-p1: usageDate
+        - 空
+      - tc-p1: usedUsages
+        - 空
+      - tc-p1: resourceId
+        - 与查询可用性传入的一致
+      - tc-p1: resourceName
+        - 对应网点的名称
+      - vouchersList
+        - voucherType=1  转二维码  卡密
+          （取值card_coupon_type）
+          - 是客户会转成二维码，对于我们来说都是string
+          - 要通过网页使用
+            - tc-p1: voucher显示对应的二维码
+              - 取值assignment_id
+            - tc-p1: localOfferOptions.redemptionUrl显示对应的url
+              - 结果与 Apifox 及脑图描述一致
+          - 无需通过网页使用
+            - tc-p1: voucher显示对应的二维码
+              - 结果与 Apifox 及脑图描述一致
+            - tc-p1: localOfferOptions.redemptionUrl显示null
+              - 为 null
+        - voucherType=4  兑换码
+          - 要通过网页使用
+            - tc-p1: voucher显示对应的兑换码
+              - 结果与 Apifox 及脑图描述一致
+            - tc-p1: localOfferOptions.redemptionUrl显示对应的url
+              - 结果与 Apifox 及脑图描述一致
+          - 无需通过网页使用
+            - tc-p1: voucher显示对应的兑换码
+              - 结果与 Apifox 及脑图描述一致
+            - tc-p1: localOfferOptions.redemptionUrl显示null
+              - 为 null
+        - voucherType=5  链接
+          - tc-p1: voucher显示对应得url
+            - 结果与 Apifox 及脑图描述一致
+          - tc-p1: localOfferOptions.redemptionUrl显示对应的url
+            - 结果与 Apifox 及脑图描述一致
+        - tc-p1: 订单状态=取消订单
+          - voucher=INVALID
+        - tc-p1: 订单状态=待发放
+          - null
+        - tc-p1: 订单状态=订单关闭
+          - null
+      - localOfferOptions
+        - tc-p1: optionId
+          - 显示正确
+            - 取值可用性缓存
+        - tc-p1: optionName
+          - 显示正确
+            - 取值可用性缓存
+        - tc-p1: redemptionUrl
+          - 见vouchersList里面的校验
+        - tc-p1: voucherValidUntil
+          - saas返回
+- 业务功能校验
+  - 未指定ePassId/memberid的prebookingToken
+    - ePassId
+      - 预订单下单
+        - tc-p1: sass系统核对
+          - 会籍列表 查看扣减 点数
+          - 预定订单 查看 商品信息、权益扣减信息、交易等信息
+        - tc-p1: 核销商品订单核实
+          - 确定供应商订单
+  - invalid prebookingToken校验
+    - tc-p1: 已下单过prebookingToken，再次下单用相同prebookingToken
+      - 下单失败
+    - tc-p1: 指定membershipId的prebookingToken
+      - 直接返回失败
+    - tc-p1: 用esim的网点生成prebookingToken去下预订单
+      - 直接返回失败
+    - tc-p1: 相同ePassId+相同的optionId+prebookingDate可以生成多个prebookingToken
+      - 可分别下单成功
+  - 指定epassid/memberid的prebookingToken
+    - ePassId
+      - tc-p1: 核对容量查询的ePassId与接口传入的是否一致
+        - 容量查询的ePassId与接口传入的是不同
+          - 返回预约失败
+        - 容量查询的ePassId与接口传入的是相同
+          - 继续下单
+      - 预订单下单
+        - tc-p1: sass系统核对
+          - 会籍列表 查看扣减 点数
+          - 预定订单 查看 商品信息、权益扣减信息、交易等信息
+        - tc-p1: 核销商品订单核实
+          - 确定供应商订单
+  - 价格限制
+    - tc-p1: basePrice 必须 > 0 且币种非空
+      - 可下单
+    - tc-p1: basePrice =0 且币种非空
+      - 不可下单
+  - tc-p1: epassid没local offer的权益,有esim权益
+    - 下预订单失败
+  - tc-p1: epassid没local offer的权益
+    - 下预订单失败
+  - tc-p1: local offer的权益点数为0
+    - 失败
+  - tc-p1: 创建的人数大于于Epass剩余权益点数
+    - 失败
+  - tc-p1: 创建的人数等于Epass剩余权益点数
+    - 成功
+  - tc-p1: 创建的人数小于Epass剩余权益点数
+    - 成功
+  - tc-p1: 销售商品：状态为售卖 能下单
+    - 状态为售卖可以下单
+    - 状态为已售卖、待上架、已下架 不能下单
+  - epassid没有限制网点范围等
+    - tc-p1: sass系统核对
+      - 会籍列表 查看扣减 点数
+      - 核销商品订单 查看 商品信息、权益扣减信息、交易等信息
+    - tc-p1: 供应商订单核实
+      - 确定供应商订单
+        - 真实下单到供应商
+  - epassid限定了网点范围（生成epass会籍订单的时候限制了resouce）
+    - tc-p1: sass系统核对
+      - 会籍列表 查看扣减 点数
+      - 核销商品订单 查看 商品信息、权益扣减信息、交易等信息
+    - tc-p1: 供应商订单核实
+      - 确定供应商订单
+        - 真实下单到供应商
+          - 无供应商下单
+  - epassid限定了countryOrRegion传对应的countryOrRegion，下单
+    - tc-p1: sass系统核对
+      - 会籍列表 查看扣减 点数
+      - 核销商品订单 查看 商品信息、权益扣减信息、交易等信息
+    - tc-p1: 供应商订单核实
+      - 确定供应商订单
+        - 真实下单到供应商
+- 错误码
+  - tc-p1: bookingToken过期
+    - 500.110.027
+      - Sorry, the prebookingToken has expired. Please request a new token to proceed.
+  - tc-p1: bookingToken无效
+    - 500.110.028
+      - Invalid prebookingToken
+  - tc-p1: Epass可用点数不足
+    - 500.110.029
+      - Sorry, the Epass usage is insufficient.
+  - tc-p1: 尝试下单该epass不可用的网点
+    - 500.110.019
+      - Sorry, this resource is not accessible with your E-pass.
+  - tc-p1: E-pass不属于当前program
+    - 500.110.020
+      - The specified E-pass does not belong to the current program.
+  - tc-p1: 下单失败（内部原因）
+    - 500.110.010
+      - Sorry, we’re unable to process your order at the moment. Please try again later.
+### Retrieve E-pass Usage Order Details
+
+- 返回校验
+  - tc-p1: code
+    - 1
+  - data
+    - tc-p1: ePassId
+      - 正确
+    - tc-p1: orderId
+      - 正确
+    - tc-p1: orderCreatedDate
+      - 正确
+    - tc-p1: orderCancelledDate
+      - 正确
+    - tc-p1: module
+      - 11
+    - tc-p1: category
+      - 2
+    - orderCancelledDate
+      - tc-p1: 已取消订单
+        - 取消时间
+      - tc-p1: 非取消订单
+        - null
+    - status
+      - tc-p1: CONFIRMED 未核销订单
+        - 1
+      - tc-p1: USED 已核销订单
+        - 2
+      - tc-p1: CANCELLED 已取消订单
+        - 3
+      - tc-p1: EXPIRED 已过期订单
+        - 4
+      - tc-p1: PENDING 待处理订单
+        - 5
+      - tc-p1: FAILED  失败订单
+        - 10
+    - extra
+      - tc-p1: clientUserId
+        - 正确
+      - tc-p1: prebookingDate
+        - 正确
+      - usageDate
+        - tc-p1: 已核销订单
+          - 核销时间
+        - tc-p1: 未核销订单
+          - tag:
+          - null
+      - usedUsages
+        - tc-p1: 已核销订单
+          - 核销人数
+        - tc-p1: 未核销订单
+          - null
+      - tc-p1: resourceName
+        - 课程名字
+      - tc-p1: resourceId
+        - 资源id
+      - tc-p1: city
+        - 正确
+      - tc-p1: countryOrRegion
+        - 正确
+      - tc-p1: clientUserId
+        - 正确
+      - tc-p1: resourceName
+        - 名字
+      - tc-p1: prebookingDate
+        - 正确
+      - tc-p1: resourceId
+        - 课程id
+      - vouchersList
+        - voucherType=1  转二维码  卡密
+          （取值card_coupon_type）
+          - 是客户会转成二维码，对于我们来说都是string
+          - 要通过网页使用
+            - tc-p1: voucher显示对应的二维码
+              - 取值assignment_id
+            - tc-p1: localOfferOptions.redemptionUrl显示对应的url
+              - 结果与 Apifox 及脑图描述一致
+          - 无需通过网页使用
+            - tc-p1: voucher显示对应的二维码
+              - 结果与 Apifox 及脑图描述一致
+            - tc-p1: localOfferOptions.redemptionUrl显示null
+              - 为 null
+        - voucherType=4  兑换码
+          - 要通过网页使用
+            - tc-p1: voucher显示对应的兑换码
+              - 结果与 Apifox 及脑图描述一致
+            - tc-p1: localOfferOptions.redemptionUrl显示对应的url
+              - 结果与 Apifox 及脑图描述一致
+          - 无需通过网页使用
+            - tc-p1: voucher显示对应的兑换码
+              - 结果与 Apifox 及脑图描述一致
+            - tc-p1: localOfferOptions.redemptionUrl显示null
+              - 为 null
+        - voucherType=5  链接
+          - tc-p1: voucher显示对应得url
+            - 结果与 Apifox 及脑图描述一致
+          - tc-p1: localOfferOptions.redemptionUrl显示对应的url
+            - 结果与 Apifox 及脑图描述一致
+        - tc-p1: 订单状态=取消订单
+          - voucher=INVALID
+        - tc-p1: 订单状态=待发放
+          - null
+        - tc-p1: 订单状态=订单关闭
+          - null
+      - localOfferOptions
+        - tc-p1: optionId
+          - 显示正确
+            - 取值可用性缓存
+        - tc-p1: optionName
+          - 显示正确
+            - 取值可用性缓存
+        - tc-p1: redemptionUrl
+          - 见vouchersList里面的校验
+        - tc-p1: voucherValidUntil
+          - saas返回
+- 错误码
+  - tc-p1: 订单号不存在
+    - 500.110.004
+      - The specified order ID does not exist. Please verify the order ID and try again.
+  - tc-p1: 订单号不属于当前program
+    - 500.110.005
+      - The specified order ID does not belong to the current program.
+  - tc-p1: 获取订单详情失败
+    - 500.110.009
+      - Sorry, we’re unable to retrieve the order details at the moment. Please try again later.
+  - tc-p1: 无法获取到订单列表
+    - 500.000.005
+      - Sorry, we’re unable to retrieve the order list at the moment. Please try again later.
+        - 这个跟上面的区别是什么？
+### Retrieve E-pass Order List
+
+- 入参校验
+  - tc-p1: ePassId
+    - 必传
+  - tc-p1: module（可选）
+    - 11
+  - tc-p1: pageSize
+    - 必传
+  - tc-p1: pageNumber
+    - 必传
+- 返回响应
+  - tc-p1: code
+    - 1
+  - data
+    - pagination
+      - tc-p1: pageSize
+        - 正确
+      - tc-p1: pageNumber
+        - 正确
+      - tc-p1: totalNumber
+        - 正确
+    - orders
+      - tc-p1: orderId
+        - 正确
+      - status
+        - tc-p1: CONFIRMED 未核销订单
+          - 1
+        - tc-p1: USED已核销订单
+          - 2
+        - tc-p1: CANCELLED 已取消订单
+          - 3
+        - tc-p1: EXPIRED 已过期订单
+          - 4
+        - tc-p1: PENDING 待处理订单
+          - 5
+        - tc-p1: FAILED失败订单
+          - 10
+      - tc-p1: usedUsages
+        - 已核销订单
+          - 核销人数
+        - tc-p1: 未核销订单
+          - 0
+      - tc-p1: module
+        - 11
+      - tc-p1: category
+        - 2
+      - tc-p1: orderCreatedDate
+        - 正确
+      - tc-p1: resourceId
+        - 正确
+      - tc-p1: resourceName
+        - 正确
+      - tc-p1: image
+        - 正确
+      - tc-p1: transportHubName
+        - null
+      - tc-p1: transportHubId
+        - null
+      - tc-p1: city
+        - 正确
+      - tc-p1: countryOrRegion
+        - 正确
+      - tc-p1: optionId
+        - 正确
+      - tc-p1: optionName
+        - 正确
+- tc-p1: 无法获取到订单列表
+  - 500.000.005
+    - Sorry, we’re unable to retrieve the order list at the moment. Please try again later.
+### Epass 取消订单
+
+- Cancel an Order
+  - 取消Epass with prebooking订单
+    - tc-p1: 未核销订单
+      - 预约未完成核销，取消订单
+        - 先取消预订单，回退权益，不取消epass （不注销epassid   但是购买订单不取消
+  - 取消Epasss使用订单（先注册epass、再下预约单）
+    - tc-p1: 未核销订单
+      - 预约休息室未完成核销，取消订单
+        - 取消预订单，不影响epass状态，权益回退
+  - 取消Epasss会籍订单
+    - tc-p1: 取消
+      - 会籍状态
+        - 取消epass （只是注销epassid   但是购买订单不取消 、权益回退
+  - 取消规则判断（boss下配置）
+    - 允许
+      - tc-p1: 按时间限制 & 取消状态限制（未完成）
+        - 可以取消成功
+      - tc-p1: 按时间限制 & 取消状态限制（已完成）
+        - 不可取消
+### v2_resources_options_prebookings_availability
+
+- 入参校验
+  - tc-p1: module=11,但resourceId和optionId入参的是esim的
+    - 返回500.020.009
+  - tc-p1: module=11，ePassId是esim的卡
+    - 返回 提示语
+  - 预约人数
+    - tc-p1: adultCount=1  childCount=0
+      - 可以通过可用性校验
+        - POST(v2_resources_options_prebookings_availability)
+          条件：module = 8，adultCount = 1，adultCount + childCount = 1，prebookingDate 满足 UTC 下至少提前 1 小时，且 ePassId 与资源等校验通过。
+          服务端写入 Redis：
+          Key="order:availability:session:"+UUID
+          Key="order:availability:session:"+UUID
+          缓存 ResourceAvailabilityCache（含 module、resourceId、optionId、prebookingDate、Boss bookingToken 等），TTL 15 分钟；返回体里的 prebookingToken 即该 UUID（与 Boss token 不是同一个字符串）
+    - tc-p1: adultCount=1  childCount=1
+      - 弹出合理提示
+    - tc-p1: adultCount=0  childCount=1
+      - 弹出合理提示
+    - tc-p1: adultCount=0  childCount=0
+      - 弹出合理提示
+  - tc-p1: prebookingDate 满足 UTC 下不需要 至少提前 1 小时
+    - loccl offer大于等于当前时间均可下单
+      - 之前逻辑是：prebookingDate 为 ISO 本地时间字符串，且须严格早于「当前 UTC + 1 小时」（代码LocalDateTime.now(ZoneOffset.UTC).plusHours(1) 与解析后的预约时间比较）；目前不要该校验
+  - tc-p1: loccl offer的prebookingDate 小于当前时间
+    - 弹出合理提示
+  - 默认是有库存的，没有容量锁
+- membershipId/ePassId异常状态
+  - tc-p2: membershipId不存在
+    - 返回合理错误码，可用性校验失败且不生成prebookingToken
+  - tc-p2: membershipId已取消或已过期
+    - 返回合理错误码，可用性校验失败且不生成prebookingToken
+  - tc-p2: membershipId不属于当前program
+    - 返回500.110.021
+  - tc-p2: membershipId无LocalOffer权益
+    - 返回合理错误码，可用性校验失败且不生成prebookingToken
+  - tc-p2: membershipId权益限制resourceId不匹配
+    - 返回500.110.031或合理错误码
+  - tc-p2: membershipId权益限制countryOrRegion不匹配
+    - 返回500.110.031或合理错误码
+  - tc-p2: ePassId不存在
+    - 返回合理错误码，可用性校验失败且不生成prebookingToken
+  - tc-p2: ePassId已取消或已过期
+    - 返回合理错误码，可用性校验失败且不生成prebookingToken
+  - tc-p2: ePassId不属于当前program
+    - 返回500.110.020
+  - tc-p2: ePassId无LocalOffer权益
+    - 返回合理错误码，可用性校验失败且不生成prebookingToken
+  - tc-p2: ePassId权益限制resourceId不匹配
+    - 返回500.110.019
+  - tc-p2: ePassId权益限制countryOrRegion不匹配
+    - 返回500.110.019
+- prebookingToken与请求主体一致性
+  - tc-p2: token由resourceA生成但下单请求使用resourceB对应权益或资源上下文
+    - 下单失败，返回Invalid prebookingToken或资源不可用对应错误码
+  - tc-p2: token由optionA生成但下单请求期望使用optionB
+    - 下单失败，订单不会使用非token缓存中的optionId
+  - tc-p2: token绑定membershipId但下单请求传入不同membershipId
+    - 下单失败，返回Invalid prebookingToken或会籍不匹配提示
+  - tc-p2: token绑定ePassId但下单请求传入不同ePassId
+    - 下单失败，返回Invalid prebookingToken或E-pass不匹配提示
+  - tc-p2: token对应module不是11
+    - localOffers/ePasses/prebooking或localOffers/memberships/prebooking下单失败，返回Invalid prebookingToken
+  - tc-p2: token已被成功下单消费后再次使用
+    - 再次下单失败，返回500.110.028且不重复生成预约单
+- 错误码
+  - tc-p1: 内部原因无法确认可用性
+    - 500.020.009
+      - Sorry, we are currently unable to confirm whether this resource is available for prebooking during this timeslot. Please try again.
+  - tc-p1: 查询的资源id该program不可用
+    - 500.020.007
+      - Sorry, this resource is not accessible with your program.
+  - tc-p1: membership不属于当前program
+    - 500.110.021
+      - The specified membership does not belong to the current program.
+  - tc-p1: E-pass不属于当前program
+    - 500.110.020
+      - The specified E-pass does not belong to the current program.

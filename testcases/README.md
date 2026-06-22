@@ -14,6 +14,19 @@
 
 已自动化的需求建议同步维护「自动化用例与 pytest 对应表」，例如 [`2026Q2_SP1/PAPI-2548-自动化用例与pytest对应表.md`](2026Q2_SP1/PAPI-2548-自动化用例与pytest对应表.md)。后续 PAPI-2515、PAPI-2424、Local Offers 等自动化需求也应按该模式补齐。
 
+## XMind 脑图同步 Markdown
+
+用评审脑图 **覆盖** 本目录下用例/测试分析 md 时，在仓库根执行（勿手写转换脚本）：
+
+```powershell
+python tools/xmind_to_testcases_md.py `
+  --xmind "D:\path\源.xmind" `
+  --out "testcases/2026Q2SP4/PAPI-xxxx-测试用例-001.md" `
+  --requirement "requirements/2026Q2SP4/PAPI-xxxx.md"
+```
+
+细则见 [`tools/README.md`](../tools/README.md) 与 `.cursor/skills/test-case-design-with-priority/SKILL.md`。
+
 ## 迁移说明
 
 若你看到本目录下还有以下文件：

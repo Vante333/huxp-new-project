@@ -147,7 +147,7 @@ def MakeTestEvent(
 
 def AuthJsonHeaders() -> List[JsonObject]:
     return [
-        {"key": "X-Program-ID", "value": "{{programId}}"},
+        {"key": "X-Program-ID", "value": "{{ProgramID}}"},
         {"key": "X-Request-ID", "value": "{{$guid}}"},
         {"key": "Content-Type", "value": "application/json"},
         {"key": "Accept", "value": "*/*"},
@@ -156,7 +156,7 @@ def AuthJsonHeaders() -> List[JsonObject]:
 
 def BearerJsonHeaders() -> List[JsonObject]:
     return [
-        {"key": "X-Program-ID", "value": "{{programId}}"},
+        {"key": "X-Program-ID", "value": "{{ProgramID}}"},
         {"key": "X-Request-ID", "value": "{{$guid}}"},
         {"key": "Authorization", "value": "Bearer {{accessToken}}"},
         {"key": "Content-Type", "value": "application/json"},
@@ -576,7 +576,7 @@ def BuildCollection() -> JsonObject:
                 method="POST",
                 url_path="/v2/auth/token",
                 body=json.dumps(
-                    {"clientId": "{{clientId}}", "secret": "{{clientSecret}}"},
+                    {"clientId": "{{clientId}}", "secret": "{{secret}}"},
                     ensure_ascii=False,
                     indent=2,
                 ),
@@ -1087,7 +1087,9 @@ def BuildCollection() -> JsonObject:
         "description": (
             "由 GeneratePostmanCollectionPapi2548.py 生成；含与 services/papi2548_service.py 对齐的 Tests（JavaScript）。\n"
             "导入 Apifox 后位于「后置脚本」；非可视化断言组件。\n\n"
-            "变量：baseUrl、programId、clientId、clientSecret、accessToken、membershipId、fakeMembershipId、"
+            "**环境变量（Apifox/Postman Environment）**：``ProgramID``、``clientId``、``secret``（对齐 ``DP_PROGRAM_ID`` / "
+            "``DP_CLIENT_ID`` / ``DP_CLIENT_SECRET``；见 ``PAPI-2548-sandbox.postman_environment.json``）。\n"
+            "**集合变量**：baseUrl、accessToken、membershipId、fakeMembershipId、"
             "u07aExtNorm、u03bExtNorm、e3patchNorm。"
         ),
         "schema": POSTMAN_SCHEMA,
@@ -1095,9 +1097,6 @@ def BuildCollection() -> JsonObject:
 
     variables: List[JsonObject] = [
         CollectionVariable("baseUrl", "https://developer-sandbox.dragonpass.com/api"),
-        CollectionVariable("programId", ""),
-        CollectionVariable("clientId", ""),
-        CollectionVariable("clientSecret", ""),
         CollectionVariable("accessToken", ""),
         CollectionVariable("membershipId", ""),
         CollectionVariable("fakeMembershipId", "999999999999999999"),

@@ -3,15 +3,15 @@ name: test-case-design-with-priority
 description: >-
   按团队规范进行功能测试用例设计与优先级标注（P1/P2/P3，不使用 P0），含需求分析、测试点提取、
   Markdown 与 XMind/脑图兼容结构、用例精简合并与评审清单。在用户编写或评审 testcases、功能用例、
-  测试用例设计、优先级、tc-p1、脑图导入、或引用本仓库用例规范时使用；Agent 应先读本 Skill，
-  细则与示例见 reference.md。
+  测试用例设计、优先级、tc-p1、脑图导入、**XMind 转/同步 Markdown**、**用 XMind 替换 testcases md**、
+  或引用本仓库用例规范时使用；Agent 应先读本 Skill，细则与示例见 reference.md。
 ---
 
 # 功能测试用例设计（含优先级）
 
 ## 触发条件
 
-用户涉及 **功能测试用例** / **testcases** / **用例优先级（P1、P2、P3）** / **XMind 或脑图导入** / **tc-p1、tc-p2、tc-p3** / **需求拆解测试点** 时，应先 **Read 本文件**，再按需 **Read [reference.md](reference.md)**（完整规范、示例与附录）。
+用户涉及 **功能测试用例** / **testcases** / **用例优先级（P1、P2、P3）** / **XMind 或脑图导入** / **XMind 转 Markdown、脑图同步、用 xmind 替换 md** / **tc-p1、tc-p2、tc-p3** / **需求拆解测试点** 时，应先 **Read 本文件**，再按需 **Read [reference.md](reference.md)**（完整规范、示例与附录）。
 
 若同时在搭建 **pytest 接口自动化** 或 **api-testcases**，另见 [api-testcase-pack](../api-testcase-pack/SKILL.md)。
 
@@ -19,6 +19,24 @@ description: >-
 
 1. 通读本节检查清单。
 2. 输出或改写用例前打开并遵循 [reference.md](reference.md) 中对应章节（尤其「三、用例精简与合并」「四、用例文档结构」「六、用例评审与质量检查」「九、附录」）。
+
+## XMind → testcases Markdown（必读，禁止手写转换器）
+
+用户要求 **用 XMind 覆盖/替换** `testcases/**/*.md`，或 **XMind 转 Markdown 落盘** 时：
+
+1. **禁止**新建转换脚本、禁止用 Shell 解压 `content.json` 手写解析；仓库已有工具。
+2. **默认工具**：`tools/xmind_to_testcases_md.py`（`tc-p*` 团队格式、`### tc-p1:` 层级）。细则见 [reference.md](reference.md) §8.4。
+3. **直接执行**（PowerShell，路径按用户给定替换）：
+
+```powershell
+python tools/xmind_to_testcases_md.py `
+  --xmind "path/to/源.xmind" `
+  --out "testcases/{迭代}/PAPI-xxxx-测试用例-001.md" `
+  --requirement "requirements/{迭代}/PAPI-xxxx.md"
+```
+
+4. **转换后必查**：`## 测试范围说明` 是否与当前需求一致（勿保留其他需求的 `rc:`）；脑图未挂 `tc-p*` 的判定表/分析表不会导出，若用户需要保留须说明或合并。
+5. **仅通用大纲**（无 `tc-p*`）时用 `tools/xmind2md.py`；另一套 tc 结构见 `tools/xmind_to_markdown_v2.py`（见 `tools/README.md`）。
 
 ## 核心检查清单（简版）
 

@@ -50,3 +50,17 @@ PowerShell 示例：
 $env:DP_PROFILE = "canary"
 $env:DP_TEST_DATASET = "p2515-cross-write-a"
 ```
+
+## Local Offer ePass（Apifox / 多环境）
+
+- 模板：[`env/.env.local-offer.example`](.env.local-offer.example)（合并进 `env/.env.<profile>`）
+- 变量对照与短别名：[`api-testcases/api_tests/config/local_offer_epass_env.py`](../api-testcases/api_tests/config/local_offer_epass_env.py)
+- 必填：`DP_EPASS_PROGRAM_ID`、`DP_EPASS_CLIENT_ID`、`DP_EPASS_CLIENT_SECRET`、`DP_LO_EPASS_RESOURCE_ID`、`DP_LO_EPASS_OPTION_ID`
+
+## 历史品类 ePass / eSIM（Apifox / pytest）
+
+- 模板：[`env/.env.historical-epass.example`](.env.historical-epass.example)
+- Catalog 与变量表：[`api-testcases/api_tests/config/historical_epass_env.py`](../api-testcases/api_tests/config/historical_epass_env.py)
+- **eSIM 专用网点**（与 Local Offer 的 `DP_LO_EPASS_*` 分离）：
+  - pytest / `.env`：`DP_HIST_EPASS_ESIM_RESOURCE_ID`、`DP_HIST_EPASS_ESIM_OPTION_ID`
+  - Apifox 集合 [`Esim-ePass-P0-e2e-core`](../api-testcases/api_tests/postman/Esim-ePass-P0-e2e-core.postman_collection.json)：`esimResourceId`、`esimOptionId`
