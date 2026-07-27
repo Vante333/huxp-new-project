@@ -63,4 +63,4 @@ $env:DP_TEST_DATASET = "p2515-cross-write-a"
 - Catalog 与变量表：[`api-testcases/api_tests/config/historical_epass_env.py`](../api-testcases/api_tests/config/historical_epass_env.py)
 - **eSIM 专用网点**（与 Local Offer 的 `DP_LO_EPASS_*` 分离）：
   - pytest / `.env`：`DP_HIST_EPASS_ESIM_RESOURCE_ID`、`DP_HIST_EPASS_ESIM_OPTION_ID`
-  - Apifox 集合 [`Esim-ePass-P0-e2e-core`](../api-testcases/api_tests/postman/Esim-ePass-P0-e2e-core.postman_collection.json)：`esimResourceId`、`esimOptionId`
+  - Apifox 集合 [`Esim-ePass-P0-e2e-core`](../api-testcases/api_tests/postman/collections/Esim-ePass-P0-e2e-core.postman_collection.json)：`esimResourceId`、`esimOptionId`

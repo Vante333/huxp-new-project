@@ -39,7 +39,7 @@ Apifox/Postman 列表里 **先让人看懂「这一步在验证什么」**，再
 
 在需求生成器（或共享模块）中定义，**Local Offer 参考**：
 
-[`GeneratePostmanCollectionLocalOfferEpass.py`](../../../api-testcases/api_tests/postman/GeneratePostmanCollectionLocalOfferEpass.py)：
+[`GeneratePostmanCollectionLocalOfferEpass.py`](../../../api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLocalOfferEpass.py)：
 
 ```python
 def PurposeName(purpose: str, step_id: str, method: str, path_hint: str = "") -> str:
@@ -62,7 +62,7 @@ lo.RequestItem(
 
 ### 3. Full / 多模块形态：`StepSpec` + `purpose`
 
-[`GeneratePostmanCollectionLocalOfferEpassFull.py`](../../../api-testcases/api_tests/postman/GeneratePostmanCollectionLocalOfferEpassFull.py)：
+[`GeneratePostmanCollectionLocalOfferEpassFull.py`](../../../api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLocalOfferEpassFull.py)：
 
 ```python
 @dataclass
@@ -106,11 +106,11 @@ StepSpec(
 ## 导出命令（仓库根，PowerShell）
 
 ```powershell
-python api-testcases/api_tests/postman/GeneratePostmanCollectionLocalOfferEpass.py
-python api-testcases/api_tests/postman/GeneratePostmanCollectionLocalOfferEpassFull.py
+python api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLocalOfferEpass.py
+python api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLocalOfferEpassFull.py
 ```
 
-其他需求：`python api-testcases/api_tests/postman/GeneratePostmanCollection<需求>.py`
+其他需求：`python api-testcases/api_tests/postman/generators/GeneratePostmanCollection<需求>.py`
 
 改生成器后 **必须** 运行脚本重写 `*.postman_collection.json`，再让使用者 **重新导入** Apifox（勿沿用旧集合缓存）。
 

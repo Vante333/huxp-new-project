@@ -9,6 +9,7 @@ from __future__ import annotations
     --requirement requirements/2026Q2SP4/PAPI-xxxx.md
 
 仅导出脑图中 tc 用例节点；判定表等未挂 tc 子树的内容不会写入输出。
+模块路径按脑图原始嵌套输出为 H2/H3/…（不再用 ``-`` 拼成单层 H2）。
 详见 tools/README.md 与 .cursor/skills/test-case-design-with-priority/reference.md §8.4。
 """
 
@@ -96,6 +97,42 @@ def _MergeExpecteds(children: List[str]) -> str:
     return s.replace("。；", "；")
 
 
+def _IsDataTopic(title: str) -> bool:
+    t = (title or "").strip()
+    return t == "数据" or t.startswith("数据")
+
+
+_DEFAULT_DATA_LINES = (
+    "apifox链接 ——（待补充）",
+    "boss配置 ——（待补充）",
+    "saas截图 ——（待补充）",
+    "saas价格返回 ——（待补充）",
+)
+
+
+def _NormalizeDataLine(title: str) -> str:
+    t = title.strip().replace("\n", " ")
+    if not t:
+        return ""
+    if "——" in t or "—" in t or "--" in t:
+        return t
+    return f"{t} ——（待补充）"
+
+
+def _EmitDataSection(data_node: dict[str, Any], lines: List[str]) -> None:
+    """按脑图平级子主题导出：``- 数据`` + 缩进子项。"""
+    lines.append("- 数据")
+    subs = _TopicAttached(data_node)
+    if not subs:
+        for item in _DEFAULT_DATA_LINES:
+            lines.append(f"  - {item}")
+        return
+    for sub in subs:
+        text = _NormalizeDataLine(str(sub.get("title") or ""))
+        if text:
+            lines.append(f"  - {text}")
+
+
 def _EmitCaseBody(
     attached: List[dict[str, Any]],
     lines: List[str],
@@ -158,22 +195,39 @@ def ConvertToTestcasesMarkdown(
             f"`testcases` Markdown 约定。"
         )
     out.append(
-        "- rc: 接口路径、错误码、主数据以 **Apifox/MCP** 与当前联调环境为准。"
+        "- rc: 若涉及接口，接口结构以 **Apifox/MCP 契约**为准；业务预期与错误码以需求及已确认规则为准；"
+        "当前联调响应仅作验证证据，不得反向覆盖预期。"
     )
     out.append(
         "- rc: 历史 `tc-p0` 已按规范映射为 `tc-p1`；判定表碎片节点（是/否/不适用等）未写入本文件。"
     )
     out.append("")
 
-    last_h2: str | None = None
+    # 保留脑图模块嵌套：path[0]→H2、path[1]→H3…；用例标题紧随其后一层。
+    # Markdown 实用上限 H6；更深模块仍写入但截断为 H6，用例同层继续用 H6。
+    _MAX_HEADING = 6
+    last_module_parts: List[str] = []
 
-    def flush_h2(name: str) -> None:
-        nonlocal last_h2
-        if name == last_h2:
-            return
-        out.append(f"## {name}")
-        out.append("")
-        last_h2 = name
+    def _HeadingPrefix(level: int) -> str:
+        return "#" * max(1, min(level, _MAX_HEADING))
+
+    def flush_module_path(parts: List[str]) -> None:
+        nonlocal last_module_parts
+        if not parts:
+            parts = ["默认模块"]
+        common = 0
+        while (
+            common < len(parts)
+            and common < len(last_module_parts)
+            and parts[common] == last_module_parts[common]
+        ):
+            common += 1
+        for idx in range(common, len(parts)):
+            # H1 为根标题，模块从 H2 起
+            level = idx + 2
+            out.append(f"{_HeadingPrefix(level)} {parts[idx]}")
+            out.append("")
+        last_module_parts = list(parts)
 
     def walk(node: dict[str, Any], path: List[str]) -> None:
         title_raw = (node.get("title") or "").strip().replace("\n", " ")
@@ -186,12 +240,16 @@ def ConvertToTestcasesMarkdown(
 
         if _IsTcTitle(title_raw):
             parts = [_SanitizeModuleSegment(p) for p in path if p.strip()]
-            h2 = "-".join(parts) if parts else "默认模块"
-            flush_h2(h2)
+            flush_module_path(parts)
             case_title = _NormalizeCaseTitle(title_raw)
-            out.append(f"### {case_title}")
+            case_level = (len(parts) if parts else 1) + 2
+            out.append(f"{_HeadingPrefix(case_level)} {case_title}")
             out.append("")
-            _EmitCaseBody(attached, out)
+            data_nodes = [c for c in attached if _IsDataTopic(str(c.get("title") or ""))]
+            body_nodes = [c for c in attached if not _IsDataTopic(str(c.get("title") or ""))]
+            _EmitCaseBody(body_nodes, out)
+            if data_nodes:
+                _EmitDataSection(data_nodes[0], out)
             out.append("")
             return
 

@@ -33,7 +33,7 @@ python tools/GenerateRequirementsIndex.py
 
 ## 3. XMind 测试用例脑图 → Markdown（xmind_to_testcases_md.py）
 
-将带 **`tc-p*`** 优先级语义的 XMind 转为 [`testcases/`](../testcases/) 风格的用例 Markdown（`### tc-p1:` + `pc`/步骤/预期）。**用户要求用 XMind 替换 testcases 下 md 时优先用本脚本**，勿临时写转换代码。
+将带 **`tc-p*`** 优先级语义的 XMind 转为 [`testcases/`](../testcases/) 风格的用例 Markdown（嵌套模块标题 + `tc-p1:` + `pc`/步骤/预期）。**用户要求用 XMind 替换 testcases 下 md 时优先用本脚本**，勿临时写转换代码。
 
 ```bash
 python tools/xmind_to_testcases_md.py \
@@ -43,6 +43,7 @@ python tools/xmind_to_testcases_md.py \
 ```
 
 - **仅导出**脑图中 `tc-p*` / `tc:` 节点；判定表、分析表若未挂在用例树下不会出现在输出中。
+- **保留脑图模块层级**：祖先文件夹按深度输出为 `##` / `###` / …，用例标题在下一层（不再把路径用 `-` 拼成单层 H2）。
 - `--requirement` 可选，用于生成正确的 `## 测试范围说明`（避免残留其他需求文案）。
 
 另见 `tools/xmind_to_markdown_v2.py`（另一套 tc 格式）、`tools/xmind2md.py`（通用大纲）。

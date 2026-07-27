@@ -1,0 +1,1132 @@
+"""
+首次会籍商品购买 · P0 冒烟 Postman Collection v2.1。
+
+两条 E2E（步骤序按用户确认）::
+
+    Preview → Create → Details → Payments → Details → Cancel → Details
+
+1. 商品 B：不传券、``autoRenewal=false``、EUR 原价
+2. 商品 A：传 ``CouponIntroValid``、``autoRenewal=true``、引导期（应付可为 0）
+
+环境变量（Apifox Environment，勿写死 secret 进仓库）::
+
+    ProgramID / clientId / secret / baseUrl / x-version
+    productBProgramId / productBProgramName / productBPrice / productBCurrency
+    productAProgramId / productAProgramName / productAPrice / productAPayableAmount / productACurrency
+    CouponIntroValid / returnUrl
+
+用法（仓库根）::
+
+    python api-testcases/api_tests/postman/generators/GeneratePostmanCollectionMembershipPurchaseP0.py
+"""
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+from typing import Any, Dict, Final, List, Mapping, Optional, Sequence, Union
+
+from collection_builder_common import CollectionPath
+
+JsonObject = Dict[str, Any]
+
+POSTMAN_SCHEMA: Final[str] = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+OUT_NAME: Final[str] = "Membership-Purchase-P0.postman_collection.json"
+COLLECTION_DISPLAY_NAME: Final[str] = "Membership Purchase · P0 冒烟（首次会籍购买）"
+
+PATH_AUTH: Final[str] = "/v2/auth/token"
+PATH_PREVIEW: Final[str] = "/v2/orders/memberships/purchase/preview"
+PATH_CREATE: Final[str] = "/v2/orders/memberships/purchase"
+PATH_DETAILS: Final[str] = "/v2/orders/memberships/purchase/details"
+PATH_PAYMENTS: Final[str] = "/v2/orders/payments"
+PATH_CANCEL: Final[str] = "/v2/orders"
+
+# 业务期望默认值（可提交）；鉴权三列仅从 .env 的 MP_P0_* 注入，勿写死 secret。
+DEFAULT_BUSINESS_ENV: Final[Dict[str, str]] = {
+    "productBProgramId": "2032786406298624",
+    "productBProgramName": "会籍购买测试-无优惠订阅15/15eur",
+    "productBPrice": "15",
+    "productBCurrency": "EUR",
+    "productBDeduction": "0",
+    "productAProgramId": "2032786406298624",
+    "productAProgramName": "会籍购买测试-有优惠10/0usd",
+    "productAPrice": "10",
+    "productAPayableAmount": "0",
+    "productADeduction": "0",
+    "productACurrency": "USD",
+    "CouponIntroValid": "PC9850UZX4MWDU9RHW04",
+    "CouponIntroValidName": "",
+    "returnUrl": "https://www.ly.com",
+    "x-version": "canary",
+    "baseUrl": "https://developer-sandbox.dragonpass.com/api",
+}
+
+
+def BuildScenarioDescription() -> str:
+    """写入 Apifox 场景 description：生成源 + 变量关系 + 金额公式（对齐 FT payment 说明风格）。"""
+    b = DEFAULT_BUSINESS_ENV
+    return (
+        "由 GeneratePostmanCollectionMembershipPurchaseP0 生成 · Membership Purchase · P0 冒烟\n"
+        "鉴权：.env 的 MP_P0_PROGRAM_ID / MP_P0_CLIENT_ID / MP_P0_SECRET → 运行时 ProgramID/clientId/secret\n"
+        "环境：baseUrl / x-version 用 Apifox Environment（Environment 351893；勿用空集合变量覆盖）。\n"
+        "\n"
+        "【链路】\n"
+        "1 商品B-无券-原价EUR：Preview→Create→Details→Payments→Details→Cancel→Details（autoRenewal=false）\n"
+        "2 商品A-传券-引导期USD：同上（CouponIntroValid + autoRenewal=true）；"
+        "payable=0 时 Payments 期望业务失败；其后仍 Cancel→Details\n"
+        "\n"
+        "【商品 B 变量关系（场景1）】\n"
+        f"· productBProgramId / productBProgramName → Preview/Create 选品"
+        f"（默认 {b['productBProgramId']} / {b['productBProgramName']}）\n"
+        f"· productBPrice → originalAmount / charges.details.unitPrice&amount 期望（默认 {b['productBPrice']}）\n"
+        f"· productBCurrency → payment.currency（默认 {b['productBCurrency']}）\n"
+        f"· productBDeduction → deductionAmount 期望（无券默认 {b['productBDeduction']}）\n"
+        "· payableAmount 期望 = productBPrice − productBDeduction\n"
+        "\n"
+        "【商品 A 变量关系（场景2）】\n"
+        f"· productAProgramId / productAProgramName → Preview/Create 选品"
+        f"（默认 {b['productAProgramId']} / {b['productAProgramName']}）\n"
+        f"· productAPrice → originalAmount / unitPrice 期望（默认 {b['productAPrice']}）\n"
+        f"· productAPayableAmount → payableAmount 期望（引导期默认 {b['productAPayableAmount']}）\n"
+        f"· productACurrency → payment.currency（默认 {b['productACurrency']}）\n"
+        f"· CouponIntroValid → couponCodes（默认 {b['CouponIntroValid']}）\n"
+        "· CouponIntroValidName → coupon.details.description / couponName 期望（Environment 配置券名称）\n"
+        "· deductionAmount 期望 = productAPrice − productAPayableAmount"
+        "（例 10−0=10；不以 productADeduction 写死为准）\n"
+        "\n"
+        "【金额块断言（Preview/Create/Details）】\n"
+        "payment.currency / originalAmount / payableAmount / deductionAmount；\n"
+        "charges[0].details[0]：paxType=CARDHOLDER、quantity=1、unitPrice、amount=unitPrice×quantity。\n"
+        "\n"
+        "【运行时变量（勿预置空集合变量）】\n"
+        "· uniqueProfileEmail / uniqueProfileClientUserId → Create 时生成\n"
+        "· orderIdB / orderIdA → Create 写出，供 Details / Payments / Cancel 使用\n"
+        f"· returnUrl → Payments 回跳（默认 {b['returnUrl']}）\n"
+    )
+
+
+def LoadDotEnv() -> None:
+    """加载仓库根 .env（不覆盖已有进程环境变量）。"""
+    root = Path(__file__).resolve().parents[4]
+    env_path = root / ".env"
+    if not env_path.is_file():
+        return
+    try:
+        text = env_path.read_text(encoding="utf-8")
+    except OSError:
+        return
+    for line in text.splitlines():
+        raw = line.strip()
+        if not raw or raw.startswith("#") or "=" not in raw:
+            continue
+        key, value = raw.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+def AuthCredentials() -> Dict[str, str]:
+    LoadDotEnv()
+    return {
+        "ProgramID": (os.environ.get("MP_P0_PROGRAM_ID") or "").strip(),
+        "clientId": (os.environ.get("MP_P0_CLIENT_ID") or "").strip(),
+        "secret": (os.environ.get("MP_P0_SECRET") or "").strip(),
+    }
+
+
+def JsStringLiteral(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def Lines_SeedRuntimeEnv() -> List[str]:
+    """
+    Apifox Environment 变量在私有化 CLI 下常无法注入；生成时写入运行时变量。
+    鉴权三列来自本机 .env 的 MP_P0_*（勿提交）。
+    """
+    creds = AuthCredentials()
+    lines: List[str] = ["try {"]
+    for key, value in DEFAULT_BUSINESS_ENV.items():
+        lit = JsStringLiteral(value)
+        lines.append(f"  if (!String((pm.environment && pm.environment.get({JsStringLiteral(key)})) || '').trim()) {{")
+        lines.append(f"    try {{ pm.environment.set({JsStringLiteral(key)}, {lit}); }} catch (eE) {{}}")
+        lines.append(f"    try {{ pm.variables.set({JsStringLiteral(key)}, {lit}); }} catch (eV) {{}}")
+        lines.append("  } else {")
+        lines.append(f"    try {{ pm.variables.set({JsStringLiteral(key)}, String(pm.environment.get({JsStringLiteral(key)}))); }} catch (eC) {{}}")
+        lines.append("  }")
+    for key in ("ProgramID", "clientId", "secret"):
+        val = creds.get(key) or ""
+        if not val:
+            continue
+        lit = JsStringLiteral(val)
+        lines.append(f"  try {{ pm.variables.set({JsStringLiteral(key)}, {lit}); }} catch (e1) {{}}")
+        lines.append(f"  try {{ pm.collectionVariables.set({JsStringLiteral(key)}, {lit}); }} catch (e2) {{}}")
+        lines.append(f"  try {{ pm.environment.set({JsStringLiteral(key)}, {lit}); }} catch (e3) {{}}")
+    lines.extend(
+        [
+            "  // Auth body 占位符强制替换，避免 {{clientId}}/{{secret}} 未解析",
+            "  if (pm.request && pm.request.body && pm.request.body.raw) {",
+            "    var _raw = String(pm.request.body.raw);",
+            "    var _cid = ''; try { _cid = String(pm.variables.get('clientId') || '').trim(); } catch (eC0) {}",
+            "    var _sec = ''; try { _sec = String(pm.variables.get('secret') || '').trim(); } catch (eS0) {}",
+            "    if (_cid) _raw = _raw.replace(/{{clientId}}/g, _cid);",
+            "    if (_sec) _raw = _raw.replace(/{{secret}}/g, _sec);",
+            "    pm.request.body.raw = _raw;",
+            "  }",
+            "  var _pid = ''; try { _pid = String(pm.variables.get('ProgramID') || '').trim(); } catch (eP0) {}",
+            "  if (_pid && pm.request && pm.request.headers && typeof pm.request.headers.upsert === 'function') {",
+            "    try { pm.request.headers.upsert({ key: 'X-Program-ID', value: _pid }); } catch (ePH) {}",
+            "  }",
+            "} catch (eSeed) { console.warn('seed runtime env', eSeed); }",
+        ]
+    )
+    return lines
+
+
+def BuildHelpersJsLines() -> List[str]:
+    js = r"""
+function isBusinessSuccess(env) {
+  if (!env || typeof env !== 'object') return false;
+  if (!Object.prototype.hasOwnProperty.call(env, 'code')) return true;
+  var c = env.code;
+  return c === 0 || c === '0';
+}
+function fmtJsonBrief(v, maxLen) {
+  maxLen = maxLen || 240;
+  var s;
+  try { s = JSON.stringify(v); } catch (e) { s = String(v); }
+  if (s.length > maxLen) return s.slice(0, maxLen) + '...(len=' + s.length + ')';
+  return s;
+}
+function assertCheck(checkpoint, expected, actual) {
+  var title = checkpoint + ' | 期望=' + fmtJsonBrief(expected) + ' | 实际=' + fmtJsonBrief(actual);
+  pm.test(title, function () {
+    pm.expect(actual).to.eql(expected);
+  });
+}
+function assertHttp(checkpoint, expectedCode) {
+  assertCheck(checkpoint, expectedCode, pm.response.code);
+}
+function assertInfo(checkpoint, expectedDesc, actualValue) {
+  var title = checkpoint + ' | 期望=' + expectedDesc + ' | 实际=' + fmtJsonBrief(actualValue);
+  pm.test(title, function () {
+    pm.expect(true).to.eql(true);
+  });
+}
+function parseJson() {
+  try { return pm.response.json(); } catch (e) { return null; }
+}
+function getEnv(name) {
+  var v = '';
+  try { v = String((pm.environment && pm.environment.get(name)) || '').trim(); } catch (e0) {}
+  if (!v) { try { v = String(pm.variables.get(name) || '').trim(); } catch (e1) {} }
+  if (!v) { try { v = String(pm.collectionVariables.get(name) || '').trim(); } catch (e2) {} }
+  return v;
+}
+function setRuntime(name, value) {
+  var s = value === null || value === undefined ? '' : String(value);
+  try { pm.variables.set(name, s); } catch (eV) {}
+  try { pm.collectionVariables.set(name, s); } catch (eC) {}
+  try { if (pm.environment) pm.environment.set(name, s); } catch (eE) {}
+}
+function numEq(a, b) {
+  if (a === null || a === undefined || b === null || b === undefined || b === '') return false;
+  return Number(a) === Number(b);
+}
+function assertNum(checkpoint, expected, actual) {
+  var title = checkpoint + ' | 期望=' + fmtJsonBrief(Number(expected)) + ' | 实际=' + fmtJsonBrief(actual);
+  pm.test(title, function () {
+    pm.expect(numEq(actual, expected), '数值不相等').to.eql(true);
+  });
+}
+function assertBizOk(checkpoint) {
+  assertHttp(checkpoint + ': HTTP', 200);
+  var j = parseJson() || {};
+  var ok = isBusinessSuccess(j);
+  var title = checkpoint + ': 业务成功 | 期望=code=0 | 实际=' + fmtJsonBrief({ code: j.code, errCode: j.errCode, msg: j.msg });
+  pm.test(title, function () {
+    pm.expect(ok, '正向步骤业务失败不可跳过').to.eql(true);
+  });
+  return j;
+}
+function emptyOrNullArr(v) {
+  return v === null || v === undefined || (Array.isArray(v) && v.length === 0);
+}
+function assertChargeDetails(label, charge, cfg) {
+  assertCheck(label + ': charges[0].type', 'MONTHLY_MEMBERSHIP_FEE', String((charge && charge.type) || ''));
+  var details = charge && charge.details;
+  assertCheck(label + ': charges[0].details 为数组', true, Array.isArray(details));
+  if (!Array.isArray(details) || !details.length) return;
+  var row = details[0] || {};
+  var expectPax = cfg.expectPaxType || 'CARDHOLDER';
+  var expectQty = cfg.expectQuantity !== undefined && cfg.expectQuantity !== '' ? cfg.expectQuantity : 1;
+  var expectUnit = cfg.expectUnitPrice;
+  assertCheck(label + ': charges[0].details[0].paxType', String(expectPax), String(row.paxType || ''));
+  assertNum(label + ': charges[0].details[0].quantity', expectQty, row.quantity);
+  if (expectUnit !== undefined && expectUnit !== '') {
+    assertNum(label + ': charges[0].details[0].unitPrice', expectUnit, row.unitPrice);
+    assertNum(label + ': charges[0].details[0].amount', Number(expectQty) * Number(expectUnit), row.amount);
+  }
+}
+function assertPriceBlock(label, pay, cfg) {
+  assertCheck(label + ': payment 为对象', 'object', (!pay || typeof pay !== 'object' || Array.isArray(pay)) ? typeof pay : 'object');
+  if (!pay) return;
+  if (cfg.expectCurrency) {
+    assertCheck(label + ': currency', String(cfg.expectCurrency), String(pay.currency || ''));
+  }
+  var price = pay.price || {};
+  if (cfg.expectOriginal !== undefined && cfg.expectOriginal !== '') {
+    assertNum(label + ': originalAmount', cfg.expectOriginal, price.originalAmount);
+  }
+  if (cfg.expectPayable !== undefined && cfg.expectPayable !== '') {
+    assertNum(label + ': payableAmount', cfg.expectPayable, price.payableAmount);
+  }
+  if (cfg.expectDeduction !== undefined && cfg.expectDeduction !== '') {
+    assertNum(label + ': deductionAmount', cfg.expectDeduction, price.deductionAmount);
+  }
+  var charges = pay.charges;
+  assertCheck(label + ': charges 为数组', true, Array.isArray(charges));
+  if (Array.isArray(charges) && charges.length) {
+    assertChargeDetails(label, charges[0], cfg);
+  }
+  pm.test(label + ': deductions 为空或[] | 期望=null|[] | 实际=' + fmtJsonBrief(pay.deductions), function () {
+    pm.expect(emptyOrNullArr(pay.deductions)).to.eql(true);
+  });
+}
+function assertPendingNoActivation(label, data) {
+  var act = data && data.extra && data.extra.activation;
+  var ok = act === null || act === undefined || (Array.isArray(act) && act.length === 0) ||
+    (typeof act === 'object' && !act.activationCode && !act.redemptionCode && !act.membershipId);
+  pm.test(label + ': 待支付无可用激活凭据 | 期望=无凭据 | 实际=' + fmtJsonBrief(act), function () {
+    pm.expect(ok).to.eql(true);
+  });
+}
+function looksLikeUtc0DateTime(s) {
+  if (!s || typeof s !== 'string') return false;
+  // 接受 2026-07-27T11:00:00Z / ...+00:00 / 无毫秒
+  return /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]00:00)$/.test(String(s).trim());
+}
+function assertCreateOrderMeta(label, data) {
+  assertCheck(label + ': orderId 非空', true, !!(data && data.orderId && String(data.orderId)));
+  pm.test(label + ': orderCreatedDate UTC+0 | 期望=ISO8601 Z/+00:00 | 实际=' + fmtJsonBrief(data && data.orderCreatedDate), function () {
+    pm.expect(looksLikeUtc0DateTime(String((data && data.orderCreatedDate) || '')), 'orderCreatedDate 非 UTC+0').to.eql(true);
+  });
+  pm.test(label + ': orderCancelledDate 为 null | 期望=null | 实际=' + fmtJsonBrief(data && data.orderCancelledDate), function () {
+    pm.expect(data && data.orderCancelledDate === null, '创建时应未取消').to.eql(true);
+  });
+}
+function assertExtraEchoRequest(label, extra, cfg) {
+  extra = extra || {};
+  if (cfg.expectAppId !== undefined) {
+    assertCheck(label + ': extra.appId', cfg.expectAppId, extra.appId);
+  }
+  if (cfg.expectAutoRenewal !== undefined) {
+    assertCheck(label + ': extra.autoRenewal', cfg.expectAutoRenewal, extra.autoRenewal);
+  }
+  if (cfg.expectCouponCode !== undefined && cfg.expectCouponCode !== '') {
+    assertCheck(label + ': extra.couponCode', String(cfg.expectCouponCode), String(extra.couponCode || ''));
+  }
+  var prof = extra.profile || {};
+  if (cfg.expectEmail !== undefined && cfg.expectEmail !== '') {
+    assertCheck(label + ': extra.profile.email', String(cfg.expectEmail), String(prof.email || ''));
+  }
+  if (cfg.expectClientUserId !== undefined && cfg.expectClientUserId !== '') {
+    assertCheck(label + ': extra.profile.clientUserId', String(cfg.expectClientUserId), String(prof.clientUserId || ''));
+  }
+}
+"""
+    return [ln for ln in js.strip().split("\n")]
+
+
+def SaveTokenLines() -> List[str]:
+    return [
+        "try {",
+        "  var j = pm.response.json();",
+        "  var d = j.data !== undefined ? j.data : j;",
+        "  var t = d.accessToken || d.token || d.access_token;",
+        "  if (t) {",
+        "    var tok = String(t);",
+        "    try { pm.variables.set('accessToken', tok); } catch (eV) {}",
+        "    try { pm.collectionVariables.set('accessToken', tok); } catch (eC) {}",
+        "    try { pm.environment.set('accessToken', tok); } catch (eE) {}",
+        "    try { if (pm.globals && typeof pm.globals.set === 'function') pm.globals.set('accessToken', tok); } catch (eG) {}",
+        "  }",
+        "} catch (e) { console.warn(e); }",
+        "pm.test('Auth: accessToken 已写入运行时', function () {",
+        "  var _a = ''; try { _a = String(pm.variables.get('accessToken') || '').trim(); } catch (e1) {}",
+        "  var _b = ''; try { _b = String(pm.collectionVariables.get('accessToken') || '').trim(); } catch (e2) {}",
+        "  var _c = ''; try { _c = String((pm.environment && pm.environment.get('accessToken')) || '').trim(); } catch (e3) {}",
+        "  var _d = ''; try { _d = String((pm.globals && pm.globals.get('accessToken')) || '').trim(); } catch (e4) {}",
+        "  pm.expect(_a || _b || _c || _d, 'variables/collection/env/globals 均无 accessToken').to.be.ok;",
+        "});",
+    ]
+
+
+def Lines_EnsureAuthPrerequest() -> List[str]:
+    return [
+        "try {",
+        "  var _base = '';",
+        "  try { _base = String((pm.environment && pm.environment.get('baseUrl')) || '').trim(); } catch (eB0) {}",
+        "  if (!_base) { try { _base = String(pm.variables.get('baseUrl') || '').trim(); } catch (eB1) {} }",
+        "  if (!_base) { try { _base = String(pm.collectionVariables.get('baseUrl') || '').trim(); } catch (eB2) {} }",
+        "  if (_base) {",
+        "    try { pm.variables.set('baseUrl', _base); } catch (eBS1) {}",
+        "    try { pm.collectionVariables.set('baseUrl', _base); } catch (eBS2) {}",
+        "  }",
+        "  var _pid = '';",
+        "  try { _pid = String(pm.variables.get('ProgramID') || '').trim(); } catch (eP0) {}",
+        "  if (!_pid) { try { _pid = String(pm.collectionVariables.get('ProgramID') || '').trim(); } catch (eP1) {} }",
+        "  if (!_pid) { try { _pid = String((pm.environment && pm.environment.get('ProgramID')) || '').trim(); } catch (eP2) {} }",
+        "  if (_pid) {",
+        "    try { pm.variables.set('ProgramID', _pid); } catch (ePS) {}",
+        "    try {",
+        "      if (pm.request && pm.request.headers && typeof pm.request.headers.upsert === 'function') {",
+        "        pm.request.headers.upsert({ key: 'X-Program-ID', value: _pid });",
+        "      }",
+        "    } catch (ePH) {}",
+        "  }",
+        "  var _xv = '';",
+        "  try { _xv = String((pm.environment && pm.environment.get('x-version')) || '').trim(); } catch (eX0) {}",
+        "  if (!_xv) { try { _xv = String(pm.variables.get('x-version') || '').trim(); } catch (eX1) {} }",
+        "  if (!_xv) { try { _xv = String(pm.collectionVariables.get('x-version') || '').trim(); } catch (eX2) {} }",
+        "  if (_xv && ['omit','none','off'].indexOf(_xv.toLowerCase()) < 0) {",
+        "    try { pm.variables.set('x-version', _xv); } catch (eXS) {}",
+        "    try {",
+        "      if (pm.request && pm.request.headers && typeof pm.request.headers.upsert === 'function') {",
+        "        pm.request.headers.upsert({ key: 'x-version', value: _xv });",
+        "      }",
+        "    } catch (eXH) {}",
+        "  }",
+        "  try {",
+        "    var _rawTok = pm.variables.get('accessToken');",
+        "    if (_rawTok !== undefined && _rawTok !== null && String(_rawTok).trim() === '') {",
+        "      try { pm.variables.unset('accessToken'); } catch (eUn) {}",
+        "    }",
+        "  } catch (eClr) {}",
+        "  var _tok = '';",
+        "  try { _tok = String(pm.collectionVariables.get('accessToken') || '').trim(); } catch (e3) {}",
+        "  if (!_tok) { try { _tok = String((pm.globals && pm.globals.get('accessToken')) || '').trim(); } catch (eG1) {} }",
+        "  if (!_tok) { try { _tok = String((pm.environment && pm.environment.get('accessToken')) || '').trim(); } catch (e4) {} }",
+        "  if (!_tok) { try { _tok = String(pm.variables.get('accessToken') || '').trim(); } catch (e5) {} }",
+        "  if (_tok) {",
+        "    try { pm.variables.set('accessToken', _tok); } catch (eTV) {}",
+        "    try { pm.collectionVariables.set('accessToken', _tok); } catch (eTC) {}",
+        "    try { pm.environment.set('accessToken', _tok); } catch (eTE) {}",
+        "    try { if (pm.globals && typeof pm.globals.set === 'function') pm.globals.set('accessToken', _tok); } catch (eTG) {}",
+        "    var _auth = 'Bearer ' + _tok;",
+        "    try {",
+        "      var _hdrs = pm.request && pm.request.headers;",
+        "      if (_hdrs && typeof _hdrs.upsert === 'function') {",
+        "        _hdrs.upsert({ key: 'Authorization', value: _auth });",
+        "      } else if (_hdrs && typeof _hdrs.add === 'function') {",
+        "        try { if (typeof _hdrs.remove === 'function') _hdrs.remove('Authorization'); } catch (eRm) {}",
+        "        _hdrs.add({ key: 'Authorization', value: _auth });",
+        "      }",
+        "    } catch (eH) {}",
+        "  }",
+        "} catch (eAll) {}",
+    ]
+
+
+def Lines_UniqueProfilePrerequest(prefix: str) -> List[str]:
+    """为每条链路写入独立 UniqueProfile（email / clientUserId）。"""
+    return [
+        "try {",
+        f"  var _ts = String(Date.now());",
+        f"  var _email = '{prefix}_' + _ts + '@example.com';",
+        f"  var _cuid = '{prefix}_' + _ts;",
+        "  try { pm.variables.set('uniqueProfileEmail', _email); } catch (e1) {}",
+        "  try { pm.collectionVariables.set('uniqueProfileEmail', _email); } catch (e2) {}",
+        "  try { pm.variables.set('uniqueProfileClientUserId', _cuid); } catch (e3) {}",
+        "  try { pm.collectionVariables.set('uniqueProfileClientUserId', _cuid); } catch (e4) {}",
+        "} catch (eAll) {}",
+    ]
+
+
+def Lines_InjectOrderIdPrerequest(order_var: str) -> List[str]:
+    return [
+        "try {",
+        f"  var _oid = '';",
+        f"  try {{ _oid = String(pm.variables.get('{order_var}') || '').trim(); }} catch (e0) {{}}",
+        f"  if (!_oid) {{ try {{ _oid = String(pm.collectionVariables.get('{order_var}') || '').trim(); }} catch (e1) {{}} }}",
+        f"  if (!_oid) {{ try {{ _oid = String((pm.environment && pm.environment.get('{order_var}')) || '').trim(); }} catch (e2) {{}} }}",
+        "  if (_oid && pm.request && pm.request.body && pm.request.body.raw) {",
+        "    var raw = String(pm.request.body.raw);",
+        f"    raw = raw.replace(/{{{{{order_var}}}}}/g, _oid);",
+        "    pm.request.body.raw = raw;",
+        "  }",
+        "} catch (eAll) {}",
+    ]
+
+
+def Lines_InjectProfilePrerequest() -> List[str]:
+    return [
+        "try {",
+        "  var _email = ''; var _cuid = '';",
+        "  try { _email = String(pm.variables.get('uniqueProfileEmail') || '').trim(); } catch (e0) {}",
+        "  if (!_email) { try { _email = String(pm.collectionVariables.get('uniqueProfileEmail') || '').trim(); } catch (e1) {} }",
+        "  try { _cuid = String(pm.variables.get('uniqueProfileClientUserId') || '').trim(); } catch (e2) {}",
+        "  if (!_cuid) { try { _cuid = String(pm.collectionVariables.get('uniqueProfileClientUserId') || '').trim(); } catch (e3) {} }",
+        "  if (pm.request && pm.request.body && pm.request.body.raw) {",
+        "    var raw = String(pm.request.body.raw);",
+        "    if (_email) raw = raw.replace(/{{uniqueProfileEmail}}/g, _email);",
+        "    if (_cuid) raw = raw.replace(/{{uniqueProfileClientUserId}}/g, _cuid);",
+        "    pm.request.body.raw = raw;",
+        "  }",
+        "} catch (eAll) {}",
+    ]
+
+
+def AuthJsonHeaders() -> List[JsonObject]:
+    return [
+        {"key": "X-Program-ID", "value": "{{ProgramID}}"},
+        {"key": "x-version", "value": "{{x-version}}"},
+        {"key": "X-Request-ID", "value": "{{$guid}}"},
+        {"key": "Content-Type", "value": "application/json"},
+        {"key": "Accept", "value": "*/*"},
+    ]
+
+
+def BearerJsonHeaders() -> List[JsonObject]:
+    pid = AuthCredentials().get("ProgramID") or "{{ProgramID}}"
+    return [
+        {"key": "X-Program-ID", "value": pid},
+        {"key": "x-version", "value": "{{x-version}}"},
+        {"key": "X-Request-ID", "value": "{{$guid}}"},
+        {"key": "Authorization", "value": "Bearer {{accessToken}}"},
+        {"key": "Content-Type", "value": "application/json"},
+        {"key": "Accept", "value": "*/*"},
+    ]
+
+
+def PostmanUrl(url_path: str) -> JsonObject:
+    # 私有化 CLI 下 Environment 的 {{baseUrl}} 常无法注入；P0 使用字面量基址。
+    LoadDotEnv()
+    base = (os.environ.get("MP_P0_BASE_URL") or "").strip() or DEFAULT_BUSINESS_ENV.get("baseUrl") or ""
+    raw = base + url_path
+    path_parts = [part for part in url_path.split("/") if part]
+    return {"raw": raw, "host": [base], "path": path_parts}
+
+
+def PostmanJsonRawBody(raw: str) -> JsonObject:
+    return {"mode": "raw", "raw": raw, "options": {"raw": {"language": "json"}}}
+
+
+def CollectionVariable(key: str, value: str) -> JsonObject:
+    return {"key": key, "value": value, "type": "string"}
+
+
+def PurposeName(purpose: str, step_id: str, method: str, path_hint: str = "") -> str:
+    hint = (path_hint or "").strip()
+    if hint:
+        return f"【{purpose}】| {step_id} | {method} {hint}"
+    return f"【{purpose}】| {step_id} | {method}"
+
+
+def MakeTestEvent(
+    *,
+    save_token: bool = False,
+    extra_lines: Optional[Sequence[str]] = None,
+) -> List[JsonObject]:
+    lines: List[str] = []
+    lines.extend(BuildHelpersJsLines())
+    if save_token:
+        lines.extend(SaveTokenLines())
+    if extra_lines:
+        lines.extend(list(extra_lines))
+    return [{"listen": "test", "script": {"exec": lines, "type": "text/javascript"}}]
+
+
+def RequestItem(
+    *,
+    name: str,
+    method: str,
+    url_path: str,
+    body: Optional[str],
+    headers: List[JsonObject],
+    description: str,
+    save_token: bool = False,
+    test_lines: Optional[Sequence[str]] = None,
+    prerequest_extra: Optional[Sequence[str]] = None,
+) -> JsonObject:
+    req: JsonObject = {
+        "method": method,
+        "header": headers,
+        "url": PostmanUrl(url_path),
+        "description": description,
+    }
+    if body is not None:
+        req["body"] = PostmanJsonRawBody(body)
+    out: JsonObject = {"name": name, "request": req}
+    pre_lines = list(Lines_SeedRuntimeEnv()) + list(Lines_EnsureAuthPrerequest())
+    if prerequest_extra:
+        pre_lines.extend(list(prerequest_extra))
+    out["event"] = [
+        {"listen": "prerequest", "script": {"exec": pre_lines, "type": "text/javascript"}},
+        MakeTestEvent(save_token=save_token, extra_lines=test_lines)[0],
+    ]
+    return out
+
+
+def Folder(name: str, items: Sequence[Union[JsonObject, Mapping[str, Any]]], description: str = "") -> JsonObject:
+    folder: JsonObject = {"name": name, "item": list(items)}
+    if description:
+        folder["description"] = description
+    return folder
+
+
+def BodyPreviewCreate(*, with_coupon: bool, auto_renewal: bool) -> str:
+    payload: JsonObject = {
+        "appId": 1,
+        "autoRenewal": auto_renewal,
+        "profile": {
+            "email": "{{uniqueProfileEmail}}",
+            "clientUserId": "{{uniqueProfileClientUserId}}",
+        },
+    }
+    if with_coupon:
+        payload["couponCode"] = "{{CouponIntroValid}}"
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+def Lines_Auth() -> List[str]:
+    return [
+        "var j = parseJson() || {};",
+        "assertHttp('Auth: HTTP', 200);",
+        "var d = j.data !== undefined ? j.data : j;",
+        "var t = d && (d.accessToken || d.token || d.access_token);",
+        "assertCheck('Auth: accessToken 非空', true, !!t);",
+    ]
+
+
+def Lines_PreviewProductB() -> List[str]:
+    return [
+        "var j = assertBizOk('B-PRE');",
+        "var data = j.data || {};",
+        "var extra = data.extra || {};",
+        "assertExtraEchoRequest('B-PRE', extra, {",
+        "  expectAppId: 1,",
+        "  expectAutoRenewal: false,",
+        "  expectEmail: getEnv('uniqueProfileEmail'),",
+        "  expectClientUserId: getEnv('uniqueProfileClientUserId')",
+        "});",
+        "var pay = data.payment || {};",
+        "pm.test('B-PRE: paymentStatus/timeline 为 null | 期望=null | 实际=' + fmtJsonBrief({ ps: pay.paymentStatus, tl: pay.timeline }), function () {",
+        "  pm.expect(pay.paymentStatus === null || pay.paymentStatus === undefined).to.eql(true);",
+        "  pm.expect(pay.timeline === null || pay.timeline === undefined).to.eql(true);",
+        "});",
+        "assertPriceBlock('B-PRE', pay, {",
+        "  expectCurrency: getEnv('productBCurrency') || 'EUR',",
+        "  expectOriginal: getEnv('productBPrice') || '15',",
+        "  expectPayable: getEnv('productBPrice') || '15',",
+        "  expectDeduction: '0',",
+        "  expectPaxType: 'CARDHOLDER',",
+        "  expectQuantity: 1,",
+        "  expectUnitPrice: getEnv('productBPrice') || '15'",
+        "});",
+    ]
+
+
+def Lines_CreateProductB(order_var: str) -> List[str]:
+    return [
+        "var j = assertBizOk('B-CRT');",
+        "var data = j.data || {};",
+        "assertCheck('B-CRT: status=9 待支付', 9, data.status);",
+        "assertCreateOrderMeta('B-CRT', data);",
+        f"setRuntime('{order_var}', data.orderId);",
+        "var extra = data.extra || {};",
+        "assertCheck('B-CRT: extra.programId', getEnv('productBProgramId'), String(extra.programId || ''));",
+        "assertCheck('B-CRT: extra.programName', getEnv('productBProgramName'), String(extra.programName || ''));",
+        "assertExtraEchoRequest('B-CRT', extra, {",
+        "  expectAppId: 1,",
+        "  expectAutoRenewal: false,",
+        "  expectEmail: getEnv('uniqueProfileEmail'),",
+        "  expectClientUserId: getEnv('uniqueProfileClientUserId')",
+        "});",
+        "var pay = data.payment || {};",
+        "assertCheck('B-CRT: paymentStatus', 'PENDING_PAYMENT', String(pay.paymentStatus || ''));",
+        "assertPriceBlock('B-CRT', pay, {",
+        "  expectCurrency: getEnv('productBCurrency') || 'EUR',",
+        "  expectOriginal: getEnv('productBPrice') || '15',",
+        "  expectPayable: getEnv('productBPrice') || '15',",
+        "  expectDeduction: '0',",
+        "  expectPaxType: 'CARDHOLDER',",
+        "  expectQuantity: 1,",
+        "  expectUnitPrice: getEnv('productBPrice') || '15'",
+        "});",
+    ]
+
+
+def Lines_DetailsPending(label: str, order_var: str, *, program_id_env: str, program_name_env: str, currency_env: str, price_env: str, payable_env: str, deduction_env: str, auto_renewal: bool) -> List[str]:
+    return [
+        f"var j = assertBizOk('{label}');",
+        "var data = j.data || {};",
+        f"var expectOid = getEnv('{order_var}') || pm.variables.get('{order_var}') || pm.collectionVariables.get('{order_var}');",
+        f"assertCheck('{label}: orderId', String(expectOid || ''), String(data.orderId || ''));",
+        f"assertCheck('{label}: status=9', 9, data.status);",
+        "var extra = data.extra || {};",
+        f"assertCheck('{label}: extra.programId', getEnv('{program_id_env}'), String(extra.programId || ''));",
+        f"assertCheck('{label}: extra.programName', getEnv('{program_name_env}'), String(extra.programName || ''));",
+        f"assertCheck('{label}: extra.autoRenewal', {str(auto_renewal).lower()}, extra.autoRenewal);",
+        f"assertPendingNoActivation('{label}', data);",
+        "var pay = data.payment || {};",
+        f"assertCheck('{label}: paymentStatus', 'PENDING_PAYMENT', String(pay.paymentStatus || ''));",
+        "assertPriceBlock('" + label + "', pay, {",
+        f"  expectCurrency: getEnv('{currency_env}'),",
+        f"  expectOriginal: getEnv('{price_env}'),",
+        f"  expectPayable: getEnv('{payable_env}'),",
+        f"  expectDeduction: getEnv('{deduction_env}') || '0',",
+        "  expectPaxType: 'CARDHOLDER',",
+        "  expectQuantity: 1,",
+        f"  expectUnitPrice: getEnv('{price_env}')",
+        "});",
+    ]
+
+
+def Lines_PaymentsH5(label: str, order_var: str, *, allow_zero_payable: bool = False) -> List[str]:
+    lines = [
+        f"var expectOid = getEnv('{order_var}') || pm.variables.get('{order_var}') || pm.collectionVariables.get('{order_var}');",
+        "var j = parseJson() || {};",
+        "assertHttp('" + label + ": HTTP', 200);",
+    ]
+    if allow_zero_payable:
+        lines.extend(
+            [
+                "var payable = Number(getEnv('productAPayableAmount') || '0');",
+                "if (payable === 0) {",
+                "  var okFail = !isBusinessSuccess(j);",
+                "  pm.test('" + label + ": 应付0元不得发起收银台 | 期望=业务失败(如802) | 实际=' + fmtJsonBrief({ code: j.code, errCode: j.errCode, msg: j.msg }), function () {",
+                "    pm.expect(okFail, '0元订单不应成功取H5链').to.eql(true);",
+                "  });",
+                "  return;",
+                "}",
+            ]
+        )
+    lines.extend(
+        [
+            "var ok = isBusinessSuccess(j);",
+            "pm.test('" + label + ": 业务成功 | 期望=code=0 | 实际=' + fmtJsonBrief({ code: j.code, errCode: j.errCode, msg: j.msg }), function () {",
+            "  pm.expect(ok).to.eql(true);",
+            "});",
+            "if (!ok) return;",
+            "var data = (j.data !== undefined && j.data !== null) ? j.data : j;",
+            "assertCheck('" + label + ": orderId', String(expectOid || ''), String(data.orderId || ''));",
+            "assertCheck('" + label + ": paymentStatus', 'PENDING_PAYMENT', String(data.paymentStatus || ''));",
+            "var action = data.paymentAction || {};",
+            "assertCheck('" + label + ": paymentAction.type', 'REDIRECT', String(action.type || ''));",
+            "assertCheck('" + label + ": paymentAction.url 非空HTTPS', true, !!(action.url && String(action.url).indexOf('https://') === 0));",
+            "assertCheck('" + label + ": validUntil 为数字', 'number', typeof action.validUntil);",
+        ]
+    )
+    return lines
+
+
+def Lines_PreviewProductA() -> List[str]:
+    return [
+        "var j = assertBizOk('A-PRE');",
+        "var data = j.data || {};",
+        "var coupon = data.coupon || {};",
+        "assertCheck('A-PRE: coupon.valid', true, coupon.valid === true);",
+        "var details = coupon.details || {};",
+        "assertCheck('A-PRE: details.couponType=4 INTRODUCTORY_PRICING', 4, details.couponType);",
+        "assertCheck('A-PRE: details.description', getEnv('CouponIntroValidName'), String(details.description || ''));",
+        "assertCheck('A-PRE: details.couponName', getEnv('CouponIntroValidName'), String(details.couponName || ''));",
+        "pm.test('A-PRE: details.currency 为 null | 期望=null | 实际=' + fmtJsonBrief(details.currency), function () {",
+        "  pm.expect(details.currency === null, 'currency 应为 null').to.eql(true);",
+        "});",
+        "pm.test('A-PRE: details.discount 为 null | 期望=null | 实际=' + fmtJsonBrief(details.discount), function () {",
+        "  pm.expect(details.discount === null, 'discount 应为 null').to.eql(true);",
+        "});",
+        "var extra = data.extra || {};",
+        "assertExtraEchoRequest('A-PRE', extra, {",
+        "  expectAppId: 1,",
+        "  expectAutoRenewal: true,",
+        "  expectCouponCode: getEnv('CouponIntroValid'),",
+        "  expectEmail: getEnv('uniqueProfileEmail'),",
+        "  expectClientUserId: getEnv('uniqueProfileClientUserId')",
+        "});",
+        "var pay = data.payment || {};",
+        "pm.test('A-PRE: paymentStatus/timeline 为 null | 期望=null | 实际=' + fmtJsonBrief({ ps: pay.paymentStatus, tl: pay.timeline }), function () {",
+        "  pm.expect(pay.paymentStatus === null || pay.paymentStatus === undefined).to.eql(true);",
+        "  pm.expect(pay.timeline === null || pay.timeline === undefined).to.eql(true);",
+        "});",
+        "var orig = getEnv('productAPrice') || '10';",
+        "var payable = getEnv('productAPayableAmount');",
+        "if (payable === '') payable = '0';",
+        "var deduction = String(Number(orig) - Number(payable));",
+        "assertPriceBlock('A-PRE', pay, {",
+        "  expectCurrency: getEnv('productACurrency') || 'USD',",
+        "  expectOriginal: orig,",
+        "  expectPayable: payable,",
+        "  expectDeduction: deduction,",
+        "  expectPaxType: 'CARDHOLDER',",
+        "  expectQuantity: 1,",
+        "  expectUnitPrice: orig",
+        "});",
+    ]
+
+
+def Lines_CreateProductA(order_var: str) -> List[str]:
+    return [
+        "var j = assertBizOk('A-CRT');",
+        "var data = j.data || {};",
+        "assertCreateOrderMeta('A-CRT', data);",
+        f"setRuntime('{order_var}', data.orderId);",
+        "var extra = data.extra || {};",
+        "assertCheck('A-CRT: extra.programId', getEnv('productAProgramId'), String(extra.programId || ''));",
+        "assertCheck('A-CRT: extra.programName', getEnv('productAProgramName'), String(extra.programName || ''));",
+        "assertExtraEchoRequest('A-CRT', extra, {",
+        "  expectAppId: 1,",
+        "  expectAutoRenewal: true,",
+        "  expectCouponCode: getEnv('CouponIntroValid'),",
+        "  expectEmail: getEnv('uniqueProfileEmail'),",
+        "  expectClientUserId: getEnv('uniqueProfileClientUserId')",
+        "});",
+        "var orig = getEnv('productAPrice') || '10';",
+        "var payable = getEnv('productAPayableAmount');",
+        "if (payable === '') payable = '0';",
+        "var deduction = String(Number(orig) - Number(payable));",
+        "var pay = data.payment || {};",
+        "if (Number(payable) > 0) {",
+        "  assertCheck('A-CRT: status=9', 9, data.status);",
+        "  assertCheck('A-CRT: paymentStatus', 'PENDING_PAYMENT', String(pay.paymentStatus || ''));",
+        "} else {",
+        "  assertInfo('A-CRT: 0元订单 status/paymentStatus', '记录实际态', { status: data.status, paymentStatus: pay.paymentStatus });",
+        "}",
+        "assertPriceBlock('A-CRT', pay, {",
+        "  expectCurrency: getEnv('productACurrency') || 'USD',",
+        "  expectOriginal: orig,",
+        "  expectPayable: payable,",
+        "  expectDeduction: deduction,",
+        "  expectPaxType: 'CARDHOLDER',",
+        "  expectQuantity: 1,",
+        "  expectUnitPrice: orig",
+        "});",
+    ]
+
+
+def Lines_CancelOrder(label: str, order_var: str) -> List[str]:
+    return [
+        f"var expectOid = getEnv('{order_var}') || pm.variables.get('{order_var}') || pm.collectionVariables.get('{order_var}');",
+        "var j = parseJson() || {};",
+        "assertHttp('" + label + ": HTTP', 200);",
+        "var ok = isBusinessSuccess(j);",
+        "var msg = String(j.msg || '');",
+        "var pendingBlocked = msg.indexOf('Order cancellation failed') >= 0;",
+        "pm.test('" + label + ": 取消成功或待支付不可取消 | 期望=code=0或已知取消失败文案 | 实际=' + fmtJsonBrief({ code: j.code, errCode: j.errCode, msg: j.msg }), function () {",
+        "  pm.expect(ok || pendingBlocked, '取消既未成功也非待支付拦截').to.eql(true);",
+        "});",
+        "setRuntime('" + label + "_cancelOk', ok ? '1' : '0');",
+        "assertInfo('" + label + ": orderId', String(expectOid || ''), { orderId: expectOid, cancelOk: ok });",
+    ]
+
+
+def Lines_DetailsAfterCancel(label: str, order_var: str, cancel_label: str) -> List[str]:
+    flag = f"{cancel_label}_cancelOk"
+    return [
+        f"var j = assertBizOk('{label}');",
+        "var data = j.data || {};",
+        f"var expectOid = getEnv('{order_var}') || pm.variables.get('{order_var}') || pm.collectionVariables.get('{order_var}');",
+        f"assertCheck('{label}: orderId', String(expectOid || ''), String(data.orderId || ''));",
+        f"var cancelOk = String(getEnv('{flag}') || pm.variables.get('{flag}') || '') === '1';",
+        "if (cancelOk) {",
+        f"  assertCheck('{label}: status=3 已取消', 3, data.status);",
+        "  assertInfo('" + label + ": paymentStatus/timeline', '取消后快照', { paymentStatus: (data.payment || {}).paymentStatus, timeline: (data.payment || {}).timeline, cancelledDate: data.orderCancelledDate });",
+        "} else {",
+        "  assertInfo('" + label + ": 取消未成功时订单态', '通常仍为待支付9', { status: data.status, paymentStatus: (data.payment || {}).paymentStatus });",
+        "}",
+    ]
+
+
+def BuildCancelAndDetailsAfterItems(
+    *,
+    cancel_label: str,
+    details_label: str,
+    order_var: str,
+    purpose_cancel: str,
+    purpose_details: str,
+) -> List[JsonObject]:
+    """E2E 尾部：Cancel + 取消后 Details。"""
+    return [
+        RequestItem(
+            name=PurposeName(purpose_cancel, cancel_label, "PATCH", PATH_CANCEL),
+            method="PATCH",
+            url_path=PATH_CANCEL,
+            body=json.dumps({"status": 3, "orderId": "{{" + order_var + "}}"}, ensure_ascii=False, indent=2),
+            headers=BearerJsonHeaders(),
+            description=f"PATCH /v2/orders 取消；待支付可能被业务拦截（{cancel_label}）。",
+            test_lines=Lines_CancelOrder(cancel_label, order_var),
+            prerequest_extra=Lines_InjectOrderIdPrerequest(order_var),
+        ),
+        RequestItem(
+            name=PurposeName(purpose_details, details_label, "POST", PATH_DETAILS),
+            method="POST",
+            url_path=PATH_DETAILS,
+            body=json.dumps({"orderId": "{{" + order_var + "}}"}, ensure_ascii=False, indent=2),
+            headers=BearerJsonHeaders(),
+            description=f"取消后 Details（{details_label}）。",
+            test_lines=Lines_DetailsAfterCancel(details_label, order_var, cancel_label),
+            prerequest_extra=Lines_InjectOrderIdPrerequest(order_var),
+        ),
+    ]
+
+
+def BuildProductBFolder() -> JsonObject:
+    order_var = "orderIdProductB"
+    return Folder(
+        "商品B-无券-原价EUR",
+        [
+            RequestItem(
+                name=PurposeName("不传券预览商品B原价", "B-PRE", "POST", PATH_PREVIEW),
+                method="POST",
+                url_path=PATH_PREVIEW,
+                body=BodyPreviewCreate(with_coupon=False, auto_renewal=False),
+                headers=BearerJsonHeaders(),
+                description="P0 场景1 · Preview：默认商品 B、EUR 原价。",
+                test_lines=Lines_PreviewProductB(),
+                prerequest_extra=Lines_UniqueProfilePrerequest("mp_b"),
+            ),
+            RequestItem(
+                name=PurposeName("不传券创建商品B待支付订单", "B-CRT", "POST", PATH_CREATE),
+                method="POST",
+                url_path=PATH_CREATE,
+                body=BodyPreviewCreate(with_coupon=False, auto_renewal=False),
+                headers=BearerJsonHeaders(),
+                description="P0 场景1 · Create：保存 orderId。",
+                test_lines=Lines_CreateProductB(order_var),
+                prerequest_extra=Lines_InjectProfilePrerequest(),
+            ),
+            RequestItem(
+                name=PurposeName("待支付Details形态-商品B", "B-DET1", "POST", PATH_DETAILS),
+                method="POST",
+                url_path=PATH_DETAILS,
+                body=json.dumps({"orderId": "{{" + order_var + "}}"}, ensure_ascii=False, indent=2),
+                headers=BearerJsonHeaders(),
+                description="P0 场景1 · Details（支付前）。",
+                test_lines=Lines_DetailsPending(
+                    "B-DET1",
+                    order_var,
+                    program_id_env="productBProgramId",
+                    program_name_env="productBProgramName",
+                    currency_env="productBCurrency",
+                    price_env="productBPrice",
+                    payable_env="productBPrice",
+                    deduction_env="productBDeduction",
+                    auto_renewal=False,
+                ),
+                prerequest_extra=Lines_InjectOrderIdPrerequest(order_var),
+            ),
+            RequestItem(
+                name=PurposeName("待支付订单取H5收银台", "B-PAY", "POST", PATH_PAYMENTS),
+                method="POST",
+                url_path=PATH_PAYMENTS,
+                body=json.dumps(
+                    {
+                        "orderId": "{{" + order_var + "}}",
+                        "returnUrl": "{{returnUrl}}",
+                        "paymentMethod": "H5_CASHIER",
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                headers=BearerJsonHeaders(),
+                description="P0 场景1 · Payments H5。",
+                test_lines=Lines_PaymentsH5("B-PAY", order_var, allow_zero_payable=False),
+                prerequest_extra=Lines_InjectOrderIdPrerequest(order_var),
+            ),
+            RequestItem(
+                name=PurposeName("取链后Details仍待支付-商品B", "B-DET2", "POST", PATH_DETAILS),
+                method="POST",
+                url_path=PATH_DETAILS,
+                body=json.dumps({"orderId": "{{" + order_var + "}}"}, ensure_ascii=False, indent=2),
+                headers=BearerJsonHeaders(),
+                description="P0 场景1 · Details（取链后，未实付仍 pending）。",
+                test_lines=Lines_DetailsPending(
+                    "B-DET2",
+                    order_var,
+                    program_id_env="productBProgramId",
+                    program_name_env="productBProgramName",
+                    currency_env="productBCurrency",
+                    price_env="productBPrice",
+                    payable_env="productBPrice",
+                    deduction_env="productBDeduction",
+                    auto_renewal=False,
+                ),
+                prerequest_extra=Lines_InjectOrderIdPrerequest(order_var),
+            ),
+        ]
+        + BuildCancelAndDetailsAfterItems(
+            cancel_label="B-CAN",
+            details_label="B-DET3",
+            order_var=order_var,
+            purpose_cancel="取链后取消商品B订单",
+            purpose_details="取消后Details-商品B",
+        ),
+        description="不传券 · autoRenewal=false · 商品 B · E2E 含 Cancel。",
+    )
+
+
+def BuildProductAFolder() -> JsonObject:
+    order_var = "orderIdProductA"
+    return Folder(
+        "商品A-传券-订阅引导期USD",
+        [
+            RequestItem(
+                name=PurposeName("传券预览商品A引导期价", "A-PRE", "POST", PATH_PREVIEW),
+                method="POST",
+                url_path=PATH_PREVIEW,
+                body=BodyPreviewCreate(with_coupon=True, auto_renewal=True),
+                headers=BearerJsonHeaders(),
+                description="P0 场景2 · Preview：CouponIntroValid + autoRenewal=true。",
+                test_lines=Lines_PreviewProductA(),
+                prerequest_extra=Lines_UniqueProfilePrerequest("mp_a"),
+            ),
+            RequestItem(
+                name=PurposeName("传券创建商品A订单", "A-CRT", "POST", PATH_CREATE),
+                method="POST",
+                url_path=PATH_CREATE,
+                body=BodyPreviewCreate(with_coupon=True, auto_renewal=True),
+                headers=BearerJsonHeaders(),
+                description="P0 场景2 · Create。",
+                test_lines=Lines_CreateProductA(order_var),
+                prerequest_extra=Lines_InjectProfilePrerequest(),
+            ),
+            RequestItem(
+                name=PurposeName("Create后Details-商品A", "A-DET1", "POST", PATH_DETAILS),
+                method="POST",
+                url_path=PATH_DETAILS,
+                body=json.dumps({"orderId": "{{" + order_var + "}}"}, ensure_ascii=False, indent=2),
+                headers=BearerJsonHeaders(),
+                description="P0 场景2 · Details（Create 后）。",
+                prerequest_extra=Lines_InjectOrderIdPrerequest(order_var),
+                test_lines=[
+                    "var j = assertBizOk('A-DET1');",
+                    "var data = j.data || {};",
+                    "var expectOid = getEnv('orderIdProductA') || pm.variables.get('orderIdProductA') || pm.collectionVariables.get('orderIdProductA');",
+                    "assertCheck('A-DET1: orderId', String(expectOid || ''), String(data.orderId || ''));",
+                    "var extra = data.extra || {};",
+                    "assertCheck('A-DET1: extra.programId', getEnv('productAProgramId'), String(extra.programId || ''));",
+                    "assertCheck('A-DET1: extra.programName', getEnv('productAProgramName'), String(extra.programName || ''));",
+                    "assertCheck('A-DET1: extra.autoRenewal', true, extra.autoRenewal);",
+                    "assertPendingNoActivation('A-DET1', data);",
+                    "var orig = getEnv('productAPrice') || '10';",
+                    "var payable = getEnv('productAPayableAmount');",
+                    "if (payable === '') payable = '0';",
+                    "var deduction = String(Number(orig) - Number(payable));",
+                    "assertPriceBlock('A-DET1', data.payment || {}, {",
+                    "  expectCurrency: getEnv('productACurrency') || 'USD',",
+                    "  expectOriginal: orig,",
+                    "  expectPayable: payable,",
+                    "  expectDeduction: deduction,",
+                    "  expectPaxType: 'CARDHOLDER',",
+                    "  expectQuantity: 1,",
+                    "  expectUnitPrice: orig",
+                    "});",
+                ],
+            ),
+            RequestItem(
+                name=PurposeName("商品A发起Payments", "A-PAY", "POST", PATH_PAYMENTS),
+                method="POST",
+                url_path=PATH_PAYMENTS,
+                body=json.dumps(
+                    {
+                        "orderId": "{{" + order_var + "}}",
+                        "returnUrl": "{{returnUrl}}",
+                        "paymentMethod": "H5_CASHIER",
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                headers=BearerJsonHeaders(),
+                description="P0 场景2 · Payments；应付0元时期望业务失败（不可取收银）。",
+                test_lines=Lines_PaymentsH5("A-PAY", order_var, allow_zero_payable=True),
+                prerequest_extra=Lines_InjectOrderIdPrerequest(order_var),
+            ),
+            RequestItem(
+                name=PurposeName("Payments后Details-商品A", "A-DET2", "POST", PATH_DETAILS),
+                method="POST",
+                url_path=PATH_DETAILS,
+                body=json.dumps({"orderId": "{{" + order_var + "}}"}, ensure_ascii=False, indent=2),
+                headers=BearerJsonHeaders(),
+                description="P0 场景2 · Details（Payments 后）。",
+                prerequest_extra=Lines_InjectOrderIdPrerequest(order_var),
+                test_lines=[
+                    "var j = assertBizOk('A-DET2');",
+                    "var data = j.data || {};",
+                    "var expectOid = getEnv('orderIdProductA') || pm.variables.get('orderIdProductA') || pm.collectionVariables.get('orderIdProductA');",
+                    "assertCheck('A-DET2: orderId', String(expectOid || ''), String(data.orderId || ''));",
+                    "assertPendingNoActivation('A-DET2', data);",
+                    "assertInfo('A-DET2: status/paymentStatus', '记录Payments后态', { status: data.status, paymentStatus: (data.payment || {}).paymentStatus });",
+                ],
+            ),
+        ]
+        + BuildCancelAndDetailsAfterItems(
+            cancel_label="A-CAN",
+            details_label="A-DET3",
+            order_var=order_var,
+            purpose_cancel="Payments后取消商品A订单",
+            purpose_details="取消后Details-商品A",
+        ),
+        description="传 CouponIntroValid · autoRenewal=true · 引导期 · E2E 含 Cancel。",
+    )
+
+
+def BuildCollection() -> JsonObject:
+    auth_folder = Folder(
+        "00 Auth",
+        [
+            RequestItem(
+                name=PurposeName("鉴权获取访问令牌", "Auth", "POST", PATH_AUTH),
+                method="POST",
+                url_path=PATH_AUTH,
+                body=json.dumps(
+                    {
+                        "clientId": AuthCredentials().get("clientId") or "{{clientId}}",
+                        "secret": AuthCredentials().get("secret") or "{{secret}}",
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                headers=[
+                    {
+                        "key": "X-Program-ID",
+                        "value": AuthCredentials().get("ProgramID") or "{{ProgramID}}",
+                    },
+                    {"key": "x-version", "value": "{{x-version}}"},
+                    {"key": "X-Request-ID", "value": "{{$guid}}"},
+                    {"key": "Content-Type", "value": "application/json"},
+                    {"key": "Accept", "value": "*/*"},
+                ],
+                description="写入 accessToken；鉴权来自本机 .env 的 MP_P0_*（生成时写入 body）。",
+                save_token=True,
+                test_lines=Lines_Auth(),
+            ),
+        ],
+        description="先执行以写入 accessToken。",
+    )
+    return {
+        "info": {
+            "name": COLLECTION_DISPLAY_NAME,
+            "description": BuildScenarioDescription(),
+            "schema": POSTMAN_SCHEMA,
+        },
+        "variable": [
+            CollectionVariable("baseUrl", ""),
+            CollectionVariable("x-version", ""),
+            CollectionVariable("returnUrl", "https://www.ly.com"),
+            CollectionVariable("productBDeduction", "0"),
+            CollectionVariable("productADeduction", "0"),
+        ],
+        "item": [auth_folder, BuildProductBFolder(), BuildProductAFolder()],
+    }
+
+
+def Main() -> None:
+    out = CollectionPath(OUT_NAME)
+    payload = BuildCollection()
+    out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"Wrote {out}")
+
+
+if __name__ == "__main__":
+    Main()

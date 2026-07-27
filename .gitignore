@@ -12,6 +12,10 @@ env/.local_profile
 
 # 测试报告与 Allure 结果（本地生成，勿提交）
 reports/
+apifox-reports/
+
+# Postman 流水线中间件（Apifox 导入包等；正本在 generators/，集合在 collections/）
+api-testcases/api_tests/postman/generated/
 
 # Python cache artifacts
 .pytest_cache/

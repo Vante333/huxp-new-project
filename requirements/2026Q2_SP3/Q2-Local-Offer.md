@@ -4,39 +4,23 @@
 
 ---
 
-## 一、概述
-
-### 1.1 基础信息
-
-![](images/image-20260413-022146.png)
-
-UAT可以用上面这个项目
+## 一、概述1.1 基础信息![](images/image-20260413-022146.png)UAT可以用上面这个项目
 
 Local Offer类似美团优惠券，是生消通用卡券下单一个子品类，与eSIM类似。具体层级为：
 
-Resource（网点，如线下的某家餐厅）————》OptionList（可用卡券列表）————》Option（最终的一张券）
+Resource（网点，如线下的某家餐厅）&mdash;&mdash;》OptionList（可用卡券列表）&mdash;&mdash;》Option（最终的一张券）
 
 Resource，GR开头的编码，在BOSS通用资源管理中
 
-![](images/image-20260412-033809.png)
+![](images/image-20260412-033809.png)OptionList（可用卡券列表），在BOSS通用卡券服务包管理中，与Resource关联
 
-OptionList（可用卡券列表），在BOSS通用卡券服务包管理中，与Resource关联
+![](images/image-20260412-035308.png)Option，SKU开头的编码，在BOSS卡券服务管理中，和通用卡券服务包关联
 
-![](images/image-20260412-035308.png)
+![](images/image-20260412-034615.png)项目默认配置
 
-Option，SKU开头的编码，在BOSS卡券服务管理中，和通用卡券服务包关联
+![](images/image-20260511-033655.png)SAAS也是配置核销商品（通用卡卷）
 
-![](images/image-20260412-034615.png)
-
-项目默认配置
-
-![](images/image-20260511-033655.png)
-
-SAAS也是配置核销商品（通用卡卷）
-
-## 2. 产品需求
-
-- module 值 = 11
+2. 产品需求- module值=11
 
 
 - Local Offer 需要在E-pass和Membership中上线
@@ -51,25 +35,47 @@ SAAS也是配置核销商品（通用卡卷）
 - 相关资源数据需要加入聚合搜索，以城市/国家/经纬度等纬度，没有站点
 
 
-## 二、接口
+## 二、接口2.1 资源查询相关接口
 
-### 2.1 资源查询相关接口
+ | 接口
 
-| 接口 | 说明 | 需求 |
-| --- | --- | --- |
-| /v2/resources | 资源列表 | 改造 |
-| /v2/resources/{resourceId} | 资源详情 | 改造 |
-| /v2/resources/localOffers/{resourceId}/options | option 列表 | 新增 |
-| /v2/resources/localOffers/{resourceId}/options/{optionId} | option 详情 | 新增 |
+ | 需求
 
-### 2.1.1 资源详情
+ | 
+/v2/resources 
 
-BOSS接口，https://apifox.dragonpass.com.cn/apidoc/shared/3a30abae-9c72-42e9-af25-bf2f6b34dce7/3533902e0 
+ | 资源列表
+
+ | 改造
+
+ | 
+/v2/resources/{resourceId}
+
+ | 资源详情
+
+ | 改造
+
+ | 
+/v2/resources/localOffers/{resourceId}/options
+
+ | option列表
+
+ | 新增
+
+ | 
+/v2/resources/localOffers/{resourceId}/options/{optionId}
+
+ | option详情
+
+ | 新增
+
+ | 
+### 2.1.1 资源详情BOSS接口，https://apifox.dragonpass.com.cn/apidoc/shared/3a30abae-9c72-42e9-af25-bf2f6b34dce7/3533902e0 
 
 /api/order/ISCOrder/findResourceDetail
 
 
-```text
+```json
 /v2/resources/{resourceId}
 ```
 
@@ -116,27 +122,32 @@ BOSS接口，https://apifox.dragonpass.com.cn/apidoc/shared/3a30abae-9c72-42e9-a
     }
 }
 ```
-| 错误码 | 说明 | 英文描述 |
-| --- | --- | --- |
-| 500.020.006 | 无法获取到资源详情 | Sorry, we're unable to retrieve the resource details at the moment. Please try again later. |
-| 500.020.007 | 查询的资源id该program不可用 | Sorry, this resource is not accessible with your program. |
+错误码500.020.006
 
+ | 无法获取到资源详情
+
+ | Sorry, we&rsquo;re unable to retrieve the resource details at the moment. Please try again later.
+
+ | 
+500.020.007
+
+ | 查询的资源id该program不可用
+
+ | Sorry, this resource is not accessible with your program.
+
+ | 
 serviceNotices对应BOSS页面的Terms，目前boss不返回，写死为文案：
 
 The order can be cancelled at any time before the service is completed.
 
-![](images/image-20260511-025322.png)
-
-### 2.1.2 资源列表
-
-BOSS接口，https://apifox.dragonpass.com.cn/apidoc/shared/3a30abae-9c72-42e9-af25-bf2f6b34dce7/3533899e0 
+![](images/image-20260511-025322.png)2.1.2 资源列表BOSS接口，https://apifox.dragonpass.com.cn/apidoc/shared/3a30abae-9c72-42e9-af25-bf2f6b34dce7/3533899e0 
 
 /api/order/ISCOrder/findResourcePage
 
 通过module=11进行筛选，不支持在站点transportHub下筛选
 
 
-```text
+```json
 /v2/resources
 ```
 
@@ -164,21 +175,47 @@ BOSS接口，https://apifox.dragonpass.com.cn/apidoc/shared/3a30abae-9c72-42e9-a
     }
 }
 ```
-| 错误码 | 说明 | 英文描述 |
-| --- | --- | --- |
-| 500.020.003 | 查询的站点id该program不可用 | Sorry, this transport hub is not accessible with your program. |
-| 500.020.004 | 无法获取到产品列表 | Sorry, we're unable to retrieve the resource list at the moment. Please try again later. |
-| 500.020.012 | 限制只能查询1个模块 | Only one module can be queried at a time. |
-| 500.020.013 | 查询了不能使用的语种 | Requested language is not available for your program. |
-| 500.020.014 | 查询了非机高场景下的模块 | The requested module is not within TransportHub. Please remove transporthubId and try again. |
-### 2.1.3 option 列表
+错误码500.020.003
 
-BOSS接口，https://apifox.dragonpass.com.cn/apidoc/shared/3a30abae-9c72-42e9-af25-bf2f6b34dce7/3533903e0 
+ | 查询的站点id该program不可用
+
+ | Sorry, this transport hub is not accessible with your program.
+
+ | 
+500.020.004
+
+ | 无法获取到产品列表
+
+ | Sorry, we&rsquo;re unable to retrieve the resource list at the moment. Please try again later.
+
+ | 
+500.020.012
+
+ | 限制只能查询1个模块
+
+ | Only one module can be queried at a time.
+
+ | 
+500.020.013
+
+ | 查询了不能使用的语种
+
+ | Requested language is not available for your program.
+
+ | 
+500.020.014
+
+ | 查询了非机高场景下的模块
+
+ | The requested module is not within TransportHub. Please remove transporthubId and try again.
+
+ | 
+### 2.1.3 option列表BOSS接口，https://apifox.dragonpass.com.cn/apidoc/shared/3a30abae-9c72-42e9-af25-bf2f6b34dce7/3533903e0 
 
 /api/order/ISCOrder/findServicePage
 
 
-```text
+```json
 /v2/resources/localOffers/{resourceId}/options
 ```
 
@@ -210,44 +247,116 @@ BOSS接口，https://apifox.dragonpass.com.cn/apidoc/shared/3a30abae-9c72-42e9-a
     }
 }
 ```
-**voucherType 枚举**
+voucherType enumenum
 
-| voucherType | 展示方式 | BOSS 类型 |
-| --- | --- | --- |
-| 1 | string，转二维码 | 卡密 |
-| 4 | string，直接展示 | 兑换码 |
-| 5 | string，是个 url 直接展示 | 链接 |
+ | 展示方式
 
-**marketingTag 映射**
+ | BOSS类型
 
-![](images/image-20260413-022653.png)
+ | 
+1
 
-| 原始表达 | 推荐枚举值 | 说明 |
-| --- | --- | --- |
-| Buy X get Y | 1 | 买赠 |
-| Discount | 2 | 百分比折扣 |
-| Value off | 3 | 立减金额 |
-| Set meal | 4 | 套餐/打包 |
-| 没勾的，或者以后 boss 新增了一些 | 5 | 兜底到 5 |
+ | string，转二维码
 
-validity 表示 option 对应的券的有效期，对应 boss 以下 object
+ | 卡密
 
-![](images/image-20260413-021421.png)
+ | 
+4
 
-Type 分为 3 种：
+ | string，直接展示
 
-| Type | BOSS | |
-| --- | --- | --- |
-| 1 | Fixed | |
-| 2 | After Activation | |
-| 3 | Dynamic | |
+ | 兑换码
 
-| 错误码 | 说明 | 英文描述 |
-| --- | --- | --- |
-| 500.020.016 | 无法获取到option list | Sorry, we're unable to retrieve the list at the moment. Please try again later. |
-| 500.020.007 | 查询的资源id该program不可用 | Sorry, this resource is not accessible with your program. |
+ | 
+5
+
+ | string，是个url直接展示
+
+ | 链接
+
+ | 
+tag![](images/image-20260413-022653.png)原始表达
+
+ | 推荐枚举值
+
+ | 说明
+
+ | 
+Buy X get Y
+
+ | 1
+
+ | 买赠
+
+ | 
+Discount
+
+ | 2
+
+ | 百分比折扣
+
+ | 
+Value off
+
+ | 3
+
+ | 立减金额
+
+ | 
+Set meal
+
+ | 4
+
+ | 套餐/打包
+
+ | 
+没勾的，或者以后boss新增了一些
+
+ | 5
+
+ | 兜底到5
+
+ | 
+validity表示option对应的券的有效期，对应boss以下object
+
+![](images/image-20260413-021421.png)Type分为3种
+
+Type
+
+ | BOSS
+
+ | 
+1
+
+ | Fixed
+
+ | 
+2
+
+ | After Activation
+
+ | 
+3
+
+ | Dynamic
+
+ | 
+错误码500.020.016
+
+ | 无法获取到option list
+
+ | Sorry, we&rsquo;re unable to retrieve the list at the moment. Please try again later.
+
+ | 
+500.020.007
+
+ | 查询的资源id该program不可用
+
+ | Sorry, this resource is not accessible with your program.
+
+ | 
 ### 2.1.4 option详情
-```text
+```json
 /v2/resources/localOffers/{resourceId}/options/{optionId}
 ```
 
@@ -272,35 +381,81 @@ Type 分为 3 种：
 ```
 注意description和serviceNotices是来自卡券SKU的非规格属性配置
 
-![](images/image-20260412-053001.png)
+![](images/image-20260412-053001.png)错误码500.020.011
 
-| 错误码 | 说明 | 英文描述 |
-| --- | --- | --- |
-| 500.020.011 | 无法获取到 option details | Sorry, we're unable to retrieve the details at the moment. Please check if the optionId is correct or try again later. |
-| 500.020.007 | 查询的资源id该program不可用 | Sorry, this resource is not accessible with your program. |
+ | 无法获取到option details
 
-### 2.2 聚合搜索相关
+ | Sorry, we&rsquo;re unable to retrieve the details at the moment. Please check if the optionId is correct or try again later.
 
-#### 2.2.1 品类名称翻译映射表
+ | 
+500.020.007
 
-#### 2.2.2 数据拉取
+ | 查询的资源id该program不可用
 
-可以从之前生消的已有接口直接拉取
+ | Sorry, this resource is not accessible with your program.
 
-### 2.2 订单相关 E-pass 接口
+ | 
+### 2.2 聚合搜索相关2.2.1 品类名称翻译映射表
 
-| 接口 | 说明 | 需求 |
-| --- | --- | --- |
-| /v2/orders/localOffers/ePasses | 创建E-pass | 支持创建local offer epass |
-| /v2/orders/ePasses/search | 查询E-pass详情 | 支持查询local offer epass |
-| /v2/orders/localOffers/ePasses/prebooking | 创建E-pass local offer订单 | 新增 |
-| /v2/orders/localOffers/ePasses/bundle | 创建E-pass bundle订单 | 新增 |
-| /v2/orders/ePasses | 查询订单列表，支持lo订单 | 支持查询 |
-| /v2/orders/ePasses/details | 查询订单详情，支持lo订单 | 支持查询 |
-| /v2/resources/options/prebookings/availability | 查询option可用性，支持lo品类 | 支持查询 |
-### 2.2.1 创建 E-pass 与查询详情
+### 2.2.2 数据拉取可以从之前生消的已有接口直接拉取
 
-新增 module 枚举值 11 = local offer
+### 2.2 订单相关 E-pass接口
+
+ | 接口
+
+ | 需求
+
+ | 
+/v2/orders/localOffers/ePasses
+
+ | 创建E-pass
+
+ | 支持创建local offer epass
+
+ | 
+/v2/orders/ePasses/search
+
+ | 查询E-pass详情
+
+ | 支持查询local offer epass
+
+ | 
+/v2/orders/localOffers/ePasses/prebooking
+
+ | 创建E-pass local offer订单
+
+ | 新增
+
+ | 
+/v2/orders/localOffers/ePasses/bundle
+
+ | 创建E-pass bundle订单
+
+ | 新增
+
+ | 
+/v2/orders/ePasses
+
+ | 查询订单列表，支持lo订单
+
+ | 支持查询
+
+ | 
+/v2/orders/ePasses/details
+
+ | 查询订单详情，支持lo订单
+
+ | 支持查询
+
+ | 
+/v2/resources/options/prebookings/availability
+
+ | 查询option可用性，支持lo品类
+
+ | 支持查询
+
+ | 
+### 2.2.1 创建E-pass与查询详情新增module枚举值11=local offer
 
 复用原有的epass查询接口及相关逻辑，不支持在allowedResources中限制iatacode，只支持限制资源id与国家
 
@@ -356,19 +511,77 @@ Type 分为 3 种：
     }
 }
 ```
-| 错误码 | 说明 | 英文描述 |
-| --- | --- | --- |
-| 500.000.017 | resourceId中传了非这个接口对应品类的其他资源，例如创建ft Epass，传了Ncode | The 'resourceId' array contains resources that are not associated with the expected module. Please verify and ensure the resource IDs match the correct module. |
-| 500.000.017 | resourceId中传了超过30个资源code | The 'resourceId' array exceeds the maximum limit of 30 resource IDs. Please reduce the number of resource IDs and try again. |
-| 500.000.017 | 尝试下单该epass不可用的网点 | Sorry, this resource is not accessible with your program. |
-| 500.110.004 | 订单号不存在 | The specified order ID does not exist. Please verify the order ID and try again. |
-| 500.110.005 | 订单号不属于当前program | The specified order ID does not belong to the current program. |
-| 500.110.009 | 获取订单详情失败 | Sorry, we're unable to retrieve the order details at the moment. Please try again later. |
-| 500.110.010 | 下单失败（内部原因） | Sorry, we're unable to process your order at the moment. Please try again later. |
-| 500.110.011 | clientUserId重复 | Sorry, this clientUserId already exists. |
-| 500.110.015 | epass 限制条件只能使用1个 | Only 1 restriction condition can be applied in the allowedResources field of the E-pass. |
-| 500.110.026 | 该品类不支持以iatacode作为限制条件 | This module does not support using IATA Code as a restriction. |
-### 2.2.2 创建 E-pass local offer 订单，创建 bundle 订单
+500.000.017
+
+ | resourceId中传了非这个接口对应品类的其他资源，例如创建ft Epass，传了Ncode
+
+ | The 'resourceId' array contains resources that are not associated with the expected module. Please verify and ensure the resource IDs match the correct module.
+
+ | 
+500.000.017
+
+ | resourceId中传了超过30个资源code
+
+ | The 'resourceId' array exceeds the maximum limit of 30 resource IDs. Please reduce the number of resource IDs and try again.
+
+ | 
+500.000.017
+
+ | 尝试下单该epass不可用的网点
+
+ | Sorry, this resource is not accessible with your program.
+
+ | 
+500.110.004
+
+ | 订单号不存在
+
+ | The specified order ID does not exist. Please verify the order ID and try again.
+
+ | 
+500.110.005
+
+ | 订单号不属于当前program
+
+ | The specified order ID does not belong to the current program.
+
+ | 
+500.110.009
+
+ | 获取订单详情失败
+
+ | Sorry, we&rsquo;re unable to retrieve the order details at the moment. Please try again later.
+
+ | 
+500.110.010
+
+ | 下单失败（内部原因）
+
+ | Sorry, we&rsquo;re unable to process your order at the moment. Please try again later.
+
+ | 
+500.110.011
+
+ | clientUserId重复
+
+ | Sorry, this clientUserId already exists.
+
+ | 
+500.110.015
+
+ | epass 限制条件只能使用1个
+
+ | Only 1 restriction condition can be applied in the allowedResources field of the E-pass.
+
+ | 
+500.110.026
+
+ | 该品类不支持以iatacode作为限制条件
+
+ | This module does not support using IATA Code as a restriction.
+
+ | 
+### 2.2.2 创建E-pass local offer订单，创建bundle订单
 ```json
 {
     "module": 11, 
@@ -414,27 +627,79 @@ Type 分为 3 种：
     }
 }
 ```
-**voucherType 枚举**
+voucherType enumenum
 
-| voucherType | 展示方式 | BOSS 类型 |
-| --- | --- | --- |
-| 1 | string，转二维码 | 卡密（有可能要通过网页使用） |
-| 4 | string，直接展示 | 兑换码（有可能要通过网页使用） |
-| 5 | string，是个 url 直接展示 | 链接 |
+ | 展示方式
 
-redemptionUrl 卡密和兑换码返回时，有可能会同时返回一个 url，就需要塞到 redemptionUrl 字段，代表这个卡密和兑换码需要通过网站才能使用，不是直接现场展示或兑换
+ | BOSS类型
 
-| 错误码 | 说明 | 英文描述 |
-| --- | --- | --- |
-| 500.110.027 | bookingToken过期 | Sorry, the prebookingToken has expired. Please request a new token to proceed. |
-| 500.110.010 | 下单失败（内部原因） | Sorry, we're unable to process your order at the moment. Please try again later. |
-| 500.110.028 | bookingToken无效 | Invalid prebookingToken |
-| 500.110.029 | Epass可用点数不足 | Sorry, the Epass usage is insufficient. |
-| 500.110.019 | 尝试下单该epass不可用的网点 | Sorry, this resource is not accessible with your E-pass. |
-| 500.110.020 | E-pass不属于当前program | The specified E-pass does not belong to the current program. |
-### 2.2.3 订单列表与订单详情
+ | 
+1
 
-订单详情返回与创建订单的返回完全一致，通过订单号查单
+ | string，转二维码
+
+ | 卡密（有可能要通过网页使用）
+
+ | 
+4
+
+ | string，直接展示
+
+ | 兑换码（有可能要通过网页使用）
+
+ | 
+5
+
+ | string，是个url直接展示
+
+ | 链接
+
+ | 
+redemptionUrl卡密和兑换码返回时，有可能会同时返回一个url，就需要塞到redemptionUrl字段，代表这个卡密和兑换码需要通过网站才能使用，不是直接现场展示或兑换
+
+错误码500.110.027
+
+ | bookingToken过期
+
+ | Sorry, the prebookingToken has expired. Please request a new token to proceed.
+
+ | 
+500.110.010
+
+ | 下单失败（内部原因）
+
+ | Sorry, we&rsquo;re unable to process your order at the moment. Please try again later.
+
+ | 
+500.110.028
+
+ | bookingToken无效
+
+ | Invalid prebookingToken
+
+ | 
+500.110.029
+
+ | Epass可用点数不足
+
+ | Sorry, the Epass usage is insufficient.
+
+ | 
+500.110.019
+
+ | 尝试下单该epass不可用的网点
+
+ | Sorry, this resource is not accessible with your E-pass.
+
+ | 
+500.110.020
+
+ | E-pass不属于当前program
+
+ | The specified E-pass does not belong to the current program.
+
+ | 
+### 2.2.3 订单列表与订单详情订单详情返回与创建订单的返回完全一致，通过订单号查单
 
 订单列表
 
@@ -469,47 +734,132 @@ redemptionUrl 卡密和兑换码返回时，有可能会同时返回一个 url�
         }
       }
 ```
-| 错误码 | 说明 | 英文描述 |
-| --- | --- | --- |
-| 500.000.005 | 无法获取到订单列表 | Sorry, we're unable to retrieve the order list at the moment. Please try again later. |
-| 500.110.004 | 订单号不存在 | The specified order ID does not exist. Please verify the order ID and try again. |
-| 500.110.005 | 订单号不属于当前program | The specified order ID does not belong to the current program. |
-| 500.110.009 | 获取订单详情失败 | Sorry, we're unable to retrieve the order details at the moment. Please try again later. |
-### 2.2.4 查询可用性
+错误码500.000.005
 
-无特殊，向boss查询option可用性返回即可，禁止查当前时间之前的日期
+ | 无法获取到订单列表
+
+ | Sorry, we&rsquo;re unable to retrieve the order list at the moment. Please try again later.
+
+ | 
+500.110.004
+
+ | 订单号不存在
+
+ | The specified order ID does not exist. Please verify the order ID and try again.
+
+ | 
+500.110.005
+
+ | 订单号不属于当前program
+
+ | The specified order ID does not belong to the current program.
+
+ | 
+500.110.009
+
+ | 获取订单详情失败
+
+ | Sorry, we&rsquo;re unable to retrieve the order details at the moment. Please try again later.
+
+ | 
+### 2.2.4 查询可用性无特殊，向boss查询option可用性返回即可，禁止查当前时间之前的日期
 
 /api/order/ISCOrder/inventoryVerification
 
 不支持查询资源层的可用性
 
-| 错误码 | 说明 | 英文描述 |
-| --- | --- | --- |
-| 500.020.009 | 内部原因无法确认可用性 | Sorry, we are currently unable to confirm whether this resource is available for prebooking during this timeslot. Please try again. |
-| 500.020.007 | 查询的资源id该program不可用 | Sorry, this resource is not accessible with your program. |
-| 500.110.021 | membership不属于当前program | The specified membership does not belong to the current program. |
-| 500.110.020 | E-pass不属于当前program | The specified E-pass does not belong to the current program. |
+500.020.009
 
-### 2.2.5 取消接口
+ | 内部原因无法确认可用性
 
-| 错误码 | 说明 | 英文描述 |
-| --- | --- | --- |
-| 500.110.030 | 其他不符合取消政策 | Sorry, according to the prebooking policies, this order is no longer eligible for cancellation. |
+ | Sorry, we are currently unable to confirm whether this resource is available for prebooking during this timeslot. Please try again.
 
-### 2.3 订单相关 Membership 接口
+ | 
+500.020.007
 
-| 接口 | 说明 | 需求 |
-| --- | --- | --- |
-| /v2/entitlements/update | 权益更新 | 支持编辑LO权益 |
-| /v2/entitlements/search | 权限概览（不支持tier，不支持swap） | 支持查看LO权益 |
-| /v2/entitlements/details | 权益明细（不支持tier，不支持swap） | 支持查看LO权益 |
-| /v2/memberships | 注册时支持发放LO权益 | 注册时支持发放LO权益 |
-| /v2/orders/localOffers/memberships/prebooking | 创建LO订单 | 下单 |
-| /v2/orders/memberships | 查询membership订单列表 | 支持查看LO订单 |
-| /v2/orders/memberships/details | 查询membership订单详情 | 支持查看LO订单 |
-### 2.3.1 权益更新/权限概览/权限明细/注册接口
+ | 查询的资源id该program不可用
 
-新增权益支持，支持 module = 11
+ | Sorry, this resource is not accessible with your program.
+
+ | 
+500.110.021
+
+ | membership不属于当前program
+
+ | The specified membership does not belong to the current program.
+
+ | 
+500.110.020
+
+ | E-pass不属于当前program
+
+ | The specified E-pass does not belong to the current program.
+
+ | 
+### 2.2.5 取消接口500.110.030
+
+ | 其他不符合取消政策
+
+ | Sorry, according to the prebooking policies, this order is no longer eligible for cancellation.
+
+ | 
+### 2.3 订单相关 Membership接口
+
+ | 接口
+
+ | 需求
+
+ | 
+/v2/entitlements/update
+
+ | 权益更新
+
+ | 支持编辑LO权益
+
+ | 
+/v2/entitlements/search
+
+ | 权限概览（不支持tier，不支持swap）
+
+ | 支持查看LO权益
+
+ | 
+/v2/entitlements/details
+
+ | 权益明细（不支持tier，不支持swap）
+
+ | 支持查看LO权益
+
+ | 
+/v2/memberships
+
+ | 注册时支持发放LO权益
+
+ | 注册时支持发放LO权益
+
+ | 
+/v2/orders/localOffers/memberships/prebooking
+
+ | 创建LO订单
+
+ | 下单
+
+ | 
+/v2/orders/memberships
+
+ | 查询membership订单列表
+
+ | 支持查看LO订单
+
+ | 
+/v2/orders/memberships/details
+
+ | 查询membership订单详情
+
+ | 支持查看LO订单
+
+ | 
+### 2.3.1 权益更新/权限概览/权限明细/注册接口新增权益支持，支持module=11
 
 LO只支持共享权益+充值权益，不配持卡人/携伴专属权益
 
@@ -539,9 +889,7 @@ LO只支持共享权益+充值权益，不配持卡人/携伴专属权益
     }
 }
 ```
-### 2.3.2 订单列表
-
-获取订单，LO品类只返回resource/option信息
+### 2.3.2 订单列表获取订单，LO品类只返回resource/option信息
 
 
 ```json
@@ -577,12 +925,14 @@ LO只支持共享权益+充值权益，不配持卡人/携伴专属权益
     }
 }
 ```
-| 错误码 | 说明 | 英文描述 |
-| --- | --- | --- |
-| 500.000.005 | 无法获取到订单列表 | Sorry, we're unable to retrieve the order list at the moment. Please try again later. |
-### 2.3.2 创建 LO 订单/订单详情
+错误码500.000.005
 
-暂时不需要考虑 boss 的权益下单限制，目前都配无限
+ | 无法获取到订单列表
+
+ | Sorry, we&rsquo;re unable to retrieve the order list at the moment. Please try again later.
+
+ | 
+### 2.3.2 创建LO订单/订单详情暂时不需要考虑boss的权益下单限制，目前都配无限
 
 ![](images/image-20260511-031019.png)
 ```json
@@ -649,17 +999,30 @@ LO只支持共享权益+充值权益，不配持卡人/携伴专属权益
     }
 }
 ```
-validity 表示 option 对应的券的有效期，对应 boss 以下 object
+validity表示option对应的券的有效期，对应boss以下object
 
-![](images/image-20260413-021421.png)
+![](images/image-20260413-021421.png)Type分为3种
 
-Type 分为 3 种：
+Type
 
-| Type | BOSS | |
-| --- | --- | --- |
-| 1 | Fixed | |
-| 2 | After Activation | |
-| 3 | Dynamic | |
+ | BOSS
+
+ | 
+1
+
+ | Fixed
+
+ | 
+2
+
+ | After Activation
+
+ | 
+3
+
+ | Dynamic
+
+ | 
 
 ```json
 "validity": {
@@ -679,24 +1042,70 @@ Type 分为 3 种：
     "endTime": "2026-04-01T00:00:00+00:00"
 } //下单后才有值
 ```
-| 错误码 | 说明 | 英文描述 |
-| --- | --- | --- |
-| 500.110.010 | 下单失败（内部原因） | Sorry, we're unable to process your order at the moment. Please try again later. |
-| 500.110.027 | bookingToken过期 | Sorry, the prebookingToken has expired. Please request a new token to proceed. |
-| 500.110.028 | bookingToken无效 | Invalid prebookingToken |
-| 500.110.017 | 会籍权益不足，无法下单 | Sorry, order creation failed. Insufficient membership entitlements. |
-| 500.110.031 | 尝试下单该membership不可用的网点 | Sorry, this resource is not accessible with your membership. |
-| 500.110.034 | toUseEntitlementCount 指定权益数多于订单人数 | The specified entitlement count (toUseEntitlementCount) is greater than the number of passengers in the order. |
-| 500.110.032 | membership不属于当前program | The specified membership does not belong to the current program. |
-| 500.110.033 | toUseEntitlementCount 指定权益数少于订单人数 | The number of specified entitlements (toUseEntitlementCount) must not be less than the total number of passengers included in the order. |
-### 2.3.3 取消接口
+错误码500.110.010
 
-| 错误码 | 说明 | 英文描述 |
-| --- | --- | --- |
-| 500.110.030 | 其他不符合取消政策 | Sorry, according to the prebooking policies, this order is no longer eligible for cancellation. |
-### 2.4 价格与可用性相关
+ | 下单失败（内部原因）
 
-价格只支持在https://developer-sandbox.dragonpass.com/api/v2/resources/options/prices中进行查询
+ | Sorry, we&rsquo;re unable to process your order at the moment. Please try again later.
+
+ | 
+500.110.027
+
+ | bookingToken过期
+
+ | Sorry, the prebookingToken has expired. Please request a new token to proceed.
+
+ | 
+500.110.028
+
+ | bookingToken无效
+
+ | Invalid prebookingToken
+
+ | 
+500.110.017
+
+ | 会籍权益不足，无法下单
+
+ | Sorry, order creation failed. Insufficient membership entitlements.
+
+ | 
+500.110.031
+
+ | 尝试下单该membership不可用的网点
+
+ | Sorry, this resource is not accessible with your membership.
+
+ | 
+500.110.034
+
+ | toUseEntitlementCount 指定权益数多于订单人数
+
+ | The specified entitlement count (toUseEntitlementCount) is greater than the number of passengers in the order.
+
+ | 
+500.110.032
+
+ | membership不属于当前program
+
+ | The specified membership does not belong to the current program.
+
+ | 
+500.110.033
+
+ | toUseEntitlementCount 指定权益数少于订单人数
+
+ | The number of specified entitlements (toUseEntitlementCount) must not be less than the total number of passengers included in the order.
+
+ | 
+### 2.3.3 取消接口500.110.030
+
+ | 其他不符合取消政策
+
+ | Sorry, according to the prebooking policies, this order is no longer eligible for cancellation.
+
+ | 
+### 2.4 价格与可用性相关价格只支持在https://developer-sandbox.dragonpass.com/api/v2/resources/options/prices中进行查询
 
 结构保持不变，本次发布带上PAPI-2346de7aed67-63d8-3a91-aff7-ab8b7cec1d19System Jira 
 

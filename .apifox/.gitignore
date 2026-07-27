@@ -1,0 +1,3 @@
+*.private.*
+# 本机 AI 分支缓存，勿当真相源提交
+ai-branches.json

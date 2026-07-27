@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import base64
 import json
 import os
@@ -86,6 +88,127 @@ def _replace_code_macros(html: str) -> str:
     return re.sub(pattern, _repl, html, flags=re.DOTALL)
 
 
+def _replace_html_entities(text: str) -> str:
+    replacements = {
+        "&mdash;": "——",
+        "&rsquo;": "'",
+        "&ldquo;": '"',
+        "&rdquo;": '"',
+        "&rarr;": "->",
+        "&nbsp;": " ",
+        "&ndash;": "–",
+        "&ge;": ">=",
+        "&lt;": "<",
+        "&gt;": ">",
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text
+
+
+def _strip_inline_html(html: str) -> str:
+    text = re.sub(r"<br\s*/?>", "\n", html, flags=re.IGNORECASE)
+    text = re.sub(r"</p\s*>", "\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"<li[^>]*>", "- ", text, flags=re.IGNORECASE)
+    text = re.sub(r"</li\s*>", "\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = _replace_html_entities(text)
+    lines = [line.strip() for line in text.splitlines()]
+    text = "\n".join(line for line in lines if line)
+    return text.strip()
+
+
+def _replace_tables(html: str) -> tuple[str, dict[str, str]]:
+    placeholders: dict[str, str] = {}
+    counter = 0
+
+    def _table_repl(match: re.Match) -> str:
+        nonlocal counter
+        table_html = match.group(0)
+        row_html_list = re.findall(
+            r"<tr[^>]*>(.*?)</tr>", table_html, flags=re.DOTALL | re.IGNORECASE
+        )
+        md_rows: list[list[str]] = []
+        has_header_row = False
+        for row_html in row_html_list:
+            if re.search(r"<th[^>]*>", row_html, flags=re.IGNORECASE):
+                has_header_row = True
+                break
+        for row_html in row_html_list:
+            cell_html_list = re.findall(
+                r"<t[hd][^>]*>(.*?)</t[hd]>",
+                row_html,
+                flags=re.DOTALL | re.IGNORECASE,
+            )
+            md_rows.append(
+                [
+                    _strip_inline_html(cell_html).replace("\n", "<br>")
+                    for cell_html in cell_html_list
+                ]
+            )
+        if not md_rows:
+            return ""
+        if not has_header_row:
+            col_count = max(len(row) for row in md_rows)
+            if col_count == 3 and re.match(r"^\d+\.\d+\.\d+", md_rows[0][0]):
+                md_rows.insert(0, ["错误码", "说明", "英文提示"])
+            elif col_count == 2:
+                md_rows.insert(0, ["项", "说明"])
+            elif col_count >= 3:
+                md_rows.insert(0, [f"列{i + 1}" for i in range(col_count)])
+        col_count = max(len(row) for row in md_rows)
+        normalized = [row + [""] * (col_count - len(row)) for row in md_rows]
+        lines = [
+            "| " + " | ".join(normalized[0]) + " |",
+            "| " + " | ".join(["---"] * col_count) + " |",
+        ]
+        for row in normalized[1:]:
+            lines.append("| " + " | ".join(row) + " |")
+        key = f"__CONFLUENCE_TABLE_{counter}__"
+        counter += 1
+        placeholders[key] = "\n\n" + "\n".join(lines) + "\n\n"
+        return f"\n\n{key}\n\n"
+
+    html = re.sub(
+        r"<table[^>]*>.*?</table>",
+        _table_repl,
+        html,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
+    return html, placeholders
+
+
+def _replace_headings(html: str) -> tuple[str, dict[str, str]]:
+    placeholders: dict[str, str] = {}
+
+    for level in range(6, 0, -1):
+        tag = f"h{level}"
+        counter = 0
+
+        def _heading_repl(match: re.Match, heading_level: int = level) -> str:
+            nonlocal counter
+            content = _strip_inline_html(match.group(1))
+            hashes = "#" * heading_level
+            key = f"__CONFLUENCE_H{heading_level}_{counter}__"
+            counter += 1
+            placeholders[key] = f"\n\n{hashes} {content}\n\n"
+            return f"\n\n{key}\n\n"
+
+        html = re.sub(
+            rf"<{tag}[^>]*>(.*?)</{tag}>",
+            _heading_repl,
+            html,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+    return html, placeholders
+
+
+def _restore_placeholders(text: str, placeholders: dict[str, str]) -> str:
+    for key, value in placeholders.items():
+        text = text.replace(key, value)
+    return text
+
+
 def _replace_images(html: str) -> str:
     """
     将 <ac:image><ri:attachment ri:filename="xxx" /></ac:image>
@@ -111,6 +234,9 @@ def storage_html_to_markdown(html: str) -> str:
     # 先把常见的 Confluence 宏替换掉
     cleaned = _replace_code_macros(html)
     cleaned = _replace_images(cleaned)
+    cleaned, heading_placeholders = _replace_headings(cleaned)
+    cleaned, table_placeholders = _replace_tables(cleaned)
+    placeholders = {**heading_placeholders, **table_placeholders}
 
     # 优先使用 html2text，如果不可用，则退化为简单的标签清理
     if html2text is not None:
@@ -136,7 +262,10 @@ def storage_html_to_markdown(html: str) -> str:
         markdown = text
 
     # 通用 Markdown 后处理
+    markdown = _restore_placeholders(markdown, placeholders)
     markdown = _post_process_markdown(markdown)
+    markdown = _replace_html_entities(markdown)
+    markdown = re.sub(r"\n{3,}", "\n\n", markdown)
     return markdown.strip() + "\n"
 
 

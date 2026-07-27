@@ -69,7 +69,7 @@ Tests:
 
 - 主链路：`test_historical_epass_fasttrack.py` · `RunHistoricalEpass*MainE2EScenario(catalog_label='fastTrack')`
 - 服务层：`historical_epass_service` · `AssertHistoricalPrebookingOrderSuccessForCatalog` / `AssertHistoricalBundleOrderSuccess`
-- 重新生成 Postman P0：`python api-testcases/api_tests/postman/GeneratePostmanCollectionFastTrackEpass.py`
+- 重新生成 Postman P0：`python api-testcases/api_tests/postman/generators/GeneratePostmanCollectionFastTrackEpass.py`
 - **勿**再跑 `_build_fasttrack_from_lounge.py` 覆盖手写差异（该脚本为一次性派生工具；日常改 `GeneratePostmanCollectionFastTrackEpass.py`）
 
 ## 六、新建 / 扩展检查清单（P0 通用）
@@ -93,13 +93,13 @@ Tests:
 | 文件 | 用途 |
 |------|------|
 | `testcases/2026Q2SP4/PAPI-2839-修复FT联系人firstName-lastName正则-测试分析-001.md` | 用例与场景 |
-| `GeneratePostmanCollectionPapi2839.py` | 生成器 |
-| `PAPI-2839-FastTrack-NameRegex-P1.postman_collection.json` | 导入 JSON |
+| `postman/generators/GeneratePostmanCollectionPapi2839.py` | 生成器 |
+| `postman/collections/PAPI-2839-FastTrack-NameRegex-P1.postman_collection.json` | 导入 JSON |
 
 **生成命令**（仓库根）：
 
 ```powershell
-python api-testcases/api_tests/postman/GeneratePostmanCollectionPapi2839.py
+python api-testcases/api_tests/postman/generators/GeneratePostmanCollectionPapi2839.py
 ```
 
 ### 7.1 目录结构（ePass / membership 分组 + 前置）

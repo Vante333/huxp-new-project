@@ -4,19 +4,15 @@
 
 ---
 
-## 一、E-pass 与 swap entitlement 概述
+## 一、E-pass目前在E-pass上只支持lounge/setmeal/coupon（1，3，4）的swap entitlement。
 
-目前在 E-pass 上只支持 lounge / setmeal / coupon（1，3，4）的 swap entitlement，暂不支持其他品类的 swap。
+暂不支持其他品类的swap
 
-![](images/image-20251112-060333.png)
+![](images/image-20251112-060333.png)1.1 /v2/orders/{module}/ePasses将 {module} 设为multiModule代表多品类可用
 
-### 1.1 /v2/orders/{module}/ePasses
+/v2/orders/multiModule/ePasses
 
-将 `{module}` 设为 `multiModule` 代表多品类可用：
-
-`/v2/orders/multiModule/ePasses`
-
-用 `"module": 0` 代表多品类 ePass，实际使用 `modules` 数组来控制品类，这个数组只有在 `module = 0` 的时候生效。如果判断为 swap，则 `module` 只允许输入 0。
+用&quot;module&quot;: 0代表多品类epass，实际使用modules数组来控制品类，这个数组只有在moudel为0的时候生效。如果判断为swap，则moudle只允许输入0.
 
 
 ```json
@@ -37,34 +33,76 @@
 ```
 swap的Epass，支持指定跨品类的resoureIds
 
-swap 和单品类权益需要分为 2 个不同的 program 组，swap 的 program 组仅支持发放 swap，不兼容单品类。
+swap和单品类权益需要分为2个不同的program组，swap的program组仅支持发放swap，不兼容单品类
 
-在 SAAS 配置中，swap 的 program 需要额外配置一个新的会籍商品-会籍模板组，会籍模版下最多只会有 2 条权益明细：
+在SAAS配置中，swap的program需要额外配置一个新的会籍商品-会籍模板租，会籍模版下最多只会有2条权益明细：
 
-![](images/image-20251023-063117.png)
+![](images/image-20251023-063117.png)休息室权益+MPV，已经覆盖了4种场景：
 
-休息室权益 + MPV，已经覆盖了 4 种场景：
+![](images/image-20251117-025715.png)组合
 
-![](images/image-20251117-025715.png)
+ | 管理项目
 
-**组合配置说明：**
+ | ResoureIds
 
-| 组合                     | 管理项目                                   | ResourceIds              | Remark                                                                                      |
-| ------------------------ | ------------------------------------------ | ------------------------ | ------------------------------------------------------------------------------------------- |
-| 休息室 + Setmeal         | 一条【国际休息室】品类项目                | 可以指定 N + Rcode      | 权益模板关联【国际休息室】品类项目，勾选 SWAP + Setmeal 标签；【BOSS】网络范围配 Setmeal+休息室 |
-| Setmeal + Coupon         | 一条【国际休息室】品类项目 + 一条【MPV】品类项目 | 可以指定 Rcode          | 权益模板关联【国际休息室】品类项目，勾选 Set Meal 标签，不勾选 SWAP 标签；【BOSS】网络范围只配 Setmeal |
-| 休息室 + Coupon          | 一条【国际休息室】品类项目 + 一条【MPV】品类项目 | 可以指定 N + Rcode      | 权益模板关联【国际休息室】品类项目，无需勾选标签；【BOSS】网络范围只配休息室                      |
-| 休息室 + Setmeal + Coupon | 一条【国际休息室】品类项目 + 一条【MPV】品类项目 | 可以指定 N + Rcode      | 权益模板关联【国际休息室】品类项目，勾选 SWAP + Setmeal 标签；【BOSS】网络范围配 Setmeal+休息室      |
+ | Remark
 
-如果只有 Setmeal 的权益，现在是给【国际休息室】品类的权益打一个 Set Meal 的标。
+ | 
+休息室 + Setmeal
 
-![](images/image-20251023-063204.png)
+ | 一条【国际休息室】品类项目
 
-后面如果是休息室 + Setmeal SWAP 这种场景，一个项目支持 2 个品类，计划是打一个 SWAP 的标，告诉 API 这个条权益是休息室和 setmeal 共享的，相应地，在查询资源、展示订单时，都要根据实际使用的网点，来展示 module 和 Ncode/Rcode。
+ | 可以指定N+Rcode
 
-![](images/image-20251023-063155.png)
+ | 权益模板关联【国际休息室】品类项目，勾选SWAP+Setmeal标签，
 
-返回示例：
+【BOSS】网络范围配Setmeal+休息室
+
+ | 
+Setmeal + Coupon
+
+ | 一条【国际休息室】品类项目
+
+一条【MPV】品类项目
+
+ | 可以指定Rcode
+
+ | 权益模板关联【国际休息室】品类项目，勾选Set Meal标签，不勾选SWAP标签
+
+【BOSS】网络范围只配Setmeal
+
+ | 
+休息室 + Coupon
+
+ | 一条【国际休息室】品类项目
+
+一条【MPV】品类项目
+
+ | 可以指定N+Rcode
+
+ | 权益模板关联【国际休息室】品类项目，无需勾选标签
+
+【BOSS】网络范围只配休息室
+
+ | 
+休息室 + Setmeal + Coupon
+
+ | 一条【国际休息室】品类项目
+
+一条【MPV】品类项目
+
+ | 可以指定N+Rcode
+
+ | 权益模板关联【国际休息室】品类项目勾选，SWAP+Setmeal标签
+
+【BOSS】网络范围配Setmeal+休息室
+
+ | 
+如果只有Setmeal的权益，现在是给【国际休息室】品类的权益打一个Set Meal的标
+
+![](images/image-20251023-063204.png)后面如果是休息室+Setmeal SWAP这种场景，一个项目支持2个品类，计划是打一个SWAP的标，告诉api这个条权益是休息室和setmeal共享的，相应地，在查询资源、展示订单时，都要根据实际使用的网点，来展示Module和Ncode/Rcode
+
+![](images/image-20251023-063155.png)返回
 
 
 ```json
@@ -136,54 +174,120 @@ moudle：判断为swap只能输入0，判断为单品类只允许输入对应品
   }
 }
 ```
-### 1.3 /v2/orders/ePasses
+### 1.3 /v2/orders/ePasses展示逻辑不变，核销什么网点，就对应展示什么module和Ncode/Rcode
 
-展示逻辑不变，核销什么网点，就对应展示什么 module 和 Ncode/Rcode。
+### 1.3 /v2/orders/ePasses/details展示逻辑不变，核销什么网点，就对应展示什么module和Ncode/Rcode
 
-### 1.4 /v2/orders/ePasses/details
+### 1.4 资源相关接口对于swap entitlement到会籍模板（program），同时支持对应品类的资源检索，包括：
 
-展示逻辑不变，核销什么网点，就对应展示什么 module 和 Ncode/Rcode。
+/v2/resources
 
-### 1.5 资源相关接口
+/v2/resources/{resourceId}
 
-对于 swap entitlement 到会籍模板（program），同时支持对应品类的资源检索，包括：
+/v2/resources/updates 回去跑一下日志，如果最近30天无人用，我们就下架好了
 
-- `/v2/resources`
-- `/v2/resources/{resourceId}`
-- `/v2/resources/updates`（回去跑一下日志，如果最近 30 天无人用，就下架）
-- `/v2/transportHubs`
-- `/v2/transportHubs/{transportHubId}`
-- `/v2/search/modules`
-- `/v2/search`
+/v2/transportHubs
 
-### 1.6 预订单创建与取消、下单前权益计算
+/v2/transportHubs/{transportHubId}
+
+/v2/search/modules
+
+/v2/search
+
+### 1.5 预订单创建与取消下单前权益计算
 
 目前saas没有接口计算某个品类现在一共还有多少权益，需要根据权益明细来计算
 
 统计会籍下可用权益（初始/剩余）时，应该只统计待使用和已用完2个状态，不统计已作废/冻结/已过期的
 
-订单取消：取消的话权益直接回退到对应明细，SaaS 负责，我们不用管。
+订单取消
 
-### 1.7 错误提示语
+取消的话权益直接回退到对应明细，saas负责，我们不用管
 
-| 错误码      | 场景说明                                                                 | 提示语（英文）                                                                                                                                        |
-| ----------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 500.000.020 | 只有单品类权益，但是去下了跨品类的权益。不支持 swap entitlement          | Sorry, we’re unable to process your order at the moment. Please try again later or contact DragonPass support team.                                  |
-| 500.xxx.010 | 跨品类会籍商品，在单品类 ePass 接口尝试创建单品类权益（如 `/lounges/ePasses`、`/fastTrack/ePasses` 等） | Sorry, we’re unable to process your order at the moment. Please try again later or contact DragonPass support team.                                  |
-| 500.000.020 | 单品类会籍商品，在 `/crossModule/ePasses` 尝试创建跨品类权益             | Sorry, we’re unable to process your order at the moment. Please try again later or contact DragonPass support team.                                  |
-| 500.xxx.010 | 只要是跨品类，在对应品类的 bundle 接口不能下对应品类的 bundle 单（`/v2/orders/{module}/ePasses/bundle`） | Sorry, we’re unable to process your order at the moment. Please try again later or contact DragonPass support team.                                  |
-| 500.000.013 | 尝试下单该 ePass 不可用的网点                                            | Sorry, this resource is not accessible with your program.                                                                                             |
-| 500.000.014 | `clientUserId` 重复                                                      | Sorry, this clientUserId already exists.                                                                                                              |
-| 500.000.015 | ePass 过期时间早于激活时间                                               | Sorry, the expiration date cannot be earlier than the activation date.                                                                               |
-| 500.000.016 | ePass 激活时间早于会籍模板生效时间                                       | Sorry, the activation date is earlier than the allowed start date.                                                                                   |
-| 500.000.017 | `resourceId` 中传了非该接口对应品类的资源，例如创建 lounge ePass 时传了 Ccode | The 'resourceId' array contains resources that are not associated with the expected module. Please verify and ensure the resource IDs match the correct module. |
-| 500.000.018 | `resourceId` 中传了超过 30 个资源 code                                   | The 'resourceId' array exceeds the maximum limit of 30 resource IDs. Please reduce the number of resource IDs and try again.                         |
+### 1.6 错误提示语500.000.020
 
-## 二、Membership 接口
+ | 只有单品类权益，但是去下了跨品类的权益。不支持swap entitlement
 
-先不看 2.1 `/v2/entitlements/search`。
+ | Sorry, we&rsquo;re unable to process your order at the moment. Please try again later or contact DragonPass support team.
 
-顶级结构：
+ | 
+500.xxx.010（中间就按品类来）
+其实就是单品类接口的兜底提示语
+
+ | 跨品类会籍商品，在单品类epass接口，尝试创建单品类权益
+
+/lounges/ePasses
+
+/fastTrack/ePasses
+
+&hellip;.
+
+ | Sorry, we&rsquo;re unable to process your order at the moment. Please try again later or contact DragonPass support team.
+
+ | 
+500.000.020
+
+ | 单品类会籍商品,在以下路径尝试创建跨品类权益
+
+/crossModule/ePasses
+
+ | Sorry, we&rsquo;re unable to process your order at the moment. Please try again later or contact DragonPass support team.
+
+ | 
+500.xxx.010
+
+ | 只要是跨品类，在对应品类的bundle接口不能下对应的品类的bundle单
+
+/v2/orders/{module}/ePasses/bundle
+
+ | Sorry, we&rsquo;re unable to process your order at the moment. Please try again later or contact DragonPass support team.
+
+ | 
+500.000.013
+
+ |   尝试下单该epass不可用的网点
+
+ | Sorry, this resource is not accessible with your program.   
+
+ | 
+500.000.014
+
+ |    clientUserId重复
+
+ | Sorry, this clientUserId already exists.   
+
+ | 
+500.000.015
+
+ |    epass过期时间不能早于激活时间
+
+ | Sorry, the expiration date cannot be earlier   than the activation date.
+
+ | 
+500.000.016
+
+ | epass激活时间早于会籍模板生效时间
+
+ | Sorry, the activation date is earlier than   the allowed start date.
+
+ | 
+500.000.017
+
+ | resourceId中传了非这个接口对应品类的其他资源，例如创建lounge   Epass，传了Ccode
+
+ | The 'resourceId' array contains resources   that are not associated with the expected module. Please verify and ensure the resource IDs match the correct module.
+
+ | 
+500.000.018
+
+ | resourceId中传了超过30个资源code
+
+ | The 'resourceId' array exceeds the maximum limit of 30 resource IDs. Please reduce the number of resource IDs and try again.   
+
+ | 
+## 二、Membership 先不看2.1 /v2/entitlements/search
+
+顶级结构
 
 
 ```json
@@ -212,14 +316,22 @@ moudle：判断为swap只能输入0，判断为单品类只允许输入对应品
   }
 ]
 ```
-enabledTypes：
+enabledTypes
 
-| 枚举 | 名称            | 说明           |
-| ---- | --------------- | -------------- |
-| 1    | moduleExclusive | 存在单品类权益 |
-| 2    | crossModule     | 存在 swap 权益 |
+枚举
 
-2.2 /v2/entitlements/update
+ |  | 
+moduleExclusive
+
+ | 存在单品类权益
+
+ | 
+crossModule
+
+ | 存在swap权益
+
+ | 
+### 2.2 /v2/entitlements/update
 
 原来的入参，还是保留只更新moduleExclusiveEntitlements，返回也不变。
 

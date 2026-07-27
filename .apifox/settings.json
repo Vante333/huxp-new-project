@@ -1,0 +1,6 @@
+{
+  "projectId": 346275,
+  "apiBaseUrl": "https://apifox.dragonpass.com.cn",
+  "defaultBranchHint": "按项目实际分支为准；写入用 suites.yaml working_branch（当前 ai/apifox-cli-sync）",
+  "notes": "Repo-first 项目映射；凭据仅来自仓库根 .env 的 APIFOX_ACCESS_TOKEN。projectId/apiBaseUrl 以此文件为准。"
+}

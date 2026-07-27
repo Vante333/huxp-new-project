@@ -4,7 +4,7 @@
 
 **权威对照**：pytest + helpers 语义；Postman/Apifox 为联调与演示。变更断言后须 **改生成器 → 运行 `python …/GeneratePostmanCollection*.py` → 提醒用户 Apifox 重新导入**（勿只手改 JSON）。
 
-**金样例生成器**：[`GeneratePostmanCollectionPapi2548.py`](../../../api-testcases/2026Q2_SP1/postman/GeneratePostmanCollectionPapi2548.py)、[`GeneratePostmanCollectionLocalOfferEpass.py`](../../../api-testcases/api_tests/postman/GeneratePostmanCollectionLocalOfferEpass.py)、[`GeneratePostmanCollectionFitnessEpass.py`](../../../api-testcases/api_tests/postman/GeneratePostmanCollectionFitnessEpass.py)。
+**金样例生成器**：[`GeneratePostmanCollectionPapi2548.py`](../../../api-testcases/2026Q2_SP1/postman/GeneratePostmanCollectionPapi2548.py)、[`GeneratePostmanCollectionLocalOfferEpass.py`](../../../api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLocalOfferEpass.py)、[`GeneratePostmanCollectionFitnessEpass.py`](../../../api-testcases/api_tests/postman/generators/GeneratePostmanCollectionFitnessEpass.py)。
 
 ---
 
@@ -20,6 +20,7 @@
 | schedule / 日期不对 | URL 仍用 `{{fitnessScheduleQuery}}` 等变量但 pre-request 未跑 | GET schedule 的 query 直接写 Apifox 表达式（见 §6） |
 | HTTP 200 但断言失败 | Apifox「校验响应」与脚本重复；或 `pm.response.code` 缺失 | 业务成功用 `fpIsBusinessSuccess`；负向步关闭 Apifox 自带 HTTP 200 校验（见 Local Offer description） |
 | 改生成器后用户仍报旧错 | 未重新导入 | 明确提示：**覆盖导入** `*.postman_collection.json` |
+| Preview 误跑 Detail 断言 / `Invalid or unexpected token` | 环境 `order_api_stage` 未随 URL 更新；或脚本含 `?.`/`??`/特殊 Unicode | 用 [`prebooking-payment-apifox-assertions.md`](./prebooking-payment-apifox-assertions.md) 与 `tools/apifox_payment_assert_*.js`；前置按 URL 写 stage |
 
 ---
 
@@ -35,7 +36,7 @@
 2. **仅 WAIT 等极轻步骤**可用 `js_helpers=lambda: []`。
 3. **不要**为「减小 JSON」只在集合级注入 helpers 而不改 test——Apifox 必挂。
 
-**代码锚点**：[`collection_builder_common.py`](../../../api-testcases/api_tests/postman/collection_builder_common.py) `MakeTestEvent`；fitness 曾误用 `CollectionPreRequestEvent` 已回退。
+**代码锚点**：[`collection_builder_common.py`](../../../api-testcases/api_tests/postman/generators/collection_builder_common.py) `MakeTestEvent`；fitness 曾误用 `CollectionPreRequestEvent` 已回退。
 
 ---
 
@@ -92,7 +93,7 @@ E02-S07-R3   PATCH 取消（第 3 次）
 
 **现象**：Apifox 列表只有 `E02-S07 PATCH /orders`，看不出验证意图。
 
-**格式**：`【目的】| 步骤号 | METHOD 路径` — 使用 [`PurposeName()`](../../../api-testcases/api_tests/postman/collection_builder_common.py) 或 `StepSpec.purpose`。
+**格式**：`【目的】| 步骤号 | METHOD 路径` — 使用 [`PurposeName()`](../../../api-testcases/api_tests/postman/generators/collection_builder_common.py) 或 `StepSpec.purpose`。
 
 **细则**：[`postman-purpose-first-naming.md`](./postman-purpose-first-naming.md)。
 
@@ -133,7 +134,7 @@ E02-S07-R3   PATCH 取消（第 3 次）
 ## 8. 变更检查清单（生成器改完必做）
 
 ```text
-- [ ] python api-testcases/api_tests/postman/GeneratePostmanCollection*.py
+- [ ] python api-testcases/api_tests/postman/generators/GeneratePostmanCollection*.py
 - [ ] JSON 中 schedule 请求含 startDate/endDate Apifox 表达式（若适用）
 - [ ] 取消步骤无 sendRequest/done、无 WAIT busy-wait
 - [ ] 抽样打开 1 个请求的 test script：含 function fpAssertHttpBusinessOk（或 lo*）
@@ -147,13 +148,13 @@ E02-S07-R3   PATCH 取消（第 3 次）
 
 | 文件 | 说明 |
 |------|------|
-| [`GeneratePostmanCollectionFitnessEpass.py`](../../../api-testcases/api_tests/postman/GeneratePostmanCollectionFitnessEpass.py) | 生成器主维护 |
-| [`Fitness-ePass-P0-e2e-core.postman_collection.json`](../../../api-testcases/api_tests/postman/Fitness-ePass-P0-e2e-core.postman_collection.json) | 导入产物 |
+| [`GeneratePostmanCollectionFitnessEpass.py`](../../../api-testcases/api_tests/postman/generators/GeneratePostmanCollectionFitnessEpass.py) | 生成器主维护 |
+| [`Fitness-ePass-P0-e2e-core.postman_collection.json`](../../../api-testcases/api_tests/postman/collections/Fitness-ePass-P0-e2e-core.postman_collection.json) | 导入产物 |
 | [`historical_epass_service.py`](../../../api-testcases/api_tests/services/historical_epass_service.py) | `PatchCancelOrderWithRetry`、schedule 解析 |
 | [`test_historical_epass_regression.py`](../../../api-testcases/api_tests/tests/regression/test_historical_epass_regression.py) | fitness 三条主链路 parametrize |
 
 **生成命令**（仓库根）：
 
 ```powershell
-python api-testcases/api_tests/postman/GeneratePostmanCollectionFitnessEpass.py
+python api-testcases/api_tests/postman/generators/GeneratePostmanCollectionFitnessEpass.py
 ```

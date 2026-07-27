@@ -140,28 +140,8 @@
 
 备注：返回字段多于Generic API原订单列表，因此需要新增一个订单列表接口给迁移项目使用，目前缺少：
 
-**Revolut**
-
-**API**
-
-**Remark**
-
-dateTimeUsed
-
-usageDate
-
-缺时区，api处理或saas拼接
-
-usageChargeDetail
-
-待新增
-
-权益使用明细，saas接口已有字段，但数据库没细分，需要确认
-
-接口：`page/orderInfoMq`
-
-benefitTypeId
-
-tier
-
-做完premium lounge后会有，需要saas 提供
+| **Revolut** | **API** | **Remark** |
+|------|------|------|
+| dateTimeUsed | usageDate | 缺时区，api处理或saas拼接 |
+| usageChargeDetail | 待新增 | 权益使用明细，saas接口已有字段，但数据库没细分，需要确认 接口：`page/orderInfoMq` |
+| benefitTypeId | tier | 做完premium lounge后会有，需要saas 提供 |
