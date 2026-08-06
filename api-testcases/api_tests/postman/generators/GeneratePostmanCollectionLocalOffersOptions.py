@@ -19,7 +19,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Final, List, Mapping, Optional, Sequence, Union
 
-from collection_builder_common import CollectionPath
+from collection_builder_common import CollectionPath, Lines_EnsureRequestIdHeader
 
 JsonObject = Dict[str, Any]
 
@@ -463,6 +463,7 @@ def Lines_EnsureAuthPrerequest() -> List[str]:
         "    } catch (eH) { console.warn('LO options ensure bearer', eH); }",
         "  }",
         "} catch (eAll) {}",
+        *Lines_EnsureRequestIdHeader(),
     ]
 
 

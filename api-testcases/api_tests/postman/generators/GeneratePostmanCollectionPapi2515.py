@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from collection_builder_common import CollectionPath
+from collection_builder_common import CollectionPath, Lines_EnsureRequestIdHeader
 from typing import Any, Dict, Final, List, Mapping, Optional, Sequence, Union
 
 JsonObject = Dict[str, Any]
@@ -1270,6 +1270,7 @@ def Lines_EnsureBearerPrerequest() -> List[str]:
         "    } catch (eH) { console.warn('P2515 ensure bearer', eH); }",
         "  }",
         "} catch (eAll) {}",
+        *Lines_EnsureRequestIdHeader(),
     ]
 
 

@@ -20,7 +20,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from collection_builder_common import CollectionPath, GeneratedArtifactPath
+from collection_builder_common import (
+    CollectionPath,
+    GeneratedArtifactPath,
+    Lines_EnsureRequestIdHeader,
+)
 
 import json
 import os
@@ -1055,6 +1059,7 @@ def Lines_EnsureAuthPrerequest() -> List[str]:
         "    } catch (eH) { console.warn('LO ePass ensure bearer', eH); }",
         "  }",
         "} catch (eAll) {}",
+        *Lines_EnsureRequestIdHeader(),
     ]
 
 

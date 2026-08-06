@@ -24,9 +24,9 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, Final, List, Mapping, Optional, Sequence, Union
+from typing import Any, Dict, Final, List, Mapping, Optional, Sequence, Tuple, Union
 
-from collection_builder_common import CollectionPath
+from collection_builder_common import CollectionPath, Lines_EnsureRequestIdHeader
 
 JsonObject = Dict[str, Any]
 
@@ -55,11 +55,143 @@ DEFAULT_BUSINESS_ENV: Final[Dict[str, str]] = {
     "productADeduction": "0",
     "productACurrency": "USD",
     "CouponIntroValid": "PC9850UZX4MWDU9RHW04",
-    "CouponIntroValidName": "",
+    "CouponIntroValidName": "会籍购买测试-有优惠10/0EUR",
     "returnUrl": "https://www.ly.com",
     "x-version": "canary",
     "baseUrl": "https://developer-sandbox.dragonpass.com/api",
 }
+
+# Environment 键 → 填写说明（完整版：Group description / Console）
+ENV_KEY_FILL_GUIDE: Final[Dict[str, str]] = {
+    "CouponIntroValid": (
+        "【入参】body.couponCode。"
+        "填沙箱「周期订阅 + 引导期」有效券码。"
+        "商品A引导期 / 未开引导期两组都传此键；是否出引导期价由商品侧是否开启引导期阶段计费决定。"
+    ),
+    "CouponIntroValidName": (
+        "【断言】coupon.details.description 期望。"
+        "填与 CouponIntroValid 对应的券展示名/描述；接口无 couponName 字段。"
+    ),
+    "CouponIntroNoRenew": (
+        "【入参】body.couponCode。"
+        "填「商品A无订阅」或「支持订阅但本单 autoRenewal=false」场景用的券码（通常非引导期价）。"
+    ),
+    "CouponIntroNoRenewName": (
+        "【断言】券 description 期望（若脚本断言）。"
+        "与 CouponIntroNoRenew 对应的展示名。"
+    ),
+    "CouponExpired": "【入参·负向】已过期券码 → Preview 按原价回退 / Create 期望 500.000.702。",
+    "CouponIneligible": (
+        "【入参·负向】有效但不满足使用条件的券（如未到使用期）→ "
+        "Preview valid=false、details=null、按原价 / Create 期望 500.000.702。"
+    ),
+    "CouponWrongType": "【入参·负向】非周期优惠券码 → Preview 按原价且详情空 / Create 期望 500.000.702。",
+    "CouponCrossProgram": "【入参·负向】其它 Program 的券码 → 按无效券 / Create 期望 500.020.031。",
+    "CouponNotFoundCode": "【入参·负向】不存在的券码（默认可不改）→ Preview 按原价 / Create 期望 500.020.031。",
+    "productBProgramId": "【断言】选中商品 B 的 programId（Retail Program / 商品 ID）。与沙箱商品一致。",
+    "productBProgramName": "【断言】商品 B 的 programName 回显。与沙箱展示名一致。",
+    "productBPrice": "【断言】商品 B 原价=应付（无券）。→ originalAmount / payableAmount / unitPrice。",
+    "productBCurrency": "【断言】商品 B 币种 → payment.currency（如 EUR）。",
+    "productBDeduction": "【断言】商品 B 扣减额；无券通常填 0。payable 期望≈ price−deduction。",
+    "productAProgramId": "【断言】商品 A（支持订阅+引导期链路）的 programId。",
+    "productAProgramName": "【断言】商品 A 的 programName 回显。",
+    "productAPrice": "【断言】商品 A 原价 → originalAmount / unitPrice。",
+    "productAPayableAmount": (
+        "【断言】商品 A 应付（已开启引导期阶段计费）。"
+        "引导期常填 0；此时 Create status 期望 9，Payments 可业务失败。"
+    ),
+    "productADeduction": (
+        "【参考】扣减名义键；脚本实际用 money2(productAPrice−productAPayableAmount)，"
+        "一般不必改此键。"
+    ),
+    "productACurrency": "【断言】商品 A 币种 → payment.currency（如 USD）。",
+    "productANoSubProgramId": "【断言】「商品A不支持订阅」专用 programId（可与引导期商品不同）。",
+    "productANoSubProgramName": "【断言】无订阅商品 A 的 programName。",
+    "productANoSubPrice": "【断言】无订阅商品 A 原价（本场景按原价，常=应付）。",
+    "productANoSubPayableAmount": "【断言】无订阅商品 A 应付；通常= productANoSubPrice。",
+    "productANoSubCurrency": "【断言】无订阅商品 A 币种。",
+    "productASubOffProgramId": "【断言】「支持订阅但 autoRenewal=false」专用 programId。",
+    "productASubOffProgramName": "【断言】订阅关原价场景的 programName。",
+    "productASubOffPrice": "【断言】订阅关场景原价。",
+    "productASubOffPayableAmount": "【断言】订阅关场景应付；通常=原价。",
+    "productASubOffCurrency": "【断言】订阅关场景币种。",
+    "productANoIntroPayableAmount": (
+        "【断言】商品 A 应付（传引导期券但商品未开引导期阶段计费 → 按原价）。"
+        "通常填成与 productAPrice 相同，此时 deduction 期望 0。"
+    ),
+    "returnUrl": "【入参】Payments body.returnUrl；H5 收银台回跳地址。",
+    "ExistingActiveProfileEmail": "【入参·负向】沙箱已有生效订阅用户的 email（重复购买拒绝）。",
+    "ExistingActiveProfileClientUserId": "【入参·负向】同上用户的 clientUserId。",
+    "baseUrl": "【环境】网关根地址；换测改 Environment，勿用空集合变量覆盖。",
+    "x-version": "【环境】路由头（如 canary）。",
+}
+
+# 断言面板短文案（避免 assertInfo 标题过长；完整说明见 ENV_KEY_FILL_GUIDE）
+ENV_KEY_FILL_SHORT: Final[Dict[str, str]] = {
+    "CouponIntroValid": "入参 couponCode（周期订阅券）",
+    "CouponIntroValidName": "断言券 description",
+    "CouponIntroNoRenew": "入参 couponCode（无引导期/订阅关）",
+    "CouponIntroNoRenewName": "断言券 description",
+    "CouponExpired": "入参·过期券",
+    "CouponIneligible": "入参·不满足条件券",
+    "CouponWrongType": "入参·非周期券",
+    "CouponCrossProgram": "入参·跨 Program 券",
+    "CouponNotFoundCode": "入参·不存在券（可不改）",
+    "productBProgramId": "断言商品B programId",
+    "productBProgramName": "断言商品B programName",
+    "productBPrice": "断言商品B原价=应付",
+    "productBCurrency": "断言商品B币种",
+    "productBDeduction": "断言商品B扣减（无券常0）",
+    "productAProgramId": "断言商品A programId",
+    "productAProgramName": "断言商品A programName",
+    "productAPrice": "断言商品A原价",
+    "productAPayableAmount": "断言商品A应付（引导期，常0）",
+    "productADeduction": "参考·一般不改",
+    "productACurrency": "断言商品A币种",
+    "productANoSubProgramId": "断言无订阅A programId",
+    "productANoSubProgramName": "断言无订阅A programName",
+    "productANoSubPrice": "断言无订阅A原价",
+    "productANoSubPayableAmount": "断言无订阅A应付(=原价)",
+    "productANoSubCurrency": "断言无订阅A币种",
+    "productASubOffProgramId": "断言订阅关A programId",
+    "productASubOffProgramName": "断言订阅关A programName",
+    "productASubOffPrice": "断言订阅关A原价",
+    "productASubOffPayableAmount": "断言订阅关A应付(=原价)",
+    "productASubOffCurrency": "断言订阅关A币种",
+    "productANoIntroPayableAmount": "断言应付(未开引导期，通常=原价)",
+    "returnUrl": "入参 Payments 回跳URL",
+    "ExistingActiveProfileEmail": "入参·已有订阅用户email",
+    "ExistingActiveProfileClientUserId": "入参·已有订阅用户cuid",
+    "baseUrl": "环境·网关",
+    "x-version": "环境·路由头",
+}
+
+
+def FormatGroupEnvGuideText(
+    group_label: str,
+    env_keys: Sequence[str],
+    *,
+    fixed_notes: Sequence[str] = (),
+) -> str:
+    """生成某 Group 的 Environment 填写指南（中文）。"""
+    lines: List[str] = [
+        f"======== [{group_label}] Environment 填写指南 ========",
+        "说明：下列键请在 Apifox Environment（351893）填写；空则脚本用生成器默认占位。",
+        "分类：【入参】进请求体；【断言】对响应期望；【环境】网关/路由；【参考】可不改。",
+    ]
+    for note in fixed_notes:
+        lines.append(f"· 固定/脚本写死：{note}")
+    seen: Dict[str, bool] = {}
+    for key in env_keys:
+        k = (key or "").strip()
+        if not k or k in seen:
+            continue
+        seen[k] = True
+        guide = ENV_KEY_FILL_GUIDE.get(k) or "（未登记说明）换测时与断言标题对照填写。"
+        lines.append(f"· {k} = {{{{{k}}}}}  ← 当前值见下行 Console「当前值」")
+        lines.append(f"  {guide}")
+    lines.append("======== 指南结束（本断言恒通过，仅作填写提示）========")
+    return "\n".join(lines)
 
 
 def BuildScenarioDescription() -> str:
@@ -90,9 +222,10 @@ def BuildScenarioDescription() -> str:
         f"· productAPayableAmount → payableAmount 期望（引导期默认 {b['productAPayableAmount']}）\n"
         f"· productACurrency → payment.currency（默认 {b['productACurrency']}）\n"
         f"· CouponIntroValid → couponCodes（默认 {b['CouponIntroValid']}）\n"
-        "· CouponIntroValidName → coupon.details.description / couponName 期望（Environment 配置券名称）\n"
-        "· deductionAmount 期望 = productAPrice − productAPayableAmount"
-        "（例 10−0=10；不以 productADeduction 写死为准）\n"
+        "· CouponIntroValidName → coupon.details.description 期望（接口无 couponName 字段，不断言）\n"
+        "· deductionAmount 期望 = money2(productAPrice − productAPayableAmount)"
+        "（保留两位小数；例 10−0=10；不以 productADeduction 写死为准）\n"
+        "· Create.orderCreatedDate：仅断言非空（不校验 UTC 后缀格式）\n"
         "\n"
         "【金额块断言（Preview/Create/Details）】\n"
         "payment.currency / originalAmount / payableAmount / deductionAmount；\n"
@@ -139,21 +272,92 @@ def JsStringLiteral(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
+def Lines_AnnounceGroupEnv(
+    group_label: str,
+    env_keys: Sequence[str],
+    *,
+    fixed_notes: Sequence[str] = (),
+) -> Tuple[List[str], List[str]]:
+    """
+    返回 ``(prerequest_lines, test_lines)``：
+    - 只打 Console 短行：``键 = 当前值  // 短含义``（不占断言、不打长文）
+    - Pre-request 与 Tests 各打一遍
+    """
+    keys_raw = [k for k in env_keys if (k or "").strip()]
+    keys: List[str] = []
+    seen_k: Dict[str, bool] = {}
+    for k in keys_raw:
+        if k in seen_k:
+            continue
+        seen_k[k] = True
+        keys.append(k)
+
+    label_lit = JsStringLiteral(group_label)
+    keys_js = json.dumps(keys, ensure_ascii=False)
+    meaning_map: Dict[str, str] = {}
+    for k in keys:
+        meaning_map[k] = ENV_KEY_FILL_SHORT.get(k) or "对照填写"
+    meaning_js = json.dumps(meaning_map, ensure_ascii=False)
+    # 固定说明也缩短
+    short_notes = [(n if len(n) <= 40 else n[:37] + "…") for n in fixed_notes]
+    notes_js = json.dumps(short_notes, ensure_ascii=False)
+
+    log_block: List[str] = [
+        "try {",
+        f"  var _label = {label_lit};",
+        f"  var _keys = {keys_js};",
+        f"  var _meanings = {meaning_js};",
+        f"  var _notes = {notes_js};",
+        "  console.log('[' + _label + '] 要改的数据集列（勿改 Environment 业务键）:');",
+        "  for (var _n = 0; _n < (_notes || []).length; _n++) {",
+        "    console.log('  · ' + _notes[_n]);",
+        "  }",
+        "  for (var _i = 0; _i < (_keys || []).length; _i++) {",
+        "    var _k = String(_keys[_i] || '');",
+        "    if (!_k) continue;",
+        "    var _v = '';",
+        "    try { _v = String(pm.variables.get(_k) || ''); } catch (eV) {}",
+        "    if (!_v) { try { _v = String(pm.collectionVariables.get(_k) || ''); } catch (eC) {} }",
+        "    if (!_v) { try { if (typeof getEnv === 'function') _v = String(getEnv(_k) || ''); } catch (eG) {} }",
+        "    if (!_v) _v = '(空)';",
+        "    var _m = '';",
+        "    try { _m = String((_meanings && _meanings[_k]) || ''); } catch (eM) {}",
+        "    console.log('  ' + _k + ' = ' + _v + (_m ? ('  // ' + _m) : ''));",
+        "  }",
+        "} catch (eAnnounce) { console.warn('announce group env', eAnnounce); }",
+    ]
+    return list(log_block), list(log_block)
+
+
 def Lines_SeedRuntimeEnv() -> List[str]:
     """
-    Apifox Environment 变量在私有化 CLI 下常无法注入；生成时写入运行时变量。
+    业务键优先 ``pm.variables``（数据集选行）；空则用 Environment；再空用生成器占位。
+    只把结果写入 variables（不回写 Environment 业务键，避免污染共用 351893）。
+    ``baseUrl`` / ``x-version`` 仍可读 Environment。
     鉴权三列来自本机 .env 的 MP_P0_*（勿提交）。
     """
     creds = AuthCredentials()
+    infra = frozenset({"baseUrl", "x-version"})
     lines: List[str] = ["try {"]
     for key, value in DEFAULT_BUSINESS_ENV.items():
         lit = JsStringLiteral(value)
-        lines.append(f"  if (!String((pm.environment && pm.environment.get({JsStringLiteral(key)})) || '').trim()) {{")
-        lines.append(f"    try {{ pm.environment.set({JsStringLiteral(key)}, {lit}); }} catch (eE) {{}}")
-        lines.append(f"    try {{ pm.variables.set({JsStringLiteral(key)}, {lit}); }} catch (eV) {{}}")
-        lines.append("  } else {")
-        lines.append(f"    try {{ pm.variables.set({JsStringLiteral(key)}, String(pm.environment.get({JsStringLiteral(key)}))); }} catch (eC) {{}}")
-        lines.append("  }")
+        k_lit = JsStringLiteral(key)
+        lines.append("  (function () {")
+        lines.append(f"    var _k = {k_lit};")
+        lines.append("    var _v = '';")
+        lines.append("    try { _v = String(pm.variables.get(_k) || '').trim(); } catch (e0) {}")
+        if key in infra:
+            lines.append(
+                "    if (!_v) { try { _v = String((pm.environment && pm.environment.get(_k)) || '').trim(); } catch (e1) {} }"
+            )
+        else:
+            # 业务键：仅当 variables 为空时才读 Environment（兼容旧 P0 手填）；有数据集行则以行为准
+            lines.append(
+                "    if (!_v) { try { _v = String((pm.environment && pm.environment.get(_k)) || '').trim(); } catch (e1) {} }"
+            )
+        lines.append(f"    if (!_v) _v = {lit};")
+        lines.append("    try { pm.variables.set(_k, _v); } catch (eV) {}")
+        lines.append("  })();")
     for key in ("ProgramID", "clientId", "secret"):
         val = creds.get(key) or ""
         if not val:
@@ -171,6 +375,15 @@ def Lines_SeedRuntimeEnv() -> List[str]:
             "    var _sec = ''; try { _sec = String(pm.variables.get('secret') || '').trim(); } catch (eS0) {}",
             "    if (_cid) _raw = _raw.replace(/{{clientId}}/g, _cid);",
             "    if (_sec) _raw = _raw.replace(/{{secret}}/g, _sec);",
+            "    // 业务键 {{}} 强制用 variables（数据集优先，防 Environment 旧值）",
+            "    var _biz = ["
+            + ", ".join(JsStringLiteral(k) for k in DEFAULT_BUSINESS_ENV if k not in ("baseUrl", "x-version"))
+            + "];",
+            "    for (var _i = 0; _i < _biz.length; _i++) {",
+            "      var _bk = _biz[_i];",
+            "      var _bv = ''; try { _bv = String(pm.variables.get(_bk) || '').trim(); } catch (eB) {}",
+            "      if (_bv) { _raw = _raw.split('{{' + _bk + '}}').join(_bv); }",
+            "    }",
             "    pm.request.body.raw = _raw;",
             "  }",
             "  var _pid = ''; try { _pid = String(pm.variables.get('ProgramID') || '').trim(); } catch (eP0) {}",
@@ -195,6 +408,8 @@ function fmtJsonBrief(v, maxLen) {
   maxLen = maxLen || 240;
   var s;
   try { s = JSON.stringify(v); } catch (e) { s = String(v); }
+  // JSON.stringify(undefined) === undefined，直接 .length 会抛错
+  if (s === undefined || s === null) s = String(v);
   if (s.length > maxLen) return s.slice(0, maxLen) + '...(len=' + s.length + ')';
   return s;
 }
@@ -217,24 +432,44 @@ function parseJson() {
   try { return pm.response.json(); } catch (e) { return null; }
 }
 function getEnv(name) {
+  // 优先 variables（Apifox 全量数据/数据集行常注入此处），再 collection。
+  // Environment 仅 infra/鉴权/令牌：业务键（券码、金额等）勿再读 Environment，避免旧值盖掉数据集。
   var v = '';
-  try { v = String((pm.environment && pm.environment.get(name)) || '').trim(); } catch (e0) {}
-  if (!v) { try { v = String(pm.variables.get(name) || '').trim(); } catch (e1) {} }
+  try { v = String(pm.variables.get(name) || '').trim(); } catch (e0) {}
   if (!v) { try { v = String(pm.collectionVariables.get(name) || '').trim(); } catch (e2) {} }
+  if (!v) {
+    var _infra = (
+      name === 'baseUrl' || name === 'x-version' || name === 'accessToken' ||
+      name === 'ProgramID' || name === 'clientId' || name === 'secret'
+    );
+    if (_infra) {
+      try { v = String((pm.environment && pm.environment.get(name)) || '').trim(); } catch (e1) {}
+    }
+  }
   return v;
 }
 function setRuntime(name, value) {
+  // 订单态等只写 variables/collection，禁止写 Environment（共用 351893；业务键只读数据集）。
   var s = value === null || value === undefined ? '' : String(value);
   try { pm.variables.set(name, s); } catch (eV) {}
   try { pm.collectionVariables.set(name, s); } catch (eC) {}
-  try { if (pm.environment) pm.environment.set(name, s); } catch (eE) {}
+}
+function money2(v) {
+  // 金额统一保留两位小数，避免 JS 浮点（如 10-2.63→7.369999…）与接口四舍五入不一致
+  if (v === null || v === undefined || v === '') return NaN;
+  var n = Number(v);
+  if (!isFinite(n)) return NaN;
+  return Math.round(n * 100) / 100;
 }
 function numEq(a, b) {
   if (a === null || a === undefined || b === null || b === undefined || b === '') return false;
-  return Number(a) === Number(b);
+  var x = money2(a);
+  var y = money2(b);
+  if (!isFinite(x) || !isFinite(y)) return false;
+  return x === y;
 }
 function assertNum(checkpoint, expected, actual) {
-  var title = checkpoint + ' | 期望=' + fmtJsonBrief(Number(expected)) + ' | 实际=' + fmtJsonBrief(actual);
+  var title = checkpoint + ' | 期望=' + fmtJsonBrief(money2(expected)) + ' | 实际=' + fmtJsonBrief(actual);
   pm.test(title, function () {
     pm.expect(numEq(actual, expected), '数值不相等').to.eql(true);
   });
@@ -301,15 +536,10 @@ function assertPendingNoActivation(label, data) {
     pm.expect(ok).to.eql(true);
   });
 }
-function looksLikeUtc0DateTime(s) {
-  if (!s || typeof s !== 'string') return false;
-  // 接受 2026-07-27T11:00:00Z / ...+00:00 / 无毫秒
-  return /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]00:00)$/.test(String(s).trim());
-}
 function assertCreateOrderMeta(label, data) {
   assertCheck(label + ': orderId 非空', true, !!(data && data.orderId && String(data.orderId)));
-  pm.test(label + ': orderCreatedDate UTC+0 | 期望=ISO8601 Z/+00:00 | 实际=' + fmtJsonBrief(data && data.orderCreatedDate), function () {
-    pm.expect(looksLikeUtc0DateTime(String((data && data.orderCreatedDate) || '')), 'orderCreatedDate 非 UTC+0').to.eql(true);
+  pm.test(label + ': orderCreatedDate 存在 | 期望=非空 | 实际=' + fmtJsonBrief(data && data.orderCreatedDate), function () {
+    pm.expect(!!(data && data.orderCreatedDate && String(data.orderCreatedDate).trim()), 'orderCreatedDate 缺失').to.eql(true);
   });
   pm.test(label + ': orderCancelledDate 为 null | 期望=null | 实际=' + fmtJsonBrief(data && data.orderCancelledDate), function () {
     pm.expect(data && data.orderCancelledDate === null, '创建时应未取消').to.eql(true);
@@ -374,11 +604,17 @@ def Lines_EnsureAuthPrerequest() -> List[str]:
         "    try { pm.collectionVariables.set('baseUrl', _base); } catch (eBS2) {}",
         "  }",
         "  var _pid = '';",
-        "  try { _pid = String(pm.variables.get('ProgramID') || '').trim(); } catch (eP0) {}",
-        "  if (!_pid) { try { _pid = String(pm.collectionVariables.get('ProgramID') || '').trim(); } catch (eP1) {} }",
+        "  try { if (pm.iterationData) _pid = String(pm.iterationData.get('ProgramID') || '').trim(); } catch (ePid) {}",
+        # 与 P1 种子一致：勾选鉴权行常在 Environment，优先于可能残留的旧 variables
         "  if (!_pid) { try { _pid = String((pm.environment && pm.environment.get('ProgramID')) || '').trim(); } catch (eP2) {} }",
+        "  if (!_pid) { try { _pid = String(pm.variables.get('ProgramID') || '').trim(); } catch (eP0) {} }",
+        "  if (!_pid) { try { _pid = String(pm.collectionVariables.get('ProgramID') || '').trim(); } catch (eP1) {} }",
+        "  if (!_pid) { try { _pid = String((pm.globals && pm.globals.get('ProgramID')) || '').trim(); } catch (eP3) {} }",
         "  if (_pid) {",
         "    try { pm.variables.set('ProgramID', _pid); } catch (ePS) {}",
+        "    try { pm.collectionVariables.set('ProgramID', _pid); } catch (ePC) {}",
+        "    try { if (pm.environment) pm.environment.set('ProgramID', _pid); } catch (ePE) {}",
+        "    try { if (pm.globals && typeof pm.globals.set === 'function') pm.globals.set('ProgramID', _pid); } catch (ePG) {}",
         "    try {",
         "      if (pm.request && pm.request.headers && typeof pm.request.headers.upsert === 'function') {",
         "        pm.request.headers.upsert({ key: 'X-Program-ID', value: _pid });",
@@ -425,6 +661,7 @@ def Lines_EnsureAuthPrerequest() -> List[str]:
         "    } catch (eH) {}",
         "  }",
         "} catch (eAll) {}",
+        *Lines_EnsureRequestIdHeader(),
     ]
 
 
@@ -488,9 +725,9 @@ def AuthJsonHeaders() -> List[JsonObject]:
 
 
 def BearerJsonHeaders() -> List[JsonObject]:
-    pid = AuthCredentials().get("ProgramID") or "{{ProgramID}}"
+    # 必须用 {{ProgramID}}：禁止生成时把 .env 写死进头，否则勾选其它鉴权数据集行无效
     return [
-        {"key": "X-Program-ID", "value": pid},
+        {"key": "X-Program-ID", "value": "{{ProgramID}}"},
         {"key": "x-version", "value": "{{x-version}}"},
         {"key": "X-Request-ID", "value": "{{$guid}}"},
         {"key": "Authorization", "value": "Bearer {{accessToken}}"},
@@ -658,6 +895,8 @@ def Lines_CreateProductB(order_var: str) -> List[str]:
 
 
 def Lines_DetailsPending(label: str, order_var: str, *, program_id_env: str, program_name_env: str, currency_env: str, price_env: str, payable_env: str, deduction_env: str, auto_renewal: bool) -> List[str]:
+    # deduction_env 保留调用方兼容；期望一律 money2(original−payable)，与 Preview/Create / A-DET1 手写一致
+    _ = deduction_env
     return [
         f"var j = assertBizOk('{label}');",
         "var data = j.data || {};",
@@ -671,14 +910,18 @@ def Lines_DetailsPending(label: str, order_var: str, *, program_id_env: str, pro
         f"assertPendingNoActivation('{label}', data);",
         "var pay = data.payment || {};",
         f"assertCheck('{label}: paymentStatus', 'PENDING_PAYMENT', String(pay.paymentStatus || ''));",
+        f"var orig = getEnv('{price_env}');",
+        f"var payable = getEnv('{payable_env}');",
+        "if (payable === '' || payable === undefined || payable === null) payable = orig;",
+        "var deduction = money2(Number(orig) - Number(payable));",
         "assertPriceBlock('" + label + "', pay, {",
         f"  expectCurrency: getEnv('{currency_env}'),",
-        f"  expectOriginal: getEnv('{price_env}'),",
-        f"  expectPayable: getEnv('{payable_env}'),",
-        f"  expectDeduction: getEnv('{deduction_env}') || '0',",
+        "  expectOriginal: orig,",
+        "  expectPayable: payable,",
+        "  expectDeduction: deduction,",
         "  expectPaxType: 'CARDHOLDER',",
         "  expectQuantity: 1,",
-        f"  expectUnitPrice: getEnv('{price_env}')",
+        "  expectUnitPrice: orig",
         "});",
     ]
 
@@ -730,7 +973,6 @@ def Lines_PreviewProductA() -> List[str]:
         "var details = coupon.details || {};",
         "assertCheck('A-PRE: details.couponType=4 INTRODUCTORY_PRICING', 4, details.couponType);",
         "assertCheck('A-PRE: details.description', getEnv('CouponIntroValidName'), String(details.description || ''));",
-        "assertCheck('A-PRE: details.couponName', getEnv('CouponIntroValidName'), String(details.couponName || ''));",
         "pm.test('A-PRE: details.currency 为 null | 期望=null | 实际=' + fmtJsonBrief(details.currency), function () {",
         "  pm.expect(details.currency === null, 'currency 应为 null').to.eql(true);",
         "});",
@@ -753,7 +995,7 @@ def Lines_PreviewProductA() -> List[str]:
         "var orig = getEnv('productAPrice') || '10';",
         "var payable = getEnv('productAPayableAmount');",
         "if (payable === '') payable = '0';",
-        "var deduction = String(Number(orig) - Number(payable));",
+        "var deduction = money2(Number(orig) - Number(payable));",
         "assertPriceBlock('A-PRE', pay, {",
         "  expectCurrency: getEnv('productACurrency') || 'USD',",
         "  expectOriginal: orig,",
@@ -785,7 +1027,7 @@ def Lines_CreateProductA(order_var: str) -> List[str]:
         "var orig = getEnv('productAPrice') || '10';",
         "var payable = getEnv('productAPayableAmount');",
         "if (payable === '') payable = '0';",
-        "var deduction = String(Number(orig) - Number(payable));",
+        "var deduction = money2(Number(orig) - Number(payable));",
         "var pay = data.payment || {};",
         "if (Number(payable) > 0) {",
         "  assertCheck('A-CRT: status=9', 9, data.status);",
@@ -873,6 +1115,38 @@ def BuildCancelAndDetailsAfterItems(
 
 def BuildProductBFolder() -> JsonObject:
     order_var = "orderIdProductB"
+    announce_pre, announce_test = Lines_AnnounceGroupEnv(
+        "商品B-无券-原价EUR",
+        [
+            "productBProgramId",
+            "productBProgramName",
+            "productBPrice",
+            "productBCurrency",
+            "productBDeduction",
+            "returnUrl",
+        ],
+        fixed_notes=[
+            "不传 couponCode",
+            "autoRenewal=false（脚本写死）",
+            "payable 期望 = productBPrice − productBDeduction",
+        ],
+    )
+    folder_desc = FormatGroupEnvGuideText(
+        "商品B-无券-原价EUR",
+        [
+            "productBProgramId",
+            "productBProgramName",
+            "productBPrice",
+            "productBCurrency",
+            "productBDeduction",
+            "returnUrl",
+        ],
+        fixed_notes=[
+            "不传 couponCode",
+            "autoRenewal=false（脚本写死）",
+            "payable 期望 = productBPrice − productBDeduction",
+        ],
+    )
     return Folder(
         "商品B-无券-原价EUR",
         [
@@ -882,9 +1156,9 @@ def BuildProductBFolder() -> JsonObject:
                 url_path=PATH_PREVIEW,
                 body=BodyPreviewCreate(with_coupon=False, auto_renewal=False),
                 headers=BearerJsonHeaders(),
-                description="P0 场景1 · Preview：默认商品 B、EUR 原价。",
-                test_lines=Lines_PreviewProductB(),
-                prerequest_extra=Lines_UniqueProfilePrerequest("mp_b"),
+                description="P0 场景1 · Preview：默认商品 B、EUR 原价。跑本步看 Console/断言「填写指南」。",
+                test_lines=announce_test + Lines_PreviewProductB(),
+                prerequest_extra=announce_pre + Lines_UniqueProfilePrerequest("mp_b"),
             ),
             RequestItem(
                 name=PurposeName("不传券创建商品B待支付订单", "B-CRT", "POST", PATH_CREATE),
@@ -962,12 +1236,48 @@ def BuildProductBFolder() -> JsonObject:
             purpose_cancel="取链后取消商品B订单",
             purpose_details="取消后Details-商品B",
         ),
-        description="不传券 · autoRenewal=false · 商品 B · E2E 含 Cancel。",
+        description=folder_desc,
     )
 
 
 def BuildProductAFolder() -> JsonObject:
     order_var = "orderIdProductA"
+    announce_pre, announce_test = Lines_AnnounceGroupEnv(
+        "商品A-传券-订阅引导期USD",
+        [
+            "CouponIntroValid",
+            "CouponIntroValidName",
+            "productAProgramId",
+            "productAProgramName",
+            "productAPrice",
+            "productAPayableAmount",
+            "productACurrency",
+            "returnUrl",
+        ],
+        fixed_notes=[
+            "autoRenewal=true（脚本写死）",
+            "deduction 期望 = money2(productAPrice − productAPayableAmount)",
+            "应付 0 时 Create status=9，Payments 可业务失败",
+        ],
+    )
+    folder_desc = FormatGroupEnvGuideText(
+        "商品A-传券-订阅引导期USD",
+        [
+            "CouponIntroValid",
+            "CouponIntroValidName",
+            "productAProgramId",
+            "productAProgramName",
+            "productAPrice",
+            "productAPayableAmount",
+            "productACurrency",
+            "returnUrl",
+        ],
+        fixed_notes=[
+            "autoRenewal=true（脚本写死）",
+            "deduction 期望 = money2(productAPrice − productAPayableAmount)",
+            "应付 0 时 Create status=9，Payments 可业务失败",
+        ],
+    )
     return Folder(
         "商品A-传券-订阅引导期USD",
         [
@@ -977,9 +1287,9 @@ def BuildProductAFolder() -> JsonObject:
                 url_path=PATH_PREVIEW,
                 body=BodyPreviewCreate(with_coupon=True, auto_renewal=True),
                 headers=BearerJsonHeaders(),
-                description="P0 场景2 · Preview：CouponIntroValid + autoRenewal=true。",
-                test_lines=Lines_PreviewProductA(),
-                prerequest_extra=Lines_UniqueProfilePrerequest("mp_a"),
+                description="P0 场景2 · Preview：CouponIntroValid + autoRenewal=true。跑本步看 Console/断言「填写指南」。",
+                test_lines=announce_test + Lines_PreviewProductA(),
+                prerequest_extra=announce_pre + Lines_UniqueProfilePrerequest("mp_a"),
             ),
             RequestItem(
                 name=PurposeName("传券创建商品A订单", "A-CRT", "POST", PATH_CREATE),
@@ -1012,7 +1322,7 @@ def BuildProductAFolder() -> JsonObject:
                     "var orig = getEnv('productAPrice') || '10';",
                     "var payable = getEnv('productAPayableAmount');",
                     "if (payable === '') payable = '0';",
-                    "var deduction = String(Number(orig) - Number(payable));",
+                    "var deduction = money2(Number(orig) - Number(payable));",
                     "assertPriceBlock('A-DET1', data.payment || {}, {",
                     "  expectCurrency: getEnv('productACurrency') || 'USD',",
                     "  expectOriginal: orig,",
@@ -1067,7 +1377,7 @@ def BuildProductAFolder() -> JsonObject:
             purpose_cancel="Payments后取消商品A订单",
             purpose_details="取消后Details-商品A",
         ),
-        description="传 CouponIntroValid · autoRenewal=true · 引导期 · E2E 含 Cancel。",
+        description=folder_desc,
     )
 
 

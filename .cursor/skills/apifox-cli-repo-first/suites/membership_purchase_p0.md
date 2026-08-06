@@ -1,7 +1,7 @@
 # membership_purchase_p0 · CLI 落地笔记
 
 - **场景**：366587 · `Membership Purchase P0 · CLI sync`
-- **目录**：folderId **350026** · `membership/P0(冒烟用例)/others`
+- **目录**：folderId **350048** · `common/P1（全量用例）/others`（2026-07-29 全量迁移）
 - **分支**：`ai/apifox-cli-sync`
 - **环境**：351893 · UAT（canary）— 需可用 `baseUrl` 变量（新建空环境会导致 `{{baseUrl}}` 不解析）
 - **详解**：[`Membership-Purchase-P0-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/postman/docs/Membership-Purchase-P0-apifox-cli-repo-first.md)

@@ -101,6 +101,58 @@ def MakePreRequestEvent(
     return [{"listen": "prerequest", "script": {"exec": exec_lines, "type": "text/javascript"}}]
 
 
+def Lines_EnsureRequestIdHeader() -> List[str]:
+    """发送前写入合法 ``X-Request-ID``（兼补 ``Accept``）。
+
+    Apifox 单步调试 / CLI 场景常不展开头里的 ``{{$guid}}``，发出空头会触发
+    ``301.000.001``（The field X-Request-ID contains invalid characters or format is incorrect）。
+    策略与 PAPI-2515 ``p2515FreshRequestIdForSend`` 一致：先试 ``replaceIn``，失败则本地 UUID。
+    """
+    return [
+        "try {",
+        "  var _rid = '';",
+        "  try {",
+        "    if (pm.variables && typeof pm.variables.replaceIn === 'function') {",
+        "      _rid = String(pm.variables.replaceIn('{{$guid}}') || '');",
+        "    }",
+        "  } catch (eR0) {}",
+        "  if (!_rid || _rid.indexOf('{{') >= 0 || _rid.indexOf('}}') >= 0) {",
+        "    _rid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {",
+        "      var r = (Math.random() * 16) | 0;",
+        "      var v = c === 'x' ? r : (r & 0x3) | 0x8;",
+        "      return v.toString(16);",
+        "    });",
+        "  }",
+        "  if (pm.request && pm.request.headers && typeof pm.request.headers.upsert === 'function') {",
+        "    pm.request.headers.upsert({ key: 'X-Request-ID', value: _rid });",
+        "    pm.request.headers.upsert({ key: 'Accept', value: '*/*' });",
+        "  }",
+        "} catch (eRid) {}",
+    ]
+
+
+def JsExpr_FreshRequestId() -> str:
+    """可嵌入 helpers / ``pm.sendRequest`` 头的 IIFE：返回合法 UUID（不依赖 ``{{$guid}}`` 展开）。"""
+    return (
+        "(function () {"
+        "  var r = '';"
+        "  try {"
+        "    if (pm.variables && typeof pm.variables.replaceIn === 'function') {"
+        "      r = String(pm.variables.replaceIn('{{$guid}}') || '');"
+        "    }"
+        "  } catch (e) {}"
+        "  if (!r || r.indexOf('{{') >= 0 || r.indexOf('}}') >= 0) {"
+        "    r = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {"
+        "      var n = (Math.random() * 16) | 0;"
+        "      var v = c === 'x' ? n : (n & 0x3) | 0x8;"
+        "      return v.toString(16);"
+        "    });"
+        "  }"
+        "  return r;"
+        "})()"
+    )
+
+
 def AuthJsonHeaders() -> List[JsonObject]:
     return [
         {"key": "X-Program-ID", "value": "{{ProgramID}}"},
@@ -176,8 +228,11 @@ def RequestItem(
         req["body"] = PostmanJsonRawBody(body)
     out: JsonObject = {"name": name, "request": req}
     events: List[JsonObject] = []
+    # 每步必跑：避免 Apifox 不展开 {{$guid}} 导致空 X-Request-ID → 301.000.001
+    pre_merged: List[str] = list(Lines_EnsureRequestIdHeader())
     if prerequest_lines:
-        events.extend(MakePreRequestEvent(js_helpers, prerequest_lines))
+        pre_merged.extend(list(prerequest_lines))
+    events.extend(MakePreRequestEvent(js_helpers, pre_merged))
     events.extend(MakeTestEvent(js_helpers, save_token=save_token, extra_lines=test_lines))
     if events:
         out["event"] = events

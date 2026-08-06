@@ -1,7 +1,7 @@
 # local_offer_epass_p0 · CLI 落地笔记
 
 - **场景**：366256 · `Local Offer ePass P0 · CLI sync`
-- **目录**：folderId **350033** · `epass/P0(冒烟用例)/prebooking`
+- **目录**：folderId **350048** · `common/P1（全量用例）/others`（2026-07-29 全量迁移自 epass/P0/prebooking）
 - **分支**：`ai/apifox-cli-sync`
 - **环境**：351893 · UAT（canary）
 - **数据集**：3475756（复用 papi_2424；ProgramID=`1919249349977088`）

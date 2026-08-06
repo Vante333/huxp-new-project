@@ -292,3 +292,39 @@ eference.md「症状→自动处置」 |
 | 目录 | `membership/P0(冒烟用例)/others`（folderId 350026） |
 
 **验收**：`.\scripts\ApifoxRepoFirst.ps1 -Action PushSteps -Asset membership_purchase_p0`（Environment 须可解析 `baseUrl`；券名填 `CouponIntroValidName`）。
+
+---
+
+## 14. 项目自动化页面骨架屏（客户端全量加载与重绘）
+
+### 14.1 现象与排除过程
+
+- 项目 346275：多人复现，其他项目正常；main / AI 分支均可能出现骨架屏。
+- CLI 的 branch / folder / test-scenario list、场景详情均能正常返回。
+- 项目只有 3 个分支、每个分支 16 个自动化场景；不能据此认定「场景太多」。
+- 仓库 collection 总大小不是 UI 实际载荷；实测 `test-scenario/tree-list` 约 32KB 且 HTTP 200。
+- 真正慢的是项目初始化 `/api-details`：编码后约 6.6MB，约 13～20 秒；切分支时还可能触发第二轮全量请求。
+- DOM 已经 `skeletons=0`、目录文本存在，但 Electron 窗口仍显示旧骨架时，属于重绘问题。
+- 客户端 2.7.43 与 2.8.33 均复现；连续切分支时 Heap 从约 199MB 增至 322MB，随后客户端退出。
+
+### 14.2 下次 Agent 自动处置
+
+1. 先区分「项目左树骨架屏」与「某 HTTP 步骤永久 loading」，两者禁止混查。
+2. CLI 只读验证 main / working branch 的场景、目录与抽样详情；记录真实耗时、响应字节和引用完整性。
+3. 查客户端实际版本、进程数与 Working Set；强制结束会丢未保存 UI 修改，须先征得用户同意。
+4. 干净重启仍卡时，临时开启 CDP，测 `Network.responseReceived/loadingFinished/loadingFailed`；pending Map 必须在完成/失败时删除。
+5. `tree-list` 已完成、DOM skeleton 为 0 但画面旧：置前窗口并触发 `resize` / zoom 重绘。
+6. 分支切换最多受控往返一轮；Heap 持续上涨立即停止，干净重启并恢复 `ai/apifox-cli-sync`。
+7. 不得因为 loading 就先删除场景、移动目录、拆分 P1 或精简 Postman helpers；这些不是本次已证实根因。
+
+Agent 详细决策树与安全红线见：
+
+- [Postman / Apifox troubleshooting §0.1](../../../../.cursor/skills/api-testcase-pack/postman-apifox-troubleshooting.md)
+- [Repo-first reference「症状 → 自动处置」](../../../../.cursor/skills/apifox-cli-repo-first/reference.md)
+
+### 14.3 根治建议（Apifox 私有化研发）
+
+- 自动化页面先独立展示 `test-scenario/tree-list`，不等待 API / Schema / Mock 全量加载。
+- `/api-details` 按项目、分支、模块过滤，支持字段裁剪、分页、懒加载与缓存。
+- 切分支时取消旧请求、相同请求去重；`customHttp` 不预载全量 API。
+- 验收标准：场景树返回后 1 秒内展示；`api-details` pending/失败不阻塞；连续切分支 5 次不崩溃且 Heap 不持续增长。

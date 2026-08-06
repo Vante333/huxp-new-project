@@ -24,7 +24,9 @@ from collection_builder_common import (
     BearerJsonHeaders,
     CollectionVariable,
     Folder,
+    JsExpr_FreshRequestId,
     Lines_Step,
+    PurposeName,
     RequestItem,
     WriteCollectionJson,
 )
@@ -1250,6 +1252,8 @@ function epAssertSearchCancelledAfterPurchaseCancel(label, matchCreateInput) {{
   }}
 }}
 """.strip()
+    # Apifox 内 {{$guid}} 常未展开 → 空 X-Request-ID → 301.000.001；sendRequest 回退头改用本地 UUID
+    js = js.replace("pm.variables.replaceIn('{{$guid}}')", JsExpr_FreshRequestId())
     return [ln for ln in js.split("\n")]
 
 
@@ -2161,9 +2165,67 @@ def BuildCollection() -> JsonObject:
     }
 
 
+def RewritePurposeFirstNames(node: Any) -> None:
+    """将历史「步骤码 METHOD /path」命名改写为 PurposeName（PushSteps 硬约束）。"""
+    import re
+
+    if isinstance(node, list):
+        for child in node:
+            RewritePurposeFirstNames(child)
+        return
+    if not isinstance(node, dict):
+        return
+    name = node.get("name")
+    req = node.get("request")
+    if isinstance(name, str) and isinstance(req, dict) and not name.startswith("【"):
+        method = str(req.get("method") or "POST").upper()
+        url = req.get("url")
+        path_hint = ""
+        if isinstance(url, dict):
+            raw_path = url.get("path")
+            if isinstance(raw_path, list):
+                path_hint = "/" + "/".join(str(p) for p in raw_path if str(p))
+            elif isinstance(url.get("raw"), str):
+                raw = str(url.get("raw") or "")
+                path_hint = raw.split("?", 1)[0]
+                if "://" in path_hint:
+                    path_hint = "/" + "/".join(path_hint.split("/", 3)[3:])
+        if path_hint.startswith("/v2/"):
+            path_hint = path_hint[3:]
+        elif path_hint.startswith("/v1/"):
+            path_hint = path_hint[3:]
+        m = re.match(r"^([A-Za-z0-9]+(?:-[A-Za-z0-9]+)*)\s+(.*)$", name.strip())
+        if m:
+            step_id, rest = m.group(1), m.group(2).strip()
+        elif name.strip().upper().startswith(("POST ", "GET ", "PATCH ", "PUT ", "DELETE ")):
+            step_id, rest = "Auth" if "auth/token" in name else "STEP", name.strip()
+        else:
+            step_id, rest = "STEP", name.strip()
+        purpose = re.sub(
+            r"^(GET|POST|PATCH|PUT|DELETE)\s+/[^\s（(]*\s*",
+            "",
+            rest,
+            flags=re.IGNORECASE,
+        ).strip()
+        purpose = purpose.strip("（）() ·")
+        if not purpose or purpose.upper().startswith(("POST ", "GET ", "PATCH ", "PUT ", "DELETE ")):
+            purpose = f"{step_id} 步骤"
+        if "GetAccessToken" in name or "auth/token" in name:
+            purpose = "获取 ePass 鉴权 token"
+            step_id = "Auth"
+            path_hint = path_hint or "/auth/token"
+        node["name"] = PurposeName(purpose, step_id, method, path_hint or "/")
+    for key in ("item", "response"):
+        child = node.get(key)
+        if child is not None:
+            RewritePurposeFirstNames(child)
+
+
 def Main() -> None:
     out_path = str(CollectionPath(OUT_NAME))
-    WriteCollectionJson(out_path, BuildCollection())
+    collection = BuildCollection()
+    RewritePurposeFirstNames(collection)
+    WriteCollectionJson(out_path, collection)
     print(f"Wrote {out_path}")
 
 

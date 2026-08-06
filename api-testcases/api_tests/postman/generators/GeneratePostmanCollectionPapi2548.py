@@ -9,7 +9,7 @@
 """
 from __future__ import annotations
 
-from collection_builder_common import CollectionPath
+from collection_builder_common import CollectionPath, Lines_EnsureRequestIdHeader
 
 import json
 from typing import Any, Dict, Final, List, Mapping, Optional, Sequence, Union
@@ -369,6 +369,7 @@ def Lines_EnsureAuthPrerequest() -> List[str]:
         "    } catch (eH) { console.warn('P2548 ensure bearer', eH); }",
         "  }",
         "} catch (eAll) {}",
+        *Lines_EnsureRequestIdHeader(),
     ]
 
 

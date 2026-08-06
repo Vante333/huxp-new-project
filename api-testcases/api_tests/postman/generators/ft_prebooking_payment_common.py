@@ -25,6 +25,7 @@ from collection_builder_common import (
     BearerJsonHeaders,
     CollectionVariable,
     Folder,
+    Lines_EnsureRequestIdHeader,
     Lines_Step,
     PurposeName,
     WriteCollectionJson,
@@ -411,6 +412,7 @@ def Lines_EnsureAuthPrerequest() -> List[str]:
         "    } catch (eH) { console.warn('FT payment ensure bearer', eH); }",
         "  }",
         "} catch (eAll) {}",
+        *Lines_EnsureRequestIdHeader(),
     ]
 
 
