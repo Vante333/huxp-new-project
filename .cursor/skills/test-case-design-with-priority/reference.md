@@ -836,14 +836,14 @@ testcases/{需求名称}-测试用例-{序号}.md
 
 | 场景 | 脚本 | 说明 |
 | --- | --- | --- |
-| 团队 `tc-p*` 用例/测试分析（默认） | `tools/xmind_to_testcases_md.py` | 输出 `### tc-p1:` + `pc`/步骤/预期；与本文 §4.1 一致 |
-| 另一套 tc 汇总格式 | `tools/xmind_to_markdown_v2.py` | `##### tc-P1` 等，见脚本说明 |
-| 纯大纲、无 tc 结构 | `tools/xmind2md.py` | `#` 标题 + 列表，不解析优先级 |
+| 团队 `tc-p*` 用例/测试分析（默认） | `tools/req-docs/xmind_to_testcases_md.py` | 输出 `### tc-p1:` + `pc`/步骤/预期；与本文 §4.1 一致 |
+| 另一套 tc 汇总格式 | `tools/req-docs/xmind_to_markdown_v2.py` | `##### tc-P1` 等，见脚本说明 |
+| 纯大纲、无 tc 结构 | `tools/req-docs/xmind2md.py` | `#` 标题 + 列表，不解析优先级 |
 
 **推荐命令**（Windows PowerShell）：
 
 ```powershell
-python tools/xmind_to_testcases_md.py `
+python tools/req-docs/xmind_to_testcases_md.py `
   --xmind "D:\path\PAPI-xxxx测试用例.xmind" `
   --out "testcases/2026Q2SP4/PAPI-xxxx-测试用例-001.md" `
   --requirement "requirements/2026Q2SP4/PAPI-xxxx.md"
@@ -855,7 +855,7 @@ python tools/xmind_to_testcases_md.py `
 2. 原 Markdown 中的判定表/分析表若不在脑图`tc`子树下，导出后会缺失——属预期行为；如需保留应另建分析文档，不合并进用例文件。
 3. 历史 `tc-p0` 在脚本内映射为 `tc-p1`；碎片节点（是/否/不适用）不写入。
 
-**反向**（Markdown 表格 → 列表便于导入 XMind）：`tools/md_tables_to_xmind_lists.py`。
+**反向**（Markdown 表格 → 列表便于导入 XMind）：`tools/req-docs/md_tables_to_xmind_lists.py`。
 
 ---
 

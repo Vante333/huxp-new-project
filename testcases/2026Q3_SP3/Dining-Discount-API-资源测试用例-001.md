@@ -1,0 +1,2230 @@
+# 2026Q3_SP3
+
+## Dining Discount
+
+### 资源列表与资源详情
+
+#### DiningDiscount优惠模式组合
+
+##### 仅优惠模式
+
+###### tc-p1: v2_resources资源列表_module5
+
+- rc: 覆盖R-001、R-002、R-003、R-006、R-008；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{offerOnlyResourceId}}仅有一条BOSS模式=优惠的module5数据，没有折扣模式、module3/4及结算价格，处于当前Program网络内
+- pc: 优惠文案为{{offerOptionName}}、{{offerDescription}}；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources?module=5并遍历全部分页
+  - HTTP状态码=200且业务码code=0，{{offerOnlyResourceId}}在module5资源数组中只出现一次
+- S02：按optionName和description检查目标diningOptions
+  - 仅包含一个module=5、optionName={{offerOptionName}}、description={{offerDescription}}、value=null、currency=null的object
+- rc: API不返回BOSS模式字段，通过受控优惠文案识别该object
+- rc: Apifox的module5列表枚举及响应schema尚未完整，具体数据补齐前标记blocked
+- tag: api,resource-list,offer-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources资源列表_module6
+
+- rc: 覆盖R-003、R-008、R-011、R-012；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=6、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{offerOnlyResourceId}}仅有一条BOSS模式=优惠的module5数据，没有折扣模式、module3/4及结算价格，处于当前Program网络内
+- pc: 优惠文案为{{offerOptionName}}、{{offerDescription}}；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources?module=6并遍历全部分页
+  - HTTP状态码=200且{{offerOnlyResourceId}}在module6资源数组中只出现一次
+- S02：按optionName和description检查目标diningOptions
+  - 仅包含一个module=5、optionName={{offerOptionName}}、description={{offerDescription}}、value=null、currency=null的object
+- rc: 无结算价格不得导致该餐厅从module6结果中被过滤
+- tag: api,resource-list,module6,offer-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module5
+
+- rc: 覆盖R-001、R-004、R-005、R-006；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{offerOnlyResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=5、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: 优惠文案为{{offerOptionName}}、{{offerDescription}}；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources/{resourceId}?module=5
+  - HTTP状态码=200、业务码code=0、data.module=5且data.resourceId={{offerOnlyResourceId}}
+- S02：检查diningOptions
+  - 仅包含一个module=5、optionName={{offerOptionName}}、description={{offerDescription}}、value=null、currency=null的object
+- rc: Apifox尚缺独立完整的DiningDiscount详情schema；补齐前标记blocked
+- tag: api,resource-details,offer-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module6
+
+- rc: 覆盖R-011、R-012；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{offerOnlyResourceId}}；类型=string；来源=测试数据集；目标餐厅无module3/4且无结算价格
+- pc: query.module=6、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: 优惠文案为{{offerOptionName}}、{{offerDescription}}；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources/{resourceId}?module=6
+  - HTTP状态码=200且data.resourceId={{offerOnlyResourceId}}
+- S02：检查diningOptions
+  - 仅包含一个module=5、optionName={{offerOptionName}}、description={{offerDescription}}、value=null、currency=null的object
+- tag: api,resource-details,module6,offer-mode,P1,api-automation-blocked
+
+##### 仅折扣模式
+
+###### tc-p1: v2_resources资源列表_module5
+
+- rc: 覆盖R-001、R-002、R-003、R-006、R-008；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{discountModeOnlyResourceId}}仅有一条BOSS模式=折扣的module5数据，没有优惠模式、module3/4及结算价格，处于当前Program网络内
+- pc: 折扣文案为{{discountOptionName}}、{{discountDescription}}；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources?module=5并遍历全部分页
+  - HTTP状态码=200且业务码code=0，{{discountModeOnlyResourceId}}在module5资源数组中只出现一次
+- S02：按optionName和description检查目标diningOptions
+  - 仅包含一个module=5、optionName={{discountOptionName}}、description={{discountDescription}}、value=null、currency=null的object
+- rc: API不返回BOSS模式字段，通过受控折扣文案识别该object
+- rc: Apifox的module5列表枚举及响应schema尚未完整，具体数据补齐前标记blocked
+- tag: api,resource-list,discount-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources资源列表_module6
+
+- rc: 覆盖R-003、R-008、R-011、R-012；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=6、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{discountModeOnlyResourceId}}仅有一条BOSS模式=折扣的module5数据，没有优惠模式、module3/4及结算价格，处于当前Program网络内
+- pc: 折扣文案为{{discountOptionName}}、{{discountDescription}}；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources?module=6并遍历全部分页
+  - HTTP状态码=200且{{discountModeOnlyResourceId}}在module6资源数组中只出现一次
+- S02：按optionName和description检查目标diningOptions
+  - 仅包含一个module=5、optionName={{discountOptionName}}、description={{discountDescription}}、value=null、currency=null的object
+- rc: 无结算价格不得导致该餐厅从module6结果中被过滤
+- tag: api,resource-list,module6,discount-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module5
+
+- rc: 覆盖R-001、R-004、R-005、R-006；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{discountModeOnlyResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=5、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: 折扣文案为{{discountOptionName}}、{{discountDescription}}；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources/{resourceId}?module=5
+  - HTTP状态码=200、业务码code=0、data.module=5且data.resourceId={{discountModeOnlyResourceId}}
+- S02：检查diningOptions
+  - 仅包含一个module=5、optionName={{discountOptionName}}、description={{discountDescription}}、value=null、currency=null的object
+- rc: Apifox尚缺独立完整的DiningDiscount详情schema；补齐前标记blocked
+- tag: api,resource-details,discount-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module6
+
+- rc: 覆盖R-011、R-012；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{discountModeOnlyResourceId}}；类型=string；来源=测试数据集；目标餐厅无module3/4且无结算价格
+- pc: query.module=6、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: 折扣文案为{{discountOptionName}}、{{discountDescription}}；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources/{resourceId}?module=6
+  - HTTP状态码=200且data.resourceId={{discountModeOnlyResourceId}}
+- S02：检查diningOptions
+  - 仅包含一个module=5、optionName={{discountOptionName}}、description={{discountDescription}}、value=null、currency=null的object
+- tag: api,resource-details,module6,discount-mode,P1,api-automation-blocked
+
+##### 优惠加折扣模式
+
+###### tc-p1: v2_resources资源列表_module5
+
+- rc: 覆盖R-001、R-002、R-003、R-006、R-008、R-013、R-015；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{offerAndDiscountResourceId}}同时有一条BOSS模式=优惠和一条BOSS模式=折扣的module5数据，没有module3/4及结算价格，处于当前Program网络内
+- pc: 两种模式文案分别为{{offerOptionName}}、{{offerDescription}}和{{discountOptionName}}、{{discountDescription}}；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources?module=5并遍历全部分页
+  - HTTP状态码=200且业务码code=0，{{offerAndDiscountResourceId}}在module5资源数组中只出现一次
+- S02：按module、optionName、description对目标diningOptions执行无序集合匹配
+  - 恰有两个module5 object，分别匹配优惠文案与折扣文案，且均满足value=null、currency=null
+- S03：检查资源计数
+  - {{offerAndDiscountResourceId}}只贡献一个pagination.totalNumber计数，不按两个object重复计数
+- rc: API不返回BOSS模式字段；diningOptions无固定顺序，禁止使用数组下标绑定object
+- rc: Apifox的module5列表枚举及响应schema尚未完整，具体数据补齐前标记blocked
+- tag: api,resource-list,offer-mode,discount-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources资源列表_module6
+
+- rc: 覆盖R-003、R-008、R-011、R-012、R-015；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=6、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{offerAndDiscountResourceId}}同时有优惠与折扣两种BOSS模式，没有module3/4及结算价格，处于当前Program网络内
+- pc: 两种模式文案分别为{{offerOptionName}}、{{offerDescription}}和{{discountOptionName}}、{{discountDescription}}；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources?module=6并遍历全部分页
+  - HTTP状态码=200且{{offerAndDiscountResourceId}}在module6资源数组中只出现一次
+- S02：按module、optionName、description对目标diningOptions执行无序集合匹配
+  - 恰有两个module5 object，分别匹配优惠文案与折扣文案，且均满足value=null、currency=null
+- rc: 无结算价格不得导致该餐厅从module6结果中被过滤
+- tag: api,resource-list,module6,offer-mode,discount-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module5
+
+- rc: 覆盖R-001、R-003、R-004、R-005、R-006、R-015；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{offerAndDiscountResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=5、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: 两种模式文案分别为{{offerOptionName}}、{{offerDescription}}和{{discountOptionName}}、{{discountDescription}}；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources/{resourceId}?module=5
+  - HTTP状态码=200、业务码code=0、data.module=5且data.resourceId={{offerAndDiscountResourceId}}
+- S02：按module、optionName、description对diningOptions执行无序集合匹配
+  - 恰有两个module5 object，分别匹配优惠文案与折扣文案，且均满足value=null、currency=null
+- rc: Apifox尚缺独立完整的DiningDiscount详情schema；补齐前标记blocked
+- tag: api,resource-details,offer-mode,discount-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module6
+
+- rc: 覆盖R-003、R-011、R-012、R-015；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{offerAndDiscountResourceId}}；类型=string；来源=测试数据集；目标餐厅无module3/4且无结算价格
+- pc: query.module=6、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: 两种模式文案分别为{{offerOptionName}}、{{offerDescription}}和{{discountOptionName}}、{{discountDescription}}；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources/{resourceId}?module=6
+  - HTTP状态码=200且data.resourceId={{offerAndDiscountResourceId}}
+- S02：按module、optionName、description对diningOptions执行无序集合匹配
+  - 恰有两个module5 object，分别匹配优惠文案与折扣文案，且均满足value=null、currency=null
+- tag: api,resource-details,module6,offer-mode,discount-mode,P1,api-automation-blocked
+
+#### 资源聚合与品类展示规则
+
+##### 验证module3与module5共存时资源不重复且选项完整
+
+###### tc-p1: v2_resources资源列表_module3
+
+- rc: 覆盖R-002、R-003；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=3、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{module3OfferResourceId}}同时存在module3与一条BOSS模式=优惠的module5数据，没有module4与折扣模式；module3选项期望值来自测试数据集
+- S01：调用GET /v2/resources并遍历全部分页
+  - {{module3OfferResourceId}}在module3资源数组中只出现一次且资源module=3
+- S02：检查目标diningOptions
+  - 仅包含module3选项，不包含module5优惠object
+- rc: module3选项字段值由既有契约提供；本用例验证module=3入参下不串入module5
+- tag: api,resource-list,multi-module,module3,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module3
+
+- rc: 覆盖R-002、R-003；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{module3OfferResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=3、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: {{module3OfferResourceId}}同时存在module3与一条BOSS模式=优惠的module5数据；module3选项期望字段来自测试数据集
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200、业务码code=0、data.module=3且data.resourceId={{module3OfferResourceId}}
+- S02：检查diningOptions
+  - 仅包含module3选项，不包含module5优惠object
+- tag: api,resource-details,multi-module,module3,P1,api-automation-blocked
+
+###### tc-p1: v2_resources资源列表_module5
+
+- rc: 覆盖R-001、R-002、R-003、R-006；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{module3OfferResourceId}}同时存在module3与一条BOSS模式=优惠的module5数据，没有module4与折扣模式
+- pc: 优惠文案为{{offerOptionName}}、{{offerDescription}}；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources并遍历全部分页
+  - {{module3OfferResourceId}}在module5资源数组中只出现一次且资源module=5
+- S02：检查目标diningOptions
+  - 仅包含一个module5优惠object，optionName={{offerOptionName}}、description={{offerDescription}}、value=null、currency=null，不包含module3选项
+- tag: api,resource-list,multi-module,module5,offer-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module5
+
+- rc: 覆盖R-001、R-004、R-005、R-006；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{module3OfferResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=5、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: 优惠文案为{{offerOptionName}}、{{offerDescription}}；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200、业务码code=0、data.module=5且data.resourceId={{module3OfferResourceId}}
+- S02：检查diningOptions
+  - 仅包含一个module5优惠object，optionName={{offerOptionName}}、description={{offerDescription}}、value=null、currency=null，不包含module3选项
+- tag: api,resource-details,multi-module,module5,offer-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources资源列表_module6
+
+- rc: 覆盖R-002、R-003、R-012；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=6、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{module3OfferResourceId}}同时存在module3与一条BOSS模式=优惠的module5数据，没有module4与折扣模式；各选项期望值来自测试数据集
+- S01：调用GET /v2/resources并遍历全部分页
+  - {{module3OfferResourceId}}在module6资源数组中只出现一次
+- S02：对目标diningOptions执行无序集合匹配
+  - 集合完整包含一个module3和一个module5优惠object且无额外重复项
+- S03：检查module5优惠object字段
+  - optionName={{offerOptionName}}、description={{offerDescription}}且value、currency均为null
+- rc: module3的具体字段值由既有契约提供，本用例重点验证组合完整性与module5字段
+- tag: api,resource-list,multi-module,module6,offer-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module6
+
+- rc: 覆盖R-002、R-003；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{module3OfferResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=6、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: {{module3OfferResourceId}}同时存在module3与一条BOSS模式=优惠的module5数据，没有module4与折扣模式；各选项期望字段来自测试数据集
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200且业务码code=0
+- S02：对diningOptions执行无序集合匹配
+  - 集合完整包含一个module3和一个module5优惠object且没有重复或丢失
+- S03：检查module5优惠object字段
+  - optionName={{offerOptionName}}、description={{offerDescription}}且value、currency均为null
+- tag: api,resource-details,multi-module,module6,offer-mode,P1,api-automation-blocked
+
+##### 验证module4与module5共存时资源不重复且选项完整
+
+###### tc-p1: v2_resources资源列表_module4
+
+- rc: 覆盖R-002、R-003；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=4、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{module4DiscountResourceId}}同时存在module4与一条BOSS模式=折扣的module5数据，没有module3与优惠模式；module4选项期望值来自测试数据集
+- S01：调用GET /v2/resources并遍历全部分页
+  - {{module4DiscountResourceId}}在module4资源数组中只出现一次且资源module=4
+- S02：检查目标diningOptions
+  - 仅包含module4选项，不包含module5折扣object
+- rc: module4选项字段值由既有契约提供；本用例验证module=4入参下不串入module5
+- tag: api,resource-list,multi-module,module4,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module4
+
+- rc: 覆盖R-002、R-003；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{module4DiscountResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=4、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: {{module4DiscountResourceId}}同时存在module4与一条BOSS模式=折扣的module5数据；module4选项期望字段来自测试数据集
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200、业务码code=0、data.module=4且data.resourceId={{module4DiscountResourceId}}
+- S02：检查diningOptions
+  - 仅包含module4选项，不包含module5折扣object
+- tag: api,resource-details,multi-module,module4,P1,api-automation-blocked
+
+###### tc-p1: v2_resources资源列表_module5
+
+- rc: 覆盖R-001、R-002、R-003、R-006；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{module4DiscountResourceId}}同时存在module4与一条BOSS模式=折扣的module5数据，没有module3与优惠模式
+- pc: 折扣文案为{{discountOptionName}}、{{discountDescription}}；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources并遍历全部分页
+  - {{module4DiscountResourceId}}在module5资源数组中只出现一次且资源module=5
+- S02：检查目标diningOptions
+  - 仅包含一个module5折扣object，optionName={{discountOptionName}}、description={{discountDescription}}、value=null、currency=null，不包含module4选项
+- tag: api,resource-list,multi-module,module5,discount-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module5
+
+- rc: 覆盖R-001、R-004、R-005、R-006；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{module4DiscountResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=5、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: 折扣文案为{{discountOptionName}}、{{discountDescription}}；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200、业务码code=0、data.module=5且data.resourceId={{module4DiscountResourceId}}
+- S02：检查diningOptions
+  - 仅包含一个module5折扣object，optionName={{discountOptionName}}、description={{discountDescription}}、value=null、currency=null，不包含module4选项
+- tag: api,resource-details,multi-module,module5,discount-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources资源列表_module6
+
+- rc: 覆盖R-002、R-003、R-012；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=6、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{module4DiscountResourceId}}同时存在module4与一条BOSS模式=折扣的module5数据，没有module3与优惠模式；各选项期望值来自测试数据集
+- S01：调用GET /v2/resources并遍历全部分页
+  - {{module4DiscountResourceId}}在module6资源数组中只出现一次
+- S02：对目标diningOptions执行无序集合匹配
+  - 集合完整包含一个module4和一个module5折扣object且无额外重复项
+- S03：检查module5折扣object字段
+  - optionName={{discountOptionName}}、description={{discountDescription}}且value、currency均为null
+- rc: module4的具体字段值由既有契约提供，本用例重点验证组合完整性与module5字段
+- tag: api,resource-list,multi-module,module6,discount-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module6
+
+- rc: 覆盖R-002、R-003；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{module4DiscountResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=6、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: {{module4DiscountResourceId}}同时存在module4与一条BOSS模式=折扣的module5数据，没有module3与优惠模式；各选项期望字段来自测试数据集
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200且业务码code=0
+- S02：对diningOptions执行无序集合匹配
+  - 集合完整包含一个module4和一个module5折扣object且没有重复或丢失
+- S03：检查module5折扣object字段
+  - optionName={{discountOptionName}}、description={{discountDescription}}且value、currency均为null
+- tag: api,resource-details,multi-module,module6,discount-mode,P1,api-automation-blocked
+
+##### 验证module3/4/5共存时资源不重复且选项完整
+
+###### tc-p1: v2_resources资源列表_module3
+
+- rc: 覆盖R-002、R-003；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=3、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{multiModuleResourceId}}同时存在module3、module4、一条BOSS模式=优惠和一条BOSS模式=折扣的module5数据；module3选项期望值来自测试数据集
+- S01：调用GET /v2/resources并遍历全部分页
+  - {{multiModuleResourceId}}在module3资源数组中只出现一次且资源module=3
+- S02：检查目标diningOptions
+  - 仅包含module3选项，不包含module4与module5选项
+- tag: api,resource-list,multi-module,module3,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module3
+
+- rc: 覆盖R-002、R-003；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{multiModuleResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=3、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: {{multiModuleResourceId}}同时存在module3、module4与两条module5数据；module3选项期望字段来自测试数据集
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200、业务码code=0、data.module=3且data.resourceId={{multiModuleResourceId}}
+- S02：检查diningOptions
+  - 仅包含module3选项，不包含module4与module5选项
+- tag: api,resource-details,multi-module,module3,P1,api-automation-blocked
+
+###### tc-p1: v2_resources资源列表_module4
+
+- rc: 覆盖R-002、R-003；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=4、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{multiModuleResourceId}}同时存在module3、module4与两条module5数据；module4选项期望值来自测试数据集
+- S01：调用GET /v2/resources并遍历全部分页
+  - {{multiModuleResourceId}}在module4资源数组中只出现一次且资源module=4
+- S02：检查目标diningOptions
+  - 仅包含module4选项，不包含module3与module5选项
+- tag: api,resource-list,multi-module,module4,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module4
+
+- rc: 覆盖R-002、R-003；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{multiModuleResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=4、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: {{multiModuleResourceId}}同时存在module3、module4与两条module5数据；module4选项期望字段来自测试数据集
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200、业务码code=0、data.module=4且data.resourceId={{multiModuleResourceId}}
+- S02：检查diningOptions
+  - 仅包含module4选项，不包含module3与module5选项
+- tag: api,resource-details,multi-module,module4,P1,api-automation-blocked
+
+###### tc-p1: v2_resources资源列表_module5
+
+- rc: 覆盖R-001、R-002、R-003、R-006、R-015；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{multiModuleResourceId}}同时存在module3、module4、一条BOSS模式=优惠和一条BOSS模式=折扣的module5数据
+- pc: 两种模式文案分别为{{offerOptionName}}、{{offerDescription}}和{{discountOptionName}}、{{discountDescription}}；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources并遍历全部分页
+  - {{multiModuleResourceId}}在module5资源数组中只出现一次且资源module=5
+- S02：按module、optionName、description对目标diningOptions执行无序集合匹配
+  - 恰有两个module5 object，分别匹配优惠文案与折扣文案，且均满足value=null、currency=null，不包含module3与module4选项
+- tag: api,resource-list,multi-module,module5,offer-mode,discount-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module5
+
+- rc: 覆盖R-001、R-003、R-004、R-005、R-006、R-015；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{multiModuleResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=5、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: 两种模式文案分别为{{offerOptionName}}、{{offerDescription}}和{{discountOptionName}}、{{discountDescription}}；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200、业务码code=0、data.module=5且data.resourceId={{multiModuleResourceId}}
+- S02：按module、optionName、description对diningOptions执行无序集合匹配
+  - 恰有两个module5 object，分别匹配优惠文案与折扣文案，且均满足value=null、currency=null，不包含module3与module4选项
+- tag: api,resource-details,multi-module,module5,offer-mode,discount-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources资源列表_module6
+
+- rc: 覆盖R-002、R-003、R-012、R-015；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=6、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: {{multiModuleResourceId}}同时存在module3、module4、一条BOSS模式=优惠和一条BOSS模式=折扣的module5数据；各选项期望值来自测试数据集
+- S01：调用GET /v2/resources并遍历全部分页
+  - {{multiModuleResourceId}}在module6资源数组中只出现一次
+- S02：对目标diningOptions执行无序集合匹配
+  - 集合完整包含一个module3、一个module4和两个module5 object且无额外重复项
+- S03：检查优惠模式与折扣模式对应的module5字段
+  - 两个module5 object分别匹配优惠模式与折扣模式的optionName和description且value、currency均为null
+- rc: module3/4的具体字段值由既有契约提供，本用例重点验证组合完整性与module5字段
+- tag: api,resource-list,multi-module,module6,offer-mode,discount-mode,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module6
+
+- rc: 覆盖R-002、R-003、R-015；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{multiModuleResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=6、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: {{multiModuleResourceId}}同时存在module3、module4、一条BOSS模式=优惠和一条BOSS模式=折扣的module5数据；各选项期望字段来自测试数据集
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200且业务码code=0
+- S02：对diningOptions执行无序集合匹配
+  - 集合完整包含一个module3、一个module4和两个module5 object且没有重复或丢失
+- S03：检查两个module5 object
+  - 两个module5 object分别匹配优惠模式与折扣模式的optionName和description且value、currency均为null
+- tag: api,resource-details,multi-module,module6,offer-mode,discount-mode,P1,api-automation-blocked
+
+#### diningOptions字段取值组合
+
+##### 验证有备注时optionName取优惠值description取备注且value与currency为null
+
+###### tc-p1: v2_resources资源列表_module5
+
+- rc: 覆盖R-001、R-004、R-005、R-006；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.language={{language}}、query.pageNumber=1、query.pageSize=100；类型分别为integer、string、integer、integer；来源=需求固定值及测试数据集
+- pc: {{remarkPresentResourceId}}仅有一条module5数据；BOSS优惠值={{bossOfferValue}}、备注={{bossRemark}}且备注非空；类型均为string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources并遍历全部分页，定位{{remarkPresentResourceId}}
+  - 资源只出现一次且diningOptions仅含一个module=5的object
+- S02：检查目标diningOptions字段取值
+  - optionName={{bossOfferValue}}、description={{bossRemark}}、value=null、currency=null；description不等于优惠值兜底
+- rc: API不拼接加工文案；optionName取优惠值，description有备注时取备注
+- tag: api,resource-list,dining-options,field-mapping,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module5
+
+- rc: 覆盖R-001、R-004、R-005、R-006；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{remarkPresentResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=5、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: BOSS优惠值={{bossOfferValue}}、备注={{bossRemark}}且备注非空；类型均为string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200、业务码code=0、data.module=5
+- S02：检查diningOptions字段取值
+  - 仅一个module=5 object，optionName={{bossOfferValue}}、description={{bossRemark}}、value=null、currency=null
+- tag: api,resource-details,dining-options,field-mapping,P1,api-automation-blocked
+
+###### tc-p1: v2_resources资源列表_module6
+
+- rc: 覆盖R-004、R-005、R-006、R-011；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=6、query.language={{language}}、query.pageNumber=1、query.pageSize=100；类型分别为integer、string、integer、integer；来源=需求固定值及测试数据集
+- pc: {{remarkPresentResourceId}}在module6网络内；BOSS优惠值={{bossOfferValue}}、备注={{bossRemark}}且备注非空
+- S01：调用GET /v2/resources并定位目标资源
+  - 资源只出现一次
+- S02：检查diningOptions中module=5的object
+  - optionName={{bossOfferValue}}、description={{bossRemark}}、value=null、currency=null
+- tag: api,resource-list,module6,dining-options,field-mapping,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module6
+
+- rc: 覆盖R-004、R-005、R-006、R-011；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{remarkPresentResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=6、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: BOSS优惠值={{bossOfferValue}}、备注={{bossRemark}}且备注非空
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200且data.resourceId={{remarkPresentResourceId}}
+- S02：检查diningOptions中module=5的object
+  - optionName={{bossOfferValue}}、description={{bossRemark}}、value=null、currency=null
+- tag: api,resource-details,module6,dining-options,field-mapping,P1,api-automation-blocked
+
+##### 验证无备注时description回落优惠值且value与currency为null
+
+###### tc-p1: v2_resources资源列表_module5
+
+- rc: 覆盖R-001、R-004、R-005、R-006；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.language={{language}}、query.pageNumber=1、query.pageSize=100；类型分别为integer、string、integer、integer；来源=需求固定值及测试数据集
+- pc: {{remarkAbsentResourceId}}仅有一条module5数据；BOSS优惠值={{bossOfferValueNoRemark}}、备注为空或未维护；类型=string；来源=BOSS对应语种受控数据
+- S01：调用GET /v2/resources并定位{{remarkAbsentResourceId}}
+  - 资源只出现一次且diningOptions仅含一个module=5的object
+- S02：检查目标diningOptions字段取值
+  - optionName={{bossOfferValueNoRemark}}、description={{bossOfferValueNoRemark}}、value=null、currency=null；description回落为优惠值
+- rc: 无备注时description取优惠值，与optionName相同
+- tag: api,resource-list,dining-options,field-mapping,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module5
+
+- rc: 覆盖R-001、R-004、R-005、R-006；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{remarkAbsentResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=5、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: BOSS优惠值={{bossOfferValueNoRemark}}、备注为空或未维护
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200、业务码code=0、data.module=5
+- S02：检查diningOptions字段取值
+  - 仅一个module=5 object，optionName与description均等于{{bossOfferValueNoRemark}}，value=null、currency=null
+- tag: api,resource-details,dining-options,field-mapping,P1,api-automation-blocked
+
+###### tc-p1: v2_resources资源列表_module6
+
+- rc: 覆盖R-004、R-005、R-006、R-011；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=6、query.language={{language}}、query.pageNumber=1、query.pageSize=100；类型分别为integer、string、integer、integer；来源=需求固定值及测试数据集
+- pc: {{remarkAbsentResourceId}}在module6网络内；BOSS优惠值={{bossOfferValueNoRemark}}、备注为空或未维护
+- S01：调用GET /v2/resources并定位目标资源
+  - 资源只出现一次
+- S02：检查diningOptions中module=5的object
+  - optionName与description均等于{{bossOfferValueNoRemark}}，value=null、currency=null
+- tag: api,resource-list,module6,dining-options,field-mapping,P1,api-automation-blocked
+
+###### tc-p1: v2_resources_{resourceId}资源详情_module6
+
+- rc: 覆盖R-004、R-005、R-006、R-011；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{remarkAbsentResourceId}}；类型=string；来源=测试数据集
+- pc: query.module=6、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: BOSS优惠值={{bossOfferValueNoRemark}}、备注为空或未维护
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200且data.resourceId={{remarkAbsentResourceId}}
+- S02：检查diningOptions中module=5的object
+  - optionName与description均等于{{bossOfferValueNoRemark}}，value=null、currency=null
+- tag: api,resource-details,module6,dining-options,field-mapping,P1,api-automation-blocked
+
+#### 资源详情公共字段取值
+
+##### tc-p1: 验证module5资源详情公共字段与列表及Boss源数据一致
+
+- rc: 覆盖需求3.1.2“搜索5的时候结构同资源列表”；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{fieldMappingResourceId}}；类型=string；来源=测试数据集；该资源Boss详情与ES坐标已受控维护
+- pc: query.module=5、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: 期望顶层字段来自测试数据集：resourceName={{expectedResourceName}}、image={{expectedImage}}；image按封面图、普通图、菜单图、null的优先级返回
+- pc: 期望locationInfo来自测试数据集：city={{expectedCity}}、countryOrRegion={{expectedCountryOrRegion}}、continent={{expectedContinent}}、transportHubId={{expectedTransportHubId}}、transportHubName={{expectedTransportHubName}}、iata={{expectedIata}}、location={{expectedLocation}}、timezone={{expectedTimezone}}、coordinates={{expectedCoordinates}}
+- pc: 期望diningInfo来自测试数据集：area={{expectedArea}}、routeTypes={{expectedRouteTypes}}、terminal={{expectedTerminal}}、nearestGate={{expectedNearestGate}}、tier={{expectedModule5Tier}}
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200、业务码code=0、data.module=5且data.resourceId={{fieldMappingResourceId}}
+- S02：核对resourceName与image
+  - resourceName={{expectedResourceName}}且image={{expectedImage}}
+- S03：核对locationInfo
+  - city、countryOrRegion、continent、transportHubId、transportHubName、iata、location、timezone、coordinates分别等于对应期望值
+- S04：核对extra.diningInfo公共字段
+  - area、routeTypes、terminal、nearestGate、tier分别等于对应期望值
+- S05：核对diningOptions
+  - module=5，optionName取BOSS优惠值，description有备注时取备注否则回落优惠值，value与currency均为null
+- tag: api,resource-details,field-mapping,P1,api-automation-blocked
+
+##### tc-p1: 验证module6资源详情公共字段与module5详情一致并聚合module5选项
+
+- rc: 覆盖需求3.1.2“搜索6时diningOptions新增module5 object”；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{fieldMappingResourceId}}；类型=string；来源=测试数据集；该餐厅同时支持module5与module6
+- pc: 分别使用query.module=5和query.module=6调用详情；query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- S01：分别调用module=5和module=6的GET /v2/resources/{resourceId}
+  - 两组请求均成功且resourceId={{fieldMappingResourceId}}
+- S02：对比两组公共字段
+  - resourceName、image、locationInfo及diningInfo中的area、routeTypes、terminal、nearestGate保持一致
+- S03：检查module6详情的diningOptions
+  - 包含该餐厅对应的module5 object，optionName、description、value、currency与module5详情一致
+- S04：检查允许差异
+  - 仅顶层module、tier及不同品类的diningOptions集合可按品类规则不同
+- tag: api,resource-details,module6,field-mapping,P1,api-automation-blocked
+
+### v2_resources资源列表接口
+
+#### 查询条件进行过滤
+
+##### tc-p1: 验证module5列表按机场ID过滤仅返回匹配网络资源
+
+- rc: 覆盖R-008、R-009；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.transportHubId={{transportHubId}}；类型分别为integer、string；来源=需求固定值及测试数据集
+- pc: 期望唯一resourceId集合={{expectedHubResourceIds}}；类型=array<string>；来源=测试数据集受控网络清单
+- S01：调用GET /v2/resources并遍历全部分页
+  - 返回的唯一resourceId集合等于{{expectedHubResourceIds}}
+- S02：检查每个返回资源
+  - module均为5且locationInfo.transportHubId={{transportHubId}}
+- rc: 机场ID与期望集合待测试数据集补充
+- tag: api,resource-list,location-filter,transportHubId,P1,api-automation-blocked
+
+##### tc-p1: 验证module5列表按IATA过滤仅返回匹配网络资源
+
+- rc: 覆盖R-008、R-009；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.iata={{iata}}；类型分别为integer、string；来源=需求固定值及测试数据集
+- pc: 期望唯一resourceId集合={{expectedIataResourceIds}}；类型=array<string>；来源=测试数据集受控网络清单
+- S01：调用GET /v2/resources并遍历全部分页
+  - 返回的唯一resourceId集合等于{{expectedIataResourceIds}}
+- S02：检查每个返回资源
+  - module均为5且locationInfo.iata={{iata}}
+- rc: IATA与期望集合待测试数据集补充
+- tag: api,resource-list,location-filter,iata,P1,api-automation-blocked
+
+##### tc-p1: 验证module5列表按城市过滤仅返回匹配网络资源
+
+- rc: 覆盖R-008、R-009；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.cityId={{cityId}}；类型分别为integer、string；来源=需求固定值及测试数据集
+- pc: 期望唯一resourceId集合={{expectedCityResourceIds}}；类型=array<string>；来源=测试数据集受控网络清单
+- S01：调用GET /v2/resources并遍历全部分页
+  - 返回的唯一resourceId集合等于{{expectedCityResourceIds}}
+- S02：检查每个返回资源
+  - module均为5且城市维度与{{cityId}}匹配
+- rc: 城市ID与期望集合待测试数据集补充
+- tag: api,resource-list,location-filter,cityId,P1,api-automation-blocked
+
+##### tc-p1: 验证module5列表按国家过滤仅返回匹配网络资源
+
+- rc: 覆盖R-008、R-009；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.countryOrRegion={{countryOrRegion}}；类型分别为integer、string；来源=需求固定值及测试数据集
+- pc: 期望唯一resourceId集合={{expectedCountryResourceIds}}；类型=array<string>；来源=测试数据集受控网络清单
+- S01：调用GET /v2/resources并遍历全部分页
+  - 返回的唯一resourceId集合等于{{expectedCountryResourceIds}}
+- S02：检查每个返回资源
+  - module均为5且locationInfo.countryOrRegion={{countryOrRegion}}
+- rc: 国家/地区与期望集合待测试数据集补充
+- tag: api,resource-list,location-filter,countryOrRegion,P1,api-automation-blocked
+
+##### tc-p1: 验证module5列表按tier过滤仅返回匹配网络资源
+
+- rc: 覆盖R-008及品类一致过滤条件；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.tier={{tier}}；类型分别为integer、integer；来源=需求固定值及测试数据集
+- pc: 期望唯一resourceId集合={{expectedTierResourceIds}}；类型=array<string>；来源=测试数据集受控网络清单
+- S01：调用GET /v2/resources并遍历全部分页
+  - 返回的唯一resourceId集合等于{{expectedTierResourceIds}}
+- S02：检查每个返回资源
+  - module均为5且extra.diningInfo.tier={{tier}}
+- rc: tier过滤与其他品类限制条件一致；tier取值及期望集合待测试数据集补充
+- tag: api,resource-list,location-filter,tier,P1,api-automation-blocked
+
+#### 网络清单总数核对
+
+##### tc-p1: 验证module5列表总数与网络清单去重资源编码一致
+
+- rc: 覆盖R-008、R-010、R-013；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.pageNumber=1、query.pageSize=100；类型均为integer；来源=需求固定值及本用例固定值
+- pc: 先下载当前Program的module5网络清单，对资源编码去重得到基准集合={{networkModule5ResourceIds}}、基准总数={{expectedModule5Quantity}}；类型分别为array<string>、integer；来源=网络清单导出受控数据；仅统计以R开头的编码
+- S01：调用GET /v2/resources并遍历全部分页，汇总唯一resourceId与pagination.totalNumber
+  - 唯一resourceId数量={{expectedModule5Quantity}}且pagination.totalNumber={{expectedModule5Quantity}}
+- S02：将接口返回的唯一resourceId集合与{{networkModule5ResourceIds}}做集合比对
+  - 两集合完全一致，无多余、无缺失、无非R前缀编码
+- rc: 网络清单下载口径与接口网络范围须同一Program同一时点；非R前缀编码不进入餐饮组装
+- tag: api,resource-list,network-count,P1,api-automation-blocked
+
+#### 多语种列表与详情串联核对
+
+##### tc-p1: 验证27语种module5列表汇总编码后详情循环可查询
+
+- rc: 覆盖R-004、R-008、R-014；接口GET /v2/resources、GET /v2/resources/{resourceId}；endpointId=3540882、3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.fallbackAllowed=false；类型分别为integer、boolean；来源=需求固定值及本用例固定值
+- pc: {{supportedLanguages}}为当前Program已开放的27个语种编码列表；类型=array<string>；来源=测试数据集
+- S01：按{{supportedLanguages}}逐语种调用GET /v2/resources并遍历全部分页，汇总各语种唯一resourceId集合
+  - 每个语种HTTP状态码=200且业务码code=0；各语种唯一resourceId集合彼此相等，记为{{collectedModule5ResourceIds}}
+- S02：对{{collectedModule5ResourceIds}}中每个resourceId，按同一语种循环调用GET /v2/resources/{resourceId}?module=5
+  - 每个编码在对应语种下均可查到，HTTP状态码=200、data.resourceId等于请求编码且data.module=5
+- S03：核对列表汇总编码与详情成功编码
+  - 详情成功编码集合等于{{collectedModule5ResourceIds}}，无列表有而详情无、无详情有而列表无
+- rc: 27语种清单与Program开放语种对齐；语种枚举待数据集补充；单语种失败不得静默跳过
+- tag: api,resource-list,resource-details,multilingual,P1,api-automation-blocked
+
+#### 资源列表公共字段取值
+
+##### tc-p1: 验证module5列表顶层与diningInfo公共字段按Boss与ES口径返回
+
+- rc: 覆盖资源列表公共字段取值；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module=5、query.language={{language}}、query.pageNumber=1、query.pageSize=100；类型分别为integer、string、integer、integer；来源=需求固定值及测试数据集
+- pc: 目标资源={{fieldMappingResourceId}}；类型=string；来源=测试数据集；该资源Boss详情与ES坐标已受控维护
+- pc: 期望顶层字段来自测试数据集：resourceName={{expectedResourceName}}、image={{expectedImage}}；image规则为imagesList为空则null否则取第一张URL，且dragonpass.com.cn域名需替换为image.m.dragonpass.com
+- pc: 期望locationInfo来自测试数据集：city={{expectedCity}}、countryOrRegion={{expectedCountryOrRegion}}、continent={{expectedContinent}}、transportHubId={{expectedTransportHubId}}、transportHubName={{expectedTransportHubName}}、iata={{expectedIata}}、location={{expectedLocation}}、timezone={{expectedTimezone}}、coordinates={{expectedCoordinates}}；coordinates格式为lat,lng且即使请求module=5也按module=6从ES补齐
+- pc: 期望diningInfo公共字段来自测试数据集：area={{expectedArea}}、routeTypes={{expectedRouteTypes}}、terminal={{expectedTerminal}}、nearestGate={{expectedNearestGate}}；area由inspectionType转码（空或其他→3），routeTypes由departureType逗号拆分后升序，nearestGate优先nearestBoardingGate否则boardingGateNearby
+- S01：调用GET /v2/resources并定位{{fieldMappingResourceId}}
+  - 资源存在且resourceId原样等于请求编码并以R开头
+- S02：核对顶层字段
+  - resourceName、image分别等于期望值；image无图时为null
+- S03：核对locationInfo
+  - city、countryOrRegion、continent、transportHubId、transportHubName、iata、location、timezone、coordinates分别等于期望值；timezone对应Boss timeZone；无坐标时coordinates为null
+- S04：核对extra.diningInfo公共字段
+  - area、routeTypes、terminal、nearestGate分别等于期望值；key固定为diningInfo
+- rc: resourceName/image/locationInfo及diningInfo中area、routeTypes、terminal、nearestGate在module=3/4/6取值逻辑相同；diningOptions与tier按module分化，本用例不校验分化字段细节
+- rc: Boss详情失败时允许空壳cache仅含resourceId与module，多数展示字段为null；具体空壳样例另由边界数据覆盖
+- tag: api,resource-list,field-mapping,P1,api-automation-blocked
+
+#### 跨品类module入参校验
+
+##### tc-p1: 验证module为3、4、5组合查询成功返回对应品类资源
+
+- rc: 覆盖新细分品类5并入6的入参门禁；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module="3,4,5"、query.pageNumber=1、query.pageSize=100；类型分别为string、integer、integer；来源=需求固定值及本用例固定值
+- pc: 当前Program网络内分别存在可识别的module3、module4、module5资源；期望集合来自测试数据集
+- S01：调用GET /v2/resources并遍历全部分页
+  - HTTP状态码=200且业务码code=0
+- S02：检查返回资源品类
+  - 结果中可同时出现module=3、module=4、module=5的资源，且不因组合入参失败
+- tag: api,resource-list,module-combo,P1,api-automation-blocked
+
+##### tc-p1: 验证module为6与3或4或5组合查询因互斥失败
+
+- rc: 覆盖新细分品类5并入6的入参互斥；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: 以下互斥组合分别执行：query.module="6,5"、query.module="6,3"、query.module="6,4"；类型=string；来源=本用例固定值
+- S01：分别调用三组GET /v2/resources
+  - 每组均失败，判定为module=6与3、4、5互斥，不返回成功业务数据
+- rc: 具体错误码与msg以既有参数校验契约为准；三组互斥同构合并为本用例
+- tag: api,resource-list,module-mutex,P1,api-automation-blocked
+
+##### tc-p1: 验证不传module时默认结果不含单独以5露出的细分语义
+
+- rc: 覆盖不传module默认露出规则；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: 不传query.module；query.pageNumber=1、query.pageSize=100；类型均为integer；来源=本用例固定值
+- pc: 当前Program存在仅有module5的餐厅与同时具备module6聚合语义的餐厅；编码来自测试数据集
+- S01：调用GET /v2/resources并遍历全部分页
+  - HTTP状态码=200且业务码code=0
+- S02：检查顶层资源module
+  - 默认结果中不出现顶层module=5的单独细分露出资源
+- S03：当默认结果包含module=6资源时检查其diningOptions
+  - 允许options中出现module=5的object，不因此判定失败
+- tag: api,resource-list,module-default,P1,api-automation-blocked
+
+##### tc-p1: 验证module为3、5组合双侧资源出现且resourceId不重复total合理
+
+- rc: 覆盖组合与去重；接口GET /v2/resources；endpointId=3540882
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.module="3,5"、query.pageNumber=1、query.pageSize=100；类型分别为string、integer、integer；来源=需求固定值及本用例固定值
+- pc: 基准去重资源编码集合={{expectedModule35UnionResourceIds}}、基准总数={{expectedModule35UnionQuantity}}；来源=网络清单中module3与module5并集去重
+- pc: 至少存在同resourceId同时具备module3与module5的餐厅，以及仅单侧品类的餐厅；编码来自测试数据集
+- S01：调用GET /v2/resources并遍历全部分页
+  - HTTP状态码=200；结果中同时出现module=3与module=5侧资源
+- S02：检查resourceId去重与分页总数
+  - 同一resourceId在结果中不因双品类重复出现；唯一resourceId数量与pagination.totalNumber均等于{{expectedModule35UnionQuantity}}
+- S03：将唯一resourceId集合与{{expectedModule35UnionResourceIds}}比对
+  - 两集合完全一致
+- tag: api,resource-list,module-combo,dedup,P1,api-automation-blocked
+
+#### 提示语
+
+##### 500.020.004无法获取到产品列表
+
+- rc: 已有逻辑不覆盖；module=5沿用既有资源列表错误处理，本需求不新增独立用例
+- tag: api,resource-list,error-code,out-of-scope
+
+##### 500.020.013查询了不能使用的语种
+
+- rc: 已有逻辑不覆盖；module=5沿用既有语种校验错误处理，本需求不新增独立用例
+- tag: api,resource-list,error-code,out-of-scope
+
+##### 500.020.018不符合搜索条件要求
+
+- rc: 已有逻辑不覆盖；module=5沿用既有搜索条件校验错误处理，本需求不新增独立用例
+- tag: api,resource-list,error-code,out-of-scope
+
+### v2_resources_{resourceId}资源详情接口
+
+#### OptionName和Description多语言与FallbackAllowed
+
+##### tc-p2: 验证OptionName和Description语种兜底
+
+- rc: 覆盖R-004、R-014；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{multilingualResourceId}}；类型=string；来源=测试数据集
+- pc: 以下语言及期望文案来自测试数据集，目标BOSS记录已维护对应语种；本用例校验有目标语种时optionName与description不做en-US兜底
+
+| query.language | query.fallbackAllowed | 期望optionName | 期望description |
+| --- | --- | --- | --- |
+| {{language1}} | false | {{expectedOptionNameLang1}} | {{expectedDescriptionLang1}} |
+| {{language2}} | false | {{expectedOptionNameLang2}} | {{expectedDescriptionLang2}} |
+
+- S01：按表中两组参数分别调用GET /v2/resources/{resourceId}?module=5
+  - 每组响应中的optionName与description均等于对应BOSS语种期望值，未被API拼接加工，也不回退到en-US
+- S02：对比两组响应的资源标识及优惠数量
+  - resourceId、module及diningOptions数量保持一致
+- rc: 具体语种与BOSS源值待数据集补充；缺少目标语种时的FallbackAllowed由后续两条覆盖
+- tag: api,resource-details,language,P2,api-automation-blocked
+
+##### tc-p2: 验证缺少目标语种且允许回退时返回EnUS优惠文案
+
+- rc: 覆盖R-014；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{fallbackResourceId}}；类型=string；来源=测试数据集；目标资源未维护{{fallbackLanguage}}但已维护en-US
+- pc: query.module=5、query.language={{fallbackLanguage}}、query.fallbackAllowed=true；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- pc: en-US期望文案为{{expectedOptionNameEnUS}}、{{expectedDescriptionEnUS}}；来源=BOSS受控源数据
+- S01：调用GET /v2/resources/{resourceId}
+  - HTTP状态码=200且业务码code=0
+- S02：检查目标module5选项文案
+  - optionName={{expectedOptionNameEnUS}}且description={{expectedDescriptionEnUS}}
+- tag: api,resource-details,language-fallback,P2,api-automation-blocked
+
+##### tc-p2: 验证缺少目标语种且禁止回退时不返回EnUS优惠文案
+
+- rc: 覆盖R-014及错误码500.020.013；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{fallbackResourceId}}；类型=string；来源=测试数据集；目标资源未维护{{fallbackLanguage}}
+- pc: query.module=5、query.language={{fallbackLanguage}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- S01：调用GET /v2/resources/{resourceId}
+  - 请求按既有语言契约返回不可用语种错误且不返回en-US优惠文案
+- rc: 详情接口对该场景的具体errCode未在需求3.1.2列出，自动化前需由Apifox或研发确认
+- tag: api,resource-details,language-fallback,P2,api-automation-blocked
+
+#### 提示语
+
+##### 500.020.006无法获取到资源详情
+
+- rc: 已有资源详情异常处理逻辑，本需求不新增独立用例
+- rc: 提示语为"Sorry, we're unable to retrieve the resource details at the moment. Please try again later."
+- tag: api,resource-details,error-code,out-of-scope
+
+##### tc-p2: 验证当前Program无网络权限时详情返回500.020.007且不泄露资源
+
+- rc: 覆盖资源详情错误码500.020.007及Program隔离；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{outOfNetworkResourceId}}；类型=string；来源=测试数据集；该资源仅属于{{otherProgramId}}
+- pc: query.module=5、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=需求固定值及测试数据集
+- S01：调用GET /v2/resources/{resourceId}
+  - 返回业务错误errCode="500.020.007"、msg="Sorry, this resource is not accessible with your program."且不返回目标资源详情
+- tag: api,resource-details,program-isolation,error-code,P2,security,api-automation-blocked
+
+##### tc-p3: 验证module与ResourceId不匹配时不返回其他品类详情
+
+- rc: 覆盖资源详情参数与品类一致性及500.020.007；接口GET /v2/resources/{resourceId}；endpointId=3540888
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: path.resourceId={{module5ResourceId}}；类型=string；来源=测试数据集；该RCode为module=5餐厅，且可按module=6查询到同一资源
+- pc: query.module=4、query.language={{language}}、query.fallbackAllowed=false；类型分别为integer、string、boolean；来源=本用例固定值及测试数据集
+- S01：对module=5口径的{{module5ResourceId}}调用GET /v2/resources/{resourceId}，入参query.module=4
+  - 返回业务错误errCode="500.020.007"且msg="Sorry, this resource is not accessible with your program."，不返回module=4或其他品类详情
+- S02：对同一RCode按module=6可查询的资源再次调用，入参仍为query.module=4
+  - 同样返回errCode="500.020.007"且msg="Sorry, this resource is not accessible with your program."，不泄露module=5或module=6详情
+- rc: module=5、module=6场景下，入参module=4搭配module=5的RCode均报该提示语
+- tag: api,resource-details,module-mismatch,error-code,P3,api-automation-blocked
+
+### v2_resources_prices资源价格接口
+
+#### 精确查询与零价格语义
+
+##### tc-p1: 验证module5按入参resources精确查询返回零价格对象
+
+- rc: 覆盖R-007、R-008；接口POST /v2/resources/prices；endpointId=3540877
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"、header.Content-Type="application/json"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应、接口固定值
+- pc: body.module=5；类型=integer；来源=需求固定值；DiningDiscount价格查询必须传module=5
+- pc: body.resources=[{{offerOnlyResourceId}}]；类型=array<string>；来源=测试数据集；resources为必填，传入目标餐厅RCode，不得省略该字段做全量查询
+- pc: body.pageNumber=1、body.pageSize=10；类型均为integer；来源=本用例固定值
+- pc: {{offerOnlyResourceId}}在当前Program网络内、BOSS模式=优惠且没有结算价格
+- S01：调用POST /v2/resources/prices
+  - HTTP状态码=200且业务码code=0，返回资源仅包含入参resources中的{{offerOnlyResourceId}}且只出现一次
+- S02：检查目标价格对象
+  - basePrice为number类型0，且prebookingFee=null、currency=null、pricingMode=null
+- rc: Apifox价格schema尚未体现module5的0/null语义；补齐前标记blocked
+- tag: api,resource-prices,exact-query,P1,api-automation-blocked
+
+##### tc-p1: 验证同一餐厅两条优惠时按入参RCode仍只返回一个零价格对象
+
+- rc: 覆盖R-007、R-013；接口POST /v2/resources/prices；endpointId=3540877
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"、header.Content-Type="application/json"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应、接口固定值
+- pc: body.module=5、body.resources=[{{offerAndDiscountResourceId}}]、body.pageNumber=1、body.pageSize=10；类型分别为integer、array<string>、integer、integer；来源=需求固定值、测试数据集及本用例固定值
+- pc: {{offerAndDiscountResourceId}}同时有优惠与折扣两条module5数据，且没有结算价格
+- S01：调用POST /v2/resources/prices
+  - HTTP状态码=200且业务码code=0，resources中{{offerAndDiscountResourceId}}只出现一次
+- S02：检查目标价格对象
+  - 仅返回一个价格对象，basePrice为number类型0，且prebookingFee=null、currency=null、pricingMode=null
+- rc: 两个diningOptions不得放大价格资源数；查询仍以入参RCode为粒度
+- tag: api,resource-prices,exact-query,dedup,P1,api-automation-blocked
+
+#### 批量分页与类型边界
+
+##### tc-p2: 验证module5批量价格按入参resources精确返回且不按优惠条数放大
+
+- rc: 覆盖R-002、R-007、R-013；接口POST /v2/resources/prices；endpointId=3540877
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"、header.Content-Type="application/json"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应、接口固定值
+- pc: body.module=5、body.resources=[{{offerOnlyResourceId}},{{offerAndDiscountResourceId}}]、body.pageNumber=1、body.pageSize=10；类型分别为integer、array<string>、integer、integer；来源=需求固定值及测试数据集
+- pc: 入参resources为必填数组，仅查询这两个RCode，不依赖不传resources的全量价格行为
+- S01：调用POST /v2/resources/prices
+  - 响应resources按resourceId去重后恰有两个目标资源且totalNumber=2，且不包含未入参的其他RCode
+- S02：检查{{offerAndDiscountResourceId}}价格项
+  - 该RCode仅返回一个价格对象，不因存在两条优惠重复返回
+- S03：检查两个资源的价格语义
+  - 两个资源均满足basePrice=0、prebookingFee=null、currency=null、pricingMode=null
+- tag: api,resource-prices,batch,P2,api-automation-blocked
+
+##### tc-p2: 验证module5价格按入参resources分页遍历无重复且总数等于入参数量
+
+- rc: 覆盖资源价格分页与R-013；接口POST /v2/resources/prices；endpointId=3540877
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"、header.Content-Type="application/json"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应、接口固定值
+- pc: body.module=5、body.resources={{module5ResourceIds}}、body.pageNumber=1、body.pageSize=1；类型分别为integer、array<string>、integer、integer；来源=需求固定值及测试数据集
+- pc: {{module5ResourceIds}}为必填入参，包含至少两个唯一RCode，其中可包含多优惠餐厅；分页总数以该入参数组去重后的数量为准，不以全网module5清单为准
+- S01：固定body.resources={{module5ResourceIds}}，按pageSize=1遍历POST /v2/resources/prices全部分页
+  - 各页pagination.totalNumber等于{{module5ResourceIds}}去重后的RCode数量
+- S02：汇总全部分页resourceId
+  - 结果无重复、均属于入参resources，且不因某RCode存在多条优惠增加价格项数量
+- tag: api,resource-prices,pagination,P2,api-automation-blocked
+
+### v2_search聚合搜索接口
+
+#### module5模块发现
+
+##### tc-p1: 验证搜索DiningDiscount模块名称返回Type4及Module5
+
+- rc: 覆盖需求3.1.4“索引入库”；接口POST /v2/search；endpointId=3540846
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"、header.Content-Type="application/json"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应、接口固定值
+- pc: body.keyword={{module5Keyword}}、body.language={{language}}、body.pageNumber=1、body.pageSize=10；类型分别为string、string、integer、integer；来源=测试数据集及本用例固定值
+- pc: body.searchFields={{moduleSearchFields}}、body.enableFuzzy={{enableFuzzy}}、body.sortBy={{sortBy}}；类型分别为array<integer>、boolean、array<integer>；来源=Apifox契约及测试数据集
+- S01：调用POST /v2/search
+  - HTTP状态码=200且业务码code=0
+- S02：在data.results中定位DiningDiscount模块结果
+  - 目标结果type=4且module=5
+- S03：检查目标moduleName
+  - moduleName等于测试数据集对应语种的{{expectedModule5Name}}
+- rc: 请求与响应$ref当前无法完整读取；具体searchFields、sortBy及关键字待数据集补充
+- tag: api,aggregated-search,dining-discount,P1,api-automation-blocked
+
+##### tc-p2: 验证聚合搜索按请求语种返回对应Module5名称
+
+- rc: 覆盖R-014及需求3.1.4；接口POST /v2/search；endpointId=3540846
+- pc: 使用合法公共Header；以下关键字、语言和期望模块名来自测试数据集
+
+| body.keyword | body.language | 期望type | 期望module | 期望moduleName |
+| --- | --- | --- | --- | --- |
+| {{module5KeywordLang1}} | {{language1}} | 4 | 5 | {{expectedModule5NameLang1}} |
+| {{module5KeywordLang2}} | {{language2}} | 4 | 5 | {{expectedModule5NameLang2}} |
+
+- pc: body.pageNumber=1、body.pageSize=10、body.searchFields={{moduleSearchFields}}、body.enableFuzzy={{enableFuzzy}}、body.sortBy={{sortBy}}；类型分别为integer、integer、array<integer>、boolean、array<integer>；来源=Apifox契约及测试数据集
+- S01：按表中两组数据分别调用POST /v2/search
+  - 每组结果均包含type=4、module=5且moduleName等于对应语种期望值
+- tag: api,aggregated-search,language,P2,api-automation-blocked
+
+### v2_search_modules可用模块统计接口
+
+#### module5与module6计数规则
+
+##### tc-p2: 验证待启用和生效网点均计入module5及module6数量
+
+- rc: 覆盖R-009、R-010；接口GET /v2/search/modules；endpointId=3540838
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: query.transportHubId={{transportHubId}}、query.language={{language}}；类型均为string；来源=测试数据集
+- pc: 同一位置范围包含网络清单待启用网点{{pendingResourceId}}和生效网点{{activeResourceId}}，两者均有module5数据
+- S01：调用GET /v2/search/modules
+  - module5与module6的quantity均包含{{pendingResourceId}}和{{activeResourceId}}两个唯一资源贡献
+- S02：分别调用同条件GET /v2/resources?module=5和module=6
+  - 两类资源结果均同时包含待启用与生效RCode
+- tag: api,search-modules,network-status,P2,api-automation-blocked
+
+#### 位置维度统计一致性
+
+##### tc-p2: 验证module5按机场城市国家统计与资源列表唯一餐厅数一致
+
+- rc: 覆盖需求3.1.5“基于资源数量统计”；接口GET /v2/search/modules；endpointId=3540838
+- pc: header.X-Program-ID={{programId}}、header.X-Request-ID={{requestId}}、header.Authorization="Bearer {{accessToken}}"；类型均为string；来源分别为测试数据集、运行时UUID、鉴权响应
+- pc: 以下单位置参数与期望数量来自测试数据集
+
+| 位置维度 | Query字段 | 期望module5数量 |
+| --- | --- | --- |
+| 机场 | transportHubId={{transportHubId}} | {{expectedHubModule5Quantity}} |
+| 城市 | cityId={{cityId}} | {{expectedCityModule5Quantity}} |
+| 国家 | countryOrRegion={{countryOrRegion}} | {{expectedCountryModule5Quantity}} |
+
+- S01：按表中三组位置参数分别调用GET /v2/search/modules
+  - 每组module5.quantity分别等于表中对应期望数量
+- S02：按相同位置参数调用GET /v2/resources?module=5并遍历全部分页
+  - 每组唯一resourceId数量分别等于对应module5.quantity
+- rc: 各位置受控数据及独立基准数待测试数据集补充
+- tag: api,search-modules,location-statistics,P2,api-automation-blocked
+
+### DiningDiscount数据同步链路
+
+#### 优惠新增修改与聚合
+
+##### tc-p1: 验证BOSS新增首条module5数据后资源接口最终一致生效
+
+- rc: 覆盖R-001、R-008、R-011及新增基本流；链路=BOSS→MQ→API数据库→定时任务→ES→接口
+- pc: {{mutableResourceId}}属于当前Program网络且新增前没有module3/4/5；BOSS操作账号具备测试环境权限
+- pc: 新增BOSS模式={{initialBossMode}}的module5数据，文案为{{newOptionName}}、{{newDescription}}；模式枚举=优惠或折扣；来源=本次受控测试数据
+- pc: 当前Program、位置条件及新增前module5/module6基准数量由测试数据集提供
+- S01：在BOSS为{{mutableResourceId}}新增第一条module5数据并选择{{initialBossMode}}
+  - BOSS保存成功并产生通知API服务的MQ变更
+- S02：检查API数据库中的目标餐厅优惠记录
+  - 数据库新增目标module5记录且模式、文案等于本次受控输入
+- S03：等待同步完成后查询GET /v2/resources?module=5和module=6
+  - 两类资源结果最终均包含{{mutableResourceId}}且各自只出现一次
+- S04：轮询GET /v2/resources/{resourceId}?module=5
+  - 详情最终包含optionName={{newOptionName}}、description={{newDescription}}的module5 object
+- S05：轮询POST /v2/resources/prices，body.module=5、body.resources=[{{mutableResourceId}}]
+  - 目标资源最终返回basePrice=0、prebookingFee=null、currency=null、pricingMode=null
+- S06：轮询POST /v2/search和GET /v2/search/modules
+  - ES生效后聚合搜索可返回module5且module5/module6数量各按唯一餐厅增加1
+- rc: 该用例修改共享BOSS配置，执行前需锁定专用mutableResourceId并在用例后恢复
+- tag: integration,sync,boss,mq,es,P1
+
+##### tc-p2: 验证BOSS修改优惠文案后接口更新且资源数量保持不变
+
+- rc: 覆盖R-004、R-014及修改备选流；链路=BOSS→MQ→API数据库→定时任务→ES→接口
+- pc: {{mutableResourceId}}已有一条BOSS模式={{initialBossMode}}的module5数据；修改前文案与module5/module6数量基准已记录
+- pc: 修改后文案为{{updatedOptionName}}、{{updatedDescription}}；类型=string；来源=本次受控测试数据
+- S01：在BOSS修改目标优惠文案
+  - BOSS保存成功并产生对应更新MQ
+- S02：检查API数据库
+  - 原优惠记录被更新且未新增重复优惠记录
+- S03：等待同步完成后查询列表与详情接口
+  - optionName和description最终等于修改后值且旧值不再返回
+- S04：查询search/modules并遍历module5/module6资源列表
+  - 修改前后module5和module6的唯一资源数量均保持不变
+- rc: 执行后需恢复BOSS原文案，恢复过程同样等待最终同步
+- tag: integration,sync,boss,mq,es,P2
+
+##### tc-p2: 验证同餐厅新增另一模式后仅增加DiningOptions且不增加资源数量
+
+- rc: 覆盖R-002、R-003、R-013、R-015；链路=BOSS→MQ→API数据库→定时任务→ES→接口
+- pc: {{mutableResourceId}}仅有一种BOSS模式的module5数据且当前module5/module6数量已记录；以下两组场景分别独立执行并在每组后恢复
+
+| 初始BOSS模式 | 新增BOSS模式 | 新增optionName | 新增description |
+| --- | --- | --- | --- |
+| 优惠 | 折扣 | {{discountOptionName}} | {{discountDescription}} |
+| 折扣 | 优惠 | {{offerOptionName}} | {{offerDescription}} |
+
+- S01：按表中场景在BOSS为同一餐厅新增另一模式
+  - BOSS保存成功并在API数据库形成另一条module5记录，原模式记录保持不变
+- S02：等待同步完成后查询资源列表和详情
+  - {{mutableResourceId}}仍只返回一个资源对象且diningOptions最终包含优惠与折扣两个无序module5 object
+- S03：按optionName和description识别两个object
+  - 优惠object与折扣object分别匹配表中对应模式文案且均满足value=null、currency=null
+- S04：轮询search/modules
+  - module5.quantity与module6.quantity均不因新增另一模式增加
+- rc: API响应无模式字段，使用受控BOSS文案区分优惠与折扣object
+- rc: 每组执行后删除本次新增模式并等待接口恢复
+- tag: integration,sync,offer-mode,discount-mode,P2
+
+#### 优惠删除与网络退出
+
+##### tc-p2: 验证分别删除优惠或折扣时仅移除目标Object并保留另一模式
+
+- rc: 覆盖R-002、R-003及删除备选流；链路=BOSS→MQ→API数据库→定时任务→ES→接口
+- pc: {{mutableResourceId}}同时存在优惠与折扣两种BOSS模式；删除前module5和module6数量基准已用网络清单独立核对
+
+| 删除BOSS模式 | 删除文案变量 | 保留BOSS模式 | 保留文案变量 |
+| --- | --- | --- | --- |
+| 优惠 | {{offerOptionName}} | 折扣 | {{discountOptionName}} |
+| 折扣 | {{discountOptionName}} | 优惠 | {{offerOptionName}} |
+
+- S01：按表中场景在BOSS删除目标模式
+  - BOSS删除成功并产生对应删除MQ，API数据库仅删除目标模式记录
+- S02：等待同步完成后查询资源列表和详情
+  - diningOptions最终不含删除文案对应object且仍包含保留文案对应object
+- S03：轮询search/modules
+  - module5与module6数量保持删除前基准，不因删除一种模式扣减餐厅数
+- rc: 两组删除场景需分别恢复优惠与折扣数据后再执行下一组
+- tag: integration,sync,offer-mode,discount-mode,delete-option,P2
+
+##### tc-p1: 验证删除最后一条module5数据后module5消失且module6保留剩余品类
+
+- rc: 覆盖R-012及删除基本流；链路=BOSS→MQ→API数据库→定时任务→ES→接口
+- pc: {{mutableMultiModuleResourceId}}同时存在module3/4和仅一条module5数据；当前Program网络包含该餐厅
+- pc: 删除前module5/module6数量为{{beforeModule5Quantity}}、{{beforeModule6Quantity}}；来源=受控网络清单独立基准
+- S01：在BOSS删除目标餐厅最后一条module5数据
+  - BOSS删除成功且API数据库最终不再存在该餐厅module5记录
+- S02：等待同步完成后查询GET /v2/resources?module=5
+  - module5结果最终不包含{{mutableMultiModuleResourceId}}
+- S03：轮询GET /v2/resources?module=6及详情
+  - module6仍包含该餐厅且diningOptions仅保留module3/4
+- S04：轮询GET /v2/search/modules
+  - module5.quantity={{beforeModule5Quantity}}-1且module6.quantity={{beforeModule6Quantity}}
+- S05：等待同步完成后调用POST /v2/search
+  - 搜索结果不再返回该餐厅对应的module5索引结果
+- rc: 预期数量来自删除前独立基准，不从删除后的被测响应反向生成
+- tag: integration,sync,delete-last-discount,P1
+
+##### tc-p1: 验证停用或移出网络清单后module5/6资源消失并扣减数量
+
+- rc: 覆盖网络状态迁移；链路=网络清单→MQ→API数据库→定时任务→ES→接口
+- pc: 目标餐厅当前在网络清单内，且可通过module5与module6查询并计入数量
+- S01：将该餐厅停用或移出当前Program网络清单
+  - 网络清单变更成功并产生通知API服务的MQ
+- S02：等待同步完成后查询资源列表、详情和价格
+  - module5与module6结果均不再包含该餐厅，详情与价格不泄露该资源
+- S03：查询search/modules
+  - module5与module6数量较变更前扣减该餐厅贡献
+- rc: 停用与移除为同构场景；同步完成时间以链路实际生效为准，不限定固定等待时长
+- tag: integration,sync,network-status,P1
+
+#### DiningDiscountCallback内容核对
+
+##### tc-p1: 核对Module5资源可用性Callback与Program网络清单变更一致
+
+- pc: 当前Program已配置可接收资源可用性Callback的地址和鉴权；具备查看Callback请求体、HTTP响应及服务日志的能力
+- pc: {{callbackResourceId}}存在有效module5数据；变更前已记录其在当前Program网络清单及GET /v2/resources?module=5中的可用状态
+- pc: Callback公共字段包含groupId、programId、tenantCode及payload；payload字段包含eventType、batchId、sequence、module和resources，具体字段类型以当前Callback契约为准
+- S01：将{{callbackResourceId}}加入当前Program的module5网络清单并等待Callback
+  - 收到资源可用性Callback且programId、tenantCode对应当前Program和租户，payload.module=5
+- S02：检查加入清单Callback中的eventType、batchId和sequence
+  - eventType符合资源可用性变更类型，batchId非空且sequence符合当前Callback契约
+- S03：检查加入清单Callback中的resources
+  - resources包含且仅按本次变更表达{{callbackResourceId}}，其可用状态语义为可用
+- S04：调用GET /v2/resources?module=5并遍历全部分页
+  - {{callbackResourceId}}出现在module5资源列表中，接口事实与Callback可用状态一致
+- S05：将{{callbackResourceId}}移出当前Program的module5网络清单并等待Callback
+  - 收到对应资源可用性Callback，payload.module=5且resources中{{callbackResourceId}}的状态语义为不可用
+- S06：再次调用GET /v2/resources?module=5并遍历全部分页
+  - {{callbackResourceId}}不再出现在module5资源列表中，接口事实与Callback不可用状态一致
+- rc: 可用状态的字段名及枚举值以当前Callback契约为准，不根据历史样例虚构固定字段和值
+- rc: 执行结束后恢复{{callbackResourceId}}原网络清单状态
+- tag: callback,resource-availability,module5,network,manual-test,P1
+
+##### tc-p1: 核对包含Module5资源的机场Callback内容正确
+
+- pc: 当前Program已配置可接收机场Callback的地址和鉴权；具备查看Callback请求体、HTTP响应及服务日志的能力
+- pc: {{callbackTransportHubId}}下至少存在一个当前Program可用的module5资源{{callbackResourceId}}
+- pc: 已通过受控机场基础数据或资源接口记录机场基准：transportHubId={{callbackTransportHubId}}、transportHubName={{callbackTransportHubName}}、iata={{callbackIata}}
+- S01：对{{callbackTransportHubId}}执行一项允许在测试环境恢复的机场元数据变更并等待Callback
+  - 收到机场元数据Callback，programId、tenantCode对应当前Program和租户
+- S02：检查Callback的eventType、batchId和sequence
+  - eventType符合机场或TransportHub元数据变更类型，batchId非空且sequence符合当前Callback契约
+- S03：检查Callback中的transportHubs集合
+  - transportHubs包含{{callbackTransportHubId}}且不包含与本次变更无关的错误机场
+- S04：核对目标机场Callback内容
+  - transportHubId、transportHubName、iata及本次修改字段与机场基础数据一致
+- S05：核对目标机场与DiningDiscount资源的关联
+  - Callback表达的机场可用范围包含module5资源所属机场，且不会把{{callbackResourceId}}关联到其他机场
+- S06：调用GET /v2/resources?module=5查询{{callbackResourceId}}的位置数据
+  - locationInfo.transportHubId、transportHubName和iata与机场Callback及机场基础数据一致
+- S07：恢复机场元数据并等待恢复Callback
+  - 恢复Callback中的目标机场字段与恢复后的基础数据一致
+- rc: Callback使用Program级还是Project级事件、eventType字面值及出站路径以当前环境配置和契约为准
+- tag: callback,transport-hub,airport,module5,location,manual-test,P1
+
+#### 全链路数据同步手工对账
+
+##### tc-p1: 核对源表与API数据库的Module5和Module6数量一致
+
+- pc: DiningDiscount同步定时任务已执行完成
+- pc: module5对应freeoffer=1；module6对应issetmeal=1、ismpv_discount=1或freeoffer=1
+- S01：在源数据库执行以下SQL
+
+```sql
+SELECT
+    COUNT(CASE WHEN fd_freeoffer = 1 THEN 1 END) AS source_module5_count,
+    COUNT(CASE
+        WHEN fd_issetmeal = 1
+          OR fd_ismpv_discount = 1
+          OR fd_freeoffer = 1
+        THEN 1
+    END) AS source_module6_count
+FROM DPBASE.ITD_RESTAURANT;
+```
+
+  - 返回源表module5和module6数量
+- S02：在api-developer-basedata数据库执行以下SQL
+
+```sql
+SELECT
+    COUNT(CASE WHEN freeoffer = 1 THEN 1 END) AS target_module5_count,
+    COUNT(CASE
+        WHEN issetmeal = 1
+          OR ismpv_discount = 1
+          OR freeoffer = 1
+        THEN 1
+    END) AS target_module6_count
+FROM base_data_restaurant
+WHERE deleted = 0
+  AND effective_state = 'A';
+```
+
+  - target_module5_count等于source_module5_count且target_module6_count等于source_module6_count
+- rc: module5和module6分别核对源表与目标表数量，不要求module5数量等于module6数量
+- tag: integration,sync,database,module5,module6,manual-test,P1
+
+##### tc-p1: 查看资源索引与位置索引插入失败记录
+
+- pc: 本次核对resource_metadata_v3和resource_location_aggregate_uat两个索引
+- S01：执行以下SQL查看两个索引的失败ID数量
+
+```sql
+SELECT
+    index_name,
+    COUNT(DISTINCT failed_id) AS failed_count
+FROM es_insert_failed_record
+WHERE index_name IN (
+    'resource_metadata_v3',
+    'resource_location_aggregate_uat'
+)
+GROUP BY index_name;
+```
+
+  - 分别返回资源索引和位置索引的失败ID去重数量；没有失败的索引不返回记录
+- S02：执行以下SQL查看失败ID明细
+
+```sql
+SELECT DISTINCT
+    index_name,
+    failed_id,
+    SUBSTRING_INDEX(failed_id, '_', -1) AS extracted_id
+FROM es_insert_failed_record
+WHERE index_name IN (
+    'resource_metadata_v3',
+    'resource_location_aggregate_uat'
+)
+ORDER BY index_name, failed_id;
+```
+
+  - 返回每个索引的失败ID及从failed_id末尾提取的资源或位置标识
+- S03：存在失败记录时执行后续对应场景的失败统计SQL
+  - 资源索引按module5或module6中文资源核对，位置索引按Country、City或Hub核对
+- S04：核对对应场景的数量关系
+  - MySQL预期数量减ES实际数量等于对应场景插入失败数量
+- rc: 同一failed_id只计算一次；具体失败影响数量以后续各场景SQL为准
+- tag: integration,sync,es,failed-record,manual-test,P1
+
+##### tc-p1: 核对资源索引Module5中文数据及插入失败数量
+
+- pc: 中文语种条件为lg='zh-CN'，ES文档id包含_zh-CN
+- pc: 失败表中的资源索引名称为resource_metadata_v3
+- S01：执行以下SQL获取MySQL中module5中文资源预期数量
+
+```sql
+SELECT COUNT(DISTINCT biz_code) AS mysql_module5_zh_cn
+FROM base_data_restaurant
+WHERE freeoffer = 1
+  AND deleted = 0
+  AND effective_state = 'A'
+  AND lg = 'zh-CN';
+```
+
+  - 返回mysql_module5_zh_cn
+- S02：执行以下请求获取ES中module5中文资源实际数量
+
+```http
+GET /resource_metadata_v3/_count
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "wildcard": { "module": "*5*" } },
+        { "wildcard": { "id": "*_zh-CN*" } }
+      ]
+    }
+  }
+}
+```
+
+  - 无插入失败时ES count等于mysql_module5_zh_cn
+- S03：执行以下SQL统计module5中文资源插入失败数量
+
+```sql
+SELECT COUNT(*) AS module5_resource_failed_count
+FROM (
+    SELECT r.biz_code
+    FROM base_data_restaurant r
+    INNER JOIN base_data_es e
+            ON e.resource_id = r.biz_code
+    INNER JOIN es_insert_failed_record f
+            ON f.failed_id = e.aggregate_key
+    WHERE f.index_name = 'resource_metadata_v3'
+      AND r.freeoffer = 1
+      AND r.deleted = 0
+      AND r.effective_state = 'A'
+      AND r.lg = 'zh-CN'
+    GROUP BY r.biz_code
+) grouped_data;
+```
+
+  - 返回module5_resource_failed_count
+- S04：存在插入失败时核对数量关系
+  - mysql_module5_zh_cn减ES count等于module5_resource_failed_count
+- S05：抽查ES缺失资源与失败记录的ID
+  - 每个ES缺失资源均能通过aggregate_key在失败表中找到对应记录
+- tag: integration,sync,resource-index,module5,zh-CN,failed-record,manual-test,P1
+
+##### tc-p1: 核对资源索引Module6中文数据及插入失败数量
+
+- pc: 中文语种条件为lg='zh-CN'，ES文档id包含_zh-CN
+- pc: 失败表中的资源索引名称为resource_metadata_v3
+- S01：执行以下SQL获取MySQL中module6中文资源预期数量
+
+```sql
+SELECT COUNT(DISTINCT biz_code) AS mysql_module6_zh_cn
+FROM base_data_restaurant
+WHERE (issetmeal = 1 OR ismpv_discount = 1 OR freeoffer = 1)
+  AND deleted = 0
+  AND effective_state = 'A'
+  AND lg = 'zh-CN';
+```
+
+  - 返回mysql_module6_zh_cn
+- S02：执行以下请求获取ES中module6中文资源实际数量
+
+```http
+GET /resource_metadata_v3/_count
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "wildcard": { "module": "*6*" } },
+        { "wildcard": { "id": "*_zh-CN*" } }
+      ]
+    }
+  }
+}
+```
+
+  - 无插入失败时ES count等于mysql_module6_zh_cn
+- S03：执行以下SQL统计module6中文资源插入失败数量
+
+```sql
+SELECT COUNT(*) AS module6_resource_failed_count
+FROM (
+    SELECT r.biz_code
+    FROM base_data_restaurant r
+    INNER JOIN base_data_es e
+            ON e.resource_id = r.biz_code
+    INNER JOIN es_insert_failed_record f
+            ON f.failed_id = e.aggregate_key
+    WHERE f.index_name = 'resource_metadata_v3'
+      AND (r.issetmeal = 1 OR r.ismpv_discount = 1 OR r.freeoffer = 1)
+      AND r.deleted = 0
+      AND r.effective_state = 'A'
+      AND r.lg = 'zh-CN'
+    GROUP BY r.biz_code
+) grouped_data;
+```
+
+  - 返回module6_resource_failed_count
+- S04：存在插入失败时核对数量关系
+  - mysql_module6_zh_cn减ES count等于module6_resource_failed_count
+- S05：抽查ES缺失资源与失败记录的ID
+  - 每个ES缺失资源均能通过aggregate_key在失败表中找到对应记录
+- tag: integration,sync,resource-index,module6,zh-CN,failed-record,manual-test,P1
+
+##### tc-p1: 核对Module5和Module6的Country位置索引及插入失败数量
+
+- pc: 位置索引不区分语种
+- pc: 失败表中的位置索引名称为resource_location_aggregate_uat
+- S01：执行以下SQL获取module5 Country预期数量
+
+```sql
+SELECT COUNT(*) AS module5_country_expected_count
+FROM (
+    SELECT iso2
+    FROM base_data_restaurant
+    WHERE freeoffer = 1
+      AND deleted = 0
+      AND effective_state = 'A'
+      AND iso2 IS NOT NULL
+      AND iso2 <> ''
+    GROUP BY iso2
+) grouped_data;
+```
+
+  - 返回module5_country_expected_count
+- S02：执行以下请求获取module5 Country实际数量
+
+```http
+GET /resource_location_aggregate_uat/_count
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "level": "country" } },
+        { "wildcard": { "module": "*5*" } }
+      ]
+    }
+  }
+}
+```
+
+  - 无插入失败时ES count等于module5_country_expected_count
+- S03：执行以下SQL获取module5 Country插入失败数量
+
+```sql
+SELECT COUNT(*) AS module5_country_failed_count
+FROM (
+    SELECT iso2
+    FROM base_data_restaurant
+    WHERE freeoffer = 1
+      AND deleted = 0
+      AND effective_state = 'A'
+      AND iso2 IS NOT NULL
+      AND iso2 <> ''
+      AND iso2 IN (
+          SELECT DISTINCT SUBSTRING_INDEX(failed_id, '_', -1)
+          FROM es_insert_failed_record
+          WHERE index_name = 'resource_location_aggregate_uat'
+      )
+    GROUP BY iso2
+) grouped_data;
+```
+
+  - module5_country_expected_count减ES count等于module5_country_failed_count
+- S04：执行以下SQL获取module6 Country预期数量
+
+```sql
+SELECT COUNT(*) AS module6_country_expected_count
+FROM (
+    SELECT iso2
+    FROM base_data_restaurant
+    WHERE (issetmeal = 1 OR ismpv_discount = 1 OR freeoffer = 1)
+      AND deleted = 0
+      AND effective_state = 'A'
+      AND iso2 IS NOT NULL
+      AND iso2 <> ''
+    GROUP BY iso2
+) grouped_data;
+```
+
+  - 返回module6_country_expected_count
+- S05：执行以下请求获取module6 Country实际数量
+
+```http
+GET /resource_location_aggregate_uat/_count
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "level": "country" } },
+        { "wildcard": { "module": "*6*" } }
+      ]
+    }
+  }
+}
+```
+
+  - 无插入失败时ES count等于module6_country_expected_count
+- S06：执行以下SQL获取module6 Country插入失败数量
+
+```sql
+SELECT COUNT(*) AS module6_country_failed_count
+FROM (
+    SELECT iso2
+    FROM base_data_restaurant
+    WHERE (issetmeal = 1 OR ismpv_discount = 1 OR freeoffer = 1)
+      AND deleted = 0
+      AND effective_state = 'A'
+      AND iso2 IS NOT NULL
+      AND iso2 <> ''
+      AND iso2 IN (
+          SELECT DISTINCT SUBSTRING_INDEX(failed_id, '_', -1)
+          FROM es_insert_failed_record
+          WHERE index_name = 'resource_location_aggregate_uat'
+      )
+    GROUP BY iso2
+) grouped_data;
+```
+
+  - module6_country_expected_count减ES count等于module6_country_failed_count
+- tag: integration,sync,location-index,country,module5,module6,failed-record,manual-test,P1
+
+##### tc-p1: 核对Module5和Module6的City位置索引及插入失败数量
+
+- pc: 位置索引不区分语种
+- pc: 失败表中的位置索引名称为resource_location_aggregate_uat
+- S01：执行以下SQL获取module5 City预期数量
+
+```sql
+SELECT COUNT(*) AS module5_city_expected_count
+FROM (
+    SELECT iso2, city_code
+    FROM base_data_restaurant
+    WHERE freeoffer = 1
+      AND deleted = 0
+      AND effective_state = 'A'
+      AND iso2 IS NOT NULL
+      AND iso2 <> ''
+      AND city_code IS NOT NULL
+      AND city_code <> ''
+    GROUP BY iso2, city_code
+) grouped_data;
+```
+
+  - 返回module5_city_expected_count
+- S02：执行以下请求获取module5 City实际数量
+
+```http
+GET /resource_location_aggregate_uat/_count
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "level": "city" } },
+        { "wildcard": { "module": "*5*" } }
+      ]
+    }
+  }
+}
+```
+
+  - 无插入失败时ES count等于module5_city_expected_count
+- S03：执行以下SQL获取module5 City插入失败数量
+
+```sql
+SELECT COUNT(*) AS module5_city_failed_count
+FROM (
+    SELECT iso2, city_code
+    FROM base_data_restaurant
+    WHERE freeoffer = 1
+      AND deleted = 0
+      AND effective_state = 'A'
+      AND iso2 IS NOT NULL
+      AND iso2 <> ''
+      AND city_code IS NOT NULL
+      AND city_code <> ''
+      AND city_code IN (
+          SELECT DISTINCT SUBSTRING_INDEX(failed_id, '_', -1)
+          FROM es_insert_failed_record
+          WHERE index_name = 'resource_location_aggregate_uat'
+      )
+    GROUP BY iso2, city_code
+) grouped_data;
+```
+
+  - module5_city_expected_count减ES count等于module5_city_failed_count
+- S04：执行以下SQL获取module6 City预期数量
+
+```sql
+SELECT COUNT(*) AS module6_city_expected_count
+FROM (
+    SELECT iso2, city_code
+    FROM base_data_restaurant
+    WHERE (issetmeal = 1 OR ismpv_discount = 1 OR freeoffer = 1)
+      AND deleted = 0
+      AND effective_state = 'A'
+      AND iso2 IS NOT NULL
+      AND iso2 <> ''
+      AND city_code IS NOT NULL
+      AND city_code <> ''
+    GROUP BY iso2, city_code
+) grouped_data;
+```
+
+  - 返回module6_city_expected_count
+- S05：执行以下请求获取module6 City实际数量
+
+```http
+GET /resource_location_aggregate_uat/_count
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "level": "city" } },
+        { "wildcard": { "module": "*6*" } }
+      ]
+    }
+  }
+}
+```
+
+  - 无插入失败时ES count等于module6_city_expected_count
+- S06：执行以下SQL获取module6 City插入失败数量
+
+```sql
+SELECT COUNT(*) AS module6_city_failed_count
+FROM (
+    SELECT iso2, city_code
+    FROM base_data_restaurant
+    WHERE (issetmeal = 1 OR ismpv_discount = 1 OR freeoffer = 1)
+      AND deleted = 0
+      AND effective_state = 'A'
+      AND iso2 IS NOT NULL
+      AND iso2 <> ''
+      AND city_code IS NOT NULL
+      AND city_code <> ''
+      AND city_code IN (
+          SELECT DISTINCT SUBSTRING_INDEX(failed_id, '_', -1)
+          FROM es_insert_failed_record
+          WHERE index_name = 'resource_location_aggregate_uat'
+      )
+    GROUP BY iso2, city_code
+) grouped_data;
+```
+
+  - module6_city_expected_count减ES count等于module6_city_failed_count
+- tag: integration,sync,location-index,city,module5,module6,failed-record,manual-test,P1
+
+##### tc-p1: 核对Module5和Module6的Hub位置索引及插入失败数量
+
+- pc: 位置索引不区分语种
+- pc: 空scode不生成Hub位置索引
+- pc: 失败表中的位置索引名称为resource_location_aggregate_uat
+- S01：执行以下SQL获取module5 Hub预期数量
+
+```sql
+SELECT COUNT(*) AS module5_hub_expected_count
+FROM (
+    SELECT iso2, city_code, scode
+    FROM base_data_restaurant
+    WHERE freeoffer = 1
+      AND deleted = 0
+      AND effective_state = 'A'
+      AND iso2 IS NOT NULL
+      AND iso2 <> ''
+      AND city_code IS NOT NULL
+      AND city_code <> ''
+      AND scode IS NOT NULL
+      AND scode <> ''
+    GROUP BY iso2, city_code, scode
+) grouped_data;
+```
+
+  - 返回module5_hub_expected_count
+- S02：执行以下请求获取module5 Hub实际数量
+
+```http
+GET /resource_location_aggregate_uat/_count
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "level": "hub" } },
+        { "wildcard": { "module": "*5*" } }
+      ]
+    }
+  }
+}
+```
+
+  - 无插入失败时ES count等于module5_hub_expected_count
+- S03：执行以下SQL获取module5 Hub插入失败数量
+
+```sql
+SELECT COUNT(*) AS module5_hub_failed_count
+FROM (
+    SELECT iso2, city_code, scode
+    FROM base_data_restaurant
+    WHERE freeoffer = 1
+      AND deleted = 0
+      AND effective_state = 'A'
+      AND iso2 IS NOT NULL
+      AND iso2 <> ''
+      AND city_code IS NOT NULL
+      AND city_code <> ''
+      AND scode IS NOT NULL
+      AND scode <> ''
+      AND scode IN (
+          SELECT DISTINCT SUBSTRING_INDEX(failed_id, '_', -1)
+          FROM es_insert_failed_record
+          WHERE index_name = 'resource_location_aggregate_uat'
+      )
+    GROUP BY iso2, city_code, scode
+) grouped_data;
+```
+
+  - module5_hub_expected_count减ES count等于module5_hub_failed_count
+- S04：执行以下SQL获取module6 Hub预期数量
+
+```sql
+SELECT COUNT(*) AS module6_hub_expected_count
+FROM (
+    SELECT iso2, city_code, scode
+    FROM base_data_restaurant
+    WHERE (issetmeal = 1 OR ismpv_discount = 1 OR freeoffer = 1)
+      AND deleted = 0
+      AND effective_state = 'A'
+      AND iso2 IS NOT NULL
+      AND iso2 <> ''
+      AND city_code IS NOT NULL
+      AND city_code <> ''
+      AND scode IS NOT NULL
+      AND scode <> ''
+    GROUP BY iso2, city_code, scode
+) grouped_data;
+```
+
+  - 返回module6_hub_expected_count
+- S05：执行以下请求获取module6 Hub实际数量
+
+```http
+GET /resource_location_aggregate_uat/_count
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "level": "hub" } },
+        { "wildcard": { "module": "*6*" } }
+      ]
+    }
+  }
+}
+```
+
+  - 无插入失败时ES count等于module6_hub_expected_count
+- S06：执行以下SQL获取module6 Hub插入失败数量
+
+```sql
+SELECT COUNT(*) AS module6_hub_failed_count
+FROM (
+    SELECT iso2, city_code, scode
+    FROM base_data_restaurant
+    WHERE (issetmeal = 1 OR ismpv_discount = 1 OR freeoffer = 1)
+      AND deleted = 0
+      AND effective_state = 'A'
+      AND iso2 IS NOT NULL
+      AND iso2 <> ''
+      AND city_code IS NOT NULL
+      AND city_code <> ''
+      AND scode IS NOT NULL
+      AND scode <> ''
+      AND scode IN (
+          SELECT DISTINCT SUBSTRING_INDEX(failed_id, '_', -1)
+          FROM es_insert_failed_record
+          WHERE index_name = 'resource_location_aggregate_uat'
+      )
+    GROUP BY iso2, city_code, scode
+) grouped_data;
+```
+
+  - module6_hub_expected_count减ES count等于module6_hub_failed_count
+- S07：抽查ES缺失的Country、City和Hub标识
+  - 每个缺失位置标识均能在resource_location_aggregate_uat对应失败记录的failed_id中找到
+- rc: 若失败重试成功后记录仍保留，需排除已恢复记录后再执行差值核对
+- tag: integration,sync,location-index,hub,module5,module6,failed-record,manual-test,P1
+
+## 生成ProgramId时需要记录到会籍模板表
+
+### MembershipToken补写会籍模板
+
+#### tc-p1: 新增MembershipToken时为ProgramId缺失的会籍模板补写生成值
+
+- pc: 通过模板编码{{membershipTemplateCode}}可在`business-saas`.mem_membership_template中唯一定位一条会籍模板
+- pc: 以下三组场景分别独立执行，每组执行前记录模板完整数据，执行后恢复原值
+
+| 场景 | 操作前program_id |
+| --- | --- |
+| NULL | NULL |
+| 空字符串 | '' |
+| 纯空格 | '   ' |
+
+- S01：按当前场景执行以下SQL查询目标模板
+
+```sql
+SELECT
+    x.id,
+    x.template_code,
+    x.program_id
+FROM `business-saas`.mem_membership_template x
+WHERE x.template_code = '{{membershipTemplateCode}}';
+```
+
+  - 仅返回一条模板且program_id等于当前场景准备值
+- S02：在项目设置页面点击“+新增Membership Token”并完成Token生成
+  - Membership Token和ProgramId生成成功，记录生成值{{generatedMembershipProgramId}}
+- S03：再次执行目标模板查询SQL
+  - program_id等于{{generatedMembershipProgramId}}，NULL、空字符串或纯空格均被视为缺失并完成补写
+- S04：比较操作前后的模板完整数据
+  - 除program_id及系统约定的更新时间字段外，其他模板业务字段保持不变
+- tag: saas,membership-token,program-id,membership-template,database,manual-test,P1
+
+#### tc-p1: 新增MembershipToken时不覆盖会籍模板已有ProgramId
+
+- pc: 模板编码{{membershipTemplateCode}}唯一对应一条会籍模板，program_id={{existingMembershipProgramId}}且TRIM后非空
+- S01：执行以下SQL记录操作前ProgramId
+
+```sql
+SELECT
+    x.id,
+    x.template_code,
+    x.program_id
+FROM `business-saas`.mem_membership_template x
+WHERE x.template_code = '{{membershipTemplateCode}}';
+```
+
+  - program_id等于{{existingMembershipProgramId}}
+- S02：点击“+新增Membership Token”并记录本次生成的ProgramId
+  - Membership Token按原流程生成成功
+- S03：再次执行相同SQL查询目标模板
+  - program_id仍等于{{existingMembershipProgramId}}，未被本次生成值覆盖
+- S04：比较模板其他字段
+  - 模板未发生非预期修改
+- tag: saas,membership-token,program-id,no-overwrite,database,manual-test,P1
+
+#### tc-p2: 连续新增MembershipToken仅在首次为会籍模板补写ProgramId
+
+- pc: 模板编码{{membershipTemplateCode}}唯一对应一条program_id缺失的会籍模板
+- S01：第一次点击“+新增Membership Token”
+  - Token生成成功，模板program_id写入第一次生成值{{firstMembershipProgramId}}
+- S02：第二次点击“+新增Membership Token”
+  - 第二次Token按原流程生成成功
+- S03：执行以下SQL查询最终值
+
+```sql
+SELECT
+    x.id,
+    x.template_code,
+    x.program_id
+FROM `business-saas`.mem_membership_template x
+WHERE x.template_code = '{{membershipTemplateCode}}';
+```
+
+  - program_id仍等于{{firstMembershipProgramId}}，未被第二次生成值覆盖
+- tag: saas,membership-token,program-id,repeat,database,manual-test,P2
+
+#### tc-p2: 新增MembershipToken仅更新模板编码匹配的目标模板
+
+- pc: 模板A编码={{membershipTemplateCodeA}}且program_id缺失，模板B编码={{membershipTemplateCodeB}}且已记录完整数据
+- S01：为模板A对应项目新增Membership Token
+  - Membership Token和ProgramId生成成功
+- S02：执行以下SQL查询模板A和模板B
+
+```sql
+SELECT
+    x.id,
+    x.template_code,
+    x.program_id
+FROM `business-saas`.mem_membership_template x
+WHERE x.template_code IN (
+    '{{membershipTemplateCodeA}}',
+    '{{membershipTemplateCodeB}}'
+)
+ORDER BY x.template_code;
+```
+
+  - 模板A写入本次生成的ProgramId，模板B的program_id及其他业务字段保持不变
+- tag: saas,membership-token,program-id,template-isolation,database,manual-test,P2
+
+### 其他Token入口回归
+
+#### tc-p1: 新增其他类型Token不修改会籍模板ProgramId
+
+- pc: 模板编码{{membershipTemplateCode}}唯一对应一条会籍模板，操作前program_id={{beforeMembershipProgramId}}
+- pc: 以下三个入口分别独立执行
+
+| Token入口 | 预期生成结果 |
+| --- | --- |
+| +新增E-pass Token | E-pass Token按原流程生成成功 |
+| +新增Auth Token | Auth Token按原流程生成成功 |
+| +新增Retail Product Token | Retail Product Token按原流程生成成功 |
+
+- S01：执行以下SQL记录目标模板操作前数据
+
+```sql
+SELECT
+    x.id,
+    x.template_code,
+    x.program_id
+FROM `business-saas`.mem_membership_template x
+WHERE x.template_code = '{{membershipTemplateCode}}';
+```
+
+  - program_id等于{{beforeMembershipProgramId}}
+- S02：按表中三个入口分别新增对应Token
+  - 每种Token均按各自原流程生成成功
+- S03：每个入口操作完成后再次执行相同SQL
+  - program_id始终等于{{beforeMembershipProgramId}}，未写入E-pass、Auth或Retail Product相关标识
+- S04：比较会籍模板操作前后的完整数据
+  - 会籍模板未被其他三个Token入口修改
+- rc: 只有“+新增Membership Token”可以触发会籍模板program_id缺失值补写
+- tag: saas,token-regression,membership-template,e-pass,auth,retail-product,manual-test,P1
+
+## 订单详情接口新增预约人数字段
+
+### 预约订单原始人数
+
+#### tc-p1: 验证FTMembership预约订单返回原始预约人数
+
+- pc: 使用合法公共Header；准备支持FT预约的Membership及可预约FT资源
+- pc: 调用POST /v2/resources/prebookings/availability时adultCount=1、childCount=1，独立基准expectedBookingCounts=2
+- S01：使用availability响应通过FTMembership预约下单接口创建订单
+  - 订单创建成功并记录唯一orderId
+- S02：以orderId调用POST /v2/orders/memberships/details
+  - 响应code等于0
+- S03：检查`$.data.extra.bookingCounts`
+  - 字段存在且值等于2
+- S04：检查bookingCounts的数据类型和详情归属
+  - bookingCounts为integer且订单对应FTMembership
+- rc: `bookingCounts`表示原始预约人数，不使用详情响应中的实际使用人数反推期望值
+- tag: api,membership,fast-track,order-details,booking-counts,prebooking,P1
+
+#### tc-p1: 验证LoungePrebookingMembership预约订单返回原始预约人数
+
+- pc: 使用合法公共Header；准备支持LoungePrebooking的Membership及可预约Lounge资源
+- pc: 调用POST /v2/resources/prebookings/availability时adultCount=2、childCount=1，独立基准expectedBookingCounts=3
+- S01：使用availability响应通过LoungeMembership预约下单接口创建订单
+  - 订单创建成功并记录唯一orderId
+- S02：以orderId调用POST /v2/orders/memberships/details
+  - 响应code等于0
+- S03：检查`$.data.extra.bookingCounts`
+  - 字段存在且值等于3
+- S04：检查bookingCounts的数据类型和详情归属
+  - bookingCounts为integer且订单对应LoungePrebookingMembership
+- rc: `bookingCounts`表示原始预约人数，不使用详情响应中的实际使用人数反推期望值
+- tag: api,membership,lounge,order-details,booking-counts,prebooking,P1
+
+#### tc-p1: 验证FitnessMembership预约订单返回原始预约人数
+
+- pc: 使用合法公共Header；准备支持Fitness预约的Membership及可预约Fitness资源
+- pc: 调用POST /v2/resources/prebookings/availability时adultCount=1、childCount=0，独立基准expectedBookingCounts=1
+- S01：使用availability响应通过FitnessMembership预约下单接口创建订单
+  - 订单创建成功并记录唯一orderId
+- S02：以orderId调用POST /v2/orders/memberships/details
+  - 响应code等于0
+- S03：检查`$.data.extra.bookingCounts`
+  - 字段存在且值等于1
+- S04：检查bookingCounts的数据类型和详情归属
+  - bookingCounts为integer且订单对应FitnessMembership
+- rc: `bookingCounts`表示原始预约人数，不使用详情响应中的实际使用人数反推期望值
+- tag: api,membership,fitness,order-details,booking-counts,prebooking,P1
+
+#### tc-p1: 验证ESIMMembership预约订单返回原始预约人数
+
+- pc: 使用合法公共Header；准备支持eSIM预约的Membership及可预约eSIM资源
+- pc: 调用POST /v2/resources/prebookings/availability时adultCount=1、childCount=2，独立基准expectedBookingCounts=3
+- S01：使用availability响应通过eSIMMembership预约下单接口创建订单
+  - 订单创建成功并记录唯一orderId
+- S02：以orderId调用POST /v2/orders/memberships/details
+  - 响应code等于0
+- S03：检查`$.data.extra.bookingCounts`
+  - 字段存在且值等于3
+- S04：检查bookingCounts的数据类型和详情归属
+  - bookingCounts为integer且订单对应eSIMMembership
+- rc: `bookingCounts`表示原始预约人数，不使用详情响应中的实际使用人数反推期望值
+- tag: api,membership,esim,order-details,booking-counts,prebooking,P1
+
+#### tc-p1: 验证LocalOfferMembership预约订单返回原始预约人数
+
+- pc: 使用合法公共Header；准备支持LocalOffer预约的Membership及可预约LocalOffer资源
+- pc: 调用POST /v2/resources/prebookings/availability时adultCount=2、childCount=2，独立基准expectedBookingCounts=4
+- S01：使用availability响应通过LocalOfferMembership预约下单接口创建订单
+  - 订单创建成功并记录唯一orderId
+- S02：以orderId调用POST /v2/orders/memberships/details
+  - 响应code等于0
+- S03：检查`$.data.extra.bookingCounts`
+  - 字段存在且值等于4
+- S04：检查bookingCounts的数据类型和详情归属
+  - bookingCounts为integer且订单对应LocalOfferMembership
+- rc: `bookingCounts`表示原始预约人数，不使用详情响应中的实际使用人数反推期望值
+- tag: api,membership,local-offer,order-details,booking-counts,prebooking,P1
+
+#### tc-p1: 验证FTEpass预约订单返回原始预约人数
+
+- pc: 使用合法公共Header；准备支持FT预约的Epass及可预约FT资源
+- pc: 调用POST /v2/resources/prebookings/availability时adultCount=1、childCount=1，独立基准expectedBookingCounts=2
+- S01：使用availability响应通过FTEpass预约下单接口创建订单
+  - 订单创建成功并记录唯一orderId
+- S02：以orderId调用POST /v2/orders/ePasses/details
+  - 响应code等于0
+- S03：检查`$.data.extra.bookingCounts`
+  - 字段存在且值等于2
+- S04：检查bookingCounts的数据类型和详情归属
+  - bookingCounts为integer且订单对应FTEpass
+- rc: `bookingCounts`表示原始预约人数，不使用详情响应中的实际使用次数反推期望值
+- tag: api,epass,fast-track,order-details,booking-counts,prebooking,P1
+
+#### tc-p1: 验证LoungePrebookingEpass预约订单返回原始预约人数
+
+- pc: 使用合法公共Header；准备支持LoungePrebooking的Epass及可预约Lounge资源
+- pc: 调用POST /v2/resources/prebookings/availability时adultCount=2、childCount=1，独立基准expectedBookingCounts=3
+- S01：使用availability响应通过LoungeEpass预约下单接口创建订单
+  - 订单创建成功并记录唯一orderId
+- S02：以orderId调用POST /v2/orders/ePasses/details
+  - 响应code等于0
+- S03：检查`$.data.extra.bookingCounts`
+  - 字段存在且值等于3
+- S04：检查bookingCounts的数据类型和详情归属
+  - bookingCounts为integer且订单对应LoungePrebookingEpass
+- rc: `bookingCounts`表示原始预约人数，不使用详情响应中的实际使用次数反推期望值
+- tag: api,epass,lounge,order-details,booking-counts,prebooking,P1
+
+#### tc-p1: 验证FitnessEpass预约订单返回原始预约人数
+
+- pc: 使用合法公共Header；准备支持Fitness预约的Epass及可预约Fitness资源
+- pc: 调用POST /v2/resources/prebookings/availability时adultCount=1、childCount=0，独立基准expectedBookingCounts=1
+- S01：使用availability响应通过FitnessEpass预约下单接口创建订单
+  - 订单创建成功并记录唯一orderId
+- S02：以orderId调用POST /v2/orders/ePasses/details
+  - 响应code等于0
+- S03：检查`$.data.extra.bookingCounts`
+  - 字段存在且值等于1
+- S04：检查bookingCounts的数据类型和详情归属
+  - bookingCounts为integer且订单对应FitnessEpass
+- rc: `bookingCounts`表示原始预约人数，不使用详情响应中的实际使用次数反推期望值
+- tag: api,epass,fitness,order-details,booking-counts,prebooking,P1
+
+#### tc-p1: 验证ESIMEpass预约订单返回原始预约人数
+
+- pc: 使用合法公共Header；准备支持eSIM预约的Epass及可预约eSIM资源
+- pc: 调用POST /v2/resources/prebookings/availability时adultCount=1、childCount=2，独立基准expectedBookingCounts=3
+- S01：使用availability响应通过eSIMEpass预约下单接口创建订单
+  - 订单创建成功并记录唯一orderId
+- S02：以orderId调用POST /v2/orders/ePasses/details
+  - 响应code等于0
+- S03：检查`$.data.extra.bookingCounts`
+  - 字段存在且值等于3
+- S04：检查bookingCounts的数据类型和详情归属
+  - bookingCounts为integer且订单对应eSIMEpass
+- rc: `bookingCounts`表示原始预约人数，不使用详情响应中的实际使用次数反推期望值
+- tag: api,epass,esim,order-details,booking-counts,prebooking,P1
+
+#### tc-p1: 验证LocalOfferEpass预约订单返回原始预约人数
+
+- pc: 使用合法公共Header；准备支持LocalOffer预约的Epass及可预约LocalOffer资源
+- pc: 调用POST /v2/resources/prebookings/availability时adultCount=2、childCount=2，独立基准expectedBookingCounts=4
+- S01：使用availability响应通过LocalOfferEpass预约下单接口创建订单
+  - 订单创建成功并记录唯一orderId
+- S02：以orderId调用POST /v2/orders/ePasses/details
+  - 响应code等于0
+- S03：检查`$.data.extra.bookingCounts`
+  - 字段存在且值等于4
+- S04：检查bookingCounts的数据类型和详情归属
+  - bookingCounts为integer且订单对应LocalOfferEpass
+- rc: `bookingCounts`表示原始预约人数，不使用详情响应中的实际使用次数反推期望值
+- tag: api,epass,local-offer,order-details,booking-counts,prebooking,P1
+
+#### tc-p2: 验证仅成人仅儿童及成人儿童组合的人数计算
+
+- pc: 使用合法公共Header；分别准备可创建Membership和Epass预约订单的受控资源
+- pc: 以下组合分别执行，预期人数来自availability请求而非订单详情响应
+
+| 场景 | adultCount | childCount | expectedBookingCounts |
+| --- | --- | --- | --- |
+| 仅成人 | 1 | 0 | 1 |
+| 仅儿童 | 0 | 1 | 1 |
+| 成人和儿童 | 2 | 3 | 5 |
+
+- S01：按表中每组人数分别调用POST /v2/resources/prebookings/availability并创建Membership预约订单
+  - 每组均创建成功并记录orderId
+- S02：调用POST /v2/orders/memberships/details查询每组订单
+  - 每组`$.data.extra.bookingCounts`均等于对应expectedBookingCounts
+- S03：按相同人数分别创建Epass预约订单
+  - 每组均创建成功并记录orderId
+- S04：调用POST /v2/orders/ePasses/details查询每组订单
+  - 每组`$.data.extra.bookingCounts`均等于对应expectedBookingCounts
+- rc: 本需求确认有效预约订单不会出现adultCount和childCount同时缺失的情况
+- tag: api,order-details,booking-counts,adult-count,child-count,boundary,P2
+
+### 历史与非预约订单兼容
+
+#### tc-p1: 验证历史预约订单返回原始预约人数
+
+- pc: 使用合法公共Header；准备功能上线前已创建的FT、LoungePrebooking、Fitness、eSIM、LocalOffer历史预约订单
+- pc: 每个品类同时准备Membership和Epass历史orderId，并从独立订单数据或原availability请求记录取得原始adultCount、childCount及两者之和
+- S01：逐一调用POST /v2/orders/memberships/details查询五个品类的历史Membership预约订单
+  - 每个订单响应code均等于0
+- S02：检查每个历史Membership订单的`$.data.extra.bookingCounts`
+  - 字段均存在且等于对应订单的原始adultCount与childCount之和
+- S03：逐一调用POST /v2/orders/ePasses/details查询五个品类的历史Epass预约订单
+  - 每个订单响应code均等于0
+- S04：检查每个历史Epass订单的`$.data.extra.bookingCounts`
+  - 字段均存在且等于对应订单的原始adultCount与childCount之和
+- S05：重复查询同一批历史订单
+  - 每个订单的bookingCounts均保持不变
+- rc: 历史预约订单同样必须展示之前预约的人数，不允许因创建时间早于功能上线而返回null
+- tag: api,membership,epass,order-details,booking-counts,historical-order,P1
+
+#### tc-p1: 验证LoungeWalkIn订单预约人数返回Null
+
+- pc: 使用合法公共Header；准备LoungeWalkIn的Membership订单{{loungeWalkInMembershipOrderId}}和Epass订单{{loungeWalkInEpassOrderId}}
+- S01：以{{loungeWalkInMembershipOrderId}}调用POST /v2/orders/memberships/details
+  - 响应code等于0
+- S02：检查Membership响应的`$.data.extra.bookingCounts`
+  - 字段存在且值为null
+- S03：以{{loungeWalkInEpassOrderId}}调用POST /v2/orders/ePasses/details
+  - 响应code等于0
+- S04：检查Epass响应的`$.data.extra.bookingCounts`
+  - 字段存在且值为null
+- S05：核对两个响应的category与订单类型
+  - category均表示WalkIn且未被新增字段逻辑改写
+- rc: 非预约订单仍必须返回bookingCounts字段，但字段值固定为null
+- tag: api,membership,epass,order-details,booking-counts,lounge,walk-in,null,P1
+
+### 订单生命周期人数一致性
+
+#### tc-p1: 验证订单状态变化后仍返回原始预约人数
+
+- pc: 使用合法公共Header；为Membership和Epass分别准备处于取消、退款、过期、部分使用、全部使用状态的预约订单
+- pc: 每个订单均已通过原availability请求或独立订单数据记录`expectedBookingCounts=adultCount+childCount`，且expectedBookingCounts大于或等于1
+
+| 订单形态 | 状态覆盖 |
+| --- | --- |
+| Membership预约订单 | 取消、退款、过期、部分使用、全部使用 |
+| Epass预约订单 | 取消、退款、过期、部分使用、全部使用 |
+
+- S01：分别调用POST /v2/orders/memberships/details查询表中各状态的Membership订单
+  - 每个可查询订单均返回其当前订单状态
+- S02：检查各状态Membership订单的`$.data.extra.bookingCounts`
+  - 每个值均等于该订单状态变化前记录的expectedBookingCounts
+- S03：分别调用POST /v2/orders/ePasses/details查询表中各状态的Epass订单
+  - 每个可查询订单均返回其当前订单状态
+- S04：检查各状态Epass订单的`$.data.extra.bookingCounts`
+  - 每个值均等于该订单状态变化前记录的expectedBookingCounts
+- S05：对比部分使用或全部使用订单的bookingCounts与实际使用人数字段
+  - bookingCounts仍为原始预约人数且不随实际使用人数变化
+- rc: 当前OpenAPI尚未声明bookingCounts；本用例字段路径与业务预期依据PAPI-3018及已确认澄清
+- tag: api,membership,epass,order-details,booking-counts,order-status,P1
+
+## 会籍取消订阅费
+
+### 订阅状态取消规则
+
+#### tc-p1: 生效中的订阅计划取消成功
+
+- pc: 使用对应会籍模板的ProgramId完成鉴权，不使用Retail商品的ProgramId
+- pc: 准备已完成Purchase、Payment、Details链路且订阅计划状态为生效中的会籍；记录取消前membershipId、会籍status、expirationDate、权益及已支付金额
+- S01：以该membershipId及其所属email调用会籍取消订阅接口
+  - HTTP状态码符合接口契约且响应`$.code=0`
+- S02：检查取消响应中的会籍信息
+  - `$.data.membershipId`等于请求membershipId，`$.data.status`及`$.data.expirationDate`分别等于取消前记录值
+- S03：检查取消响应中的订阅信息
+  - `$.data.subscription.status=2`、`$.data.subscription.cancelledDate`为非空UTC日期时间且`$.data.subscription.nextBillingDate=null`
+- rc: 取消仅停止后续续费，不取消会籍、不缩短会籍有效期、不回收已有权益、不退款
+- rc: 被测取消接口Method、Path及HTTP状态码待Apifox契约补充
+- tag: api,membership,subscription,cancellation,active,P1,api-automation-blocked
+
+#### tc-p1: 待生效的订阅计划不可取消
+
+- pc: 准备membershipId与email唯一对应且订阅计划状态为待生效的会籍
+- S01：以该membershipId及所属email调用会籍取消订阅接口
+  - 响应`$.code=-1`、`$.errCode="500.020.034"`且`$.msg="No active subscription plan found for this membership."`
+- S02：再次查询会籍及订阅结果
+  - 会籍与待生效订阅计划均保持取消前状态，未写入取消时间
+- rc: BOSS订阅计划非生效中错误`200112`映射为`500.020.034`
+- tag: api,membership,subscription,cancellation,pending,P1,negative,api-automation-blocked
+
+#### tc-p1: 已过期的订阅计划不可取消
+
+- pc: 准备membershipId与email唯一对应且订阅计划状态为已过期的会籍
+- S01：以该membershipId及所属email调用会籍取消订阅接口
+  - 响应`$.code=-1`、`$.errCode="500.020.034"`且`$.msg="No active subscription plan found for this membership."`
+- S02：再次查询会籍及订阅结果
+  - 会籍与已过期订阅计划均保持取消前状态，未写入新的取消时间
+- rc: BOSS订阅计划非生效中错误`200112`映射为`500.020.034`
+- tag: api,membership,subscription,cancellation,expired,P1,negative,api-automation-blocked
+
+#### tc-p1: 已取消的订阅计划重复取消返回兜底错误
+
+- pc: 准备已成功取消订阅的membershipId与所属email，记录首次取消响应中的cancelledDate
+- S01：使用新的X-Request-ID再次调用会籍取消订阅接口
+  - 响应`$.code=-1`、`$.errCode="500.020.035"`且`$.msg="Failed to cancel the subscription plan. Please try again later."`
+- S02：查询会籍及订阅结果
+  - 订阅计划仍为已取消且cancelledDate等于首次取消时间，会籍状态、有效期、权益及已支付金额均未变化
+- rc: 重复取消是已确认的`500.020.035`特例，不按非生效状态映射为`500.020.034`
+- tag: api,membership,subscription,cancellation,repeated,P1,negative,api-automation-blocked
+
+#### tc-p2: 未生成订阅计划的会籍取消失败
+
+- pc: 准备存在会籍但从未生成订阅计划的membershipId及其所属email
+- S01：调用会籍取消订阅接口
+  - 响应`$.code=-1`、`$.errCode="500.020.035"`且`$.msg="Failed to cancel the subscription plan. Please try again later."`
+- S02：查询会籍信息
+  - 会籍状态、有效期及权益保持不变，未生成订阅计划
+- rc: BOSS订阅计划不存在错误`200111`映射为`500.020.035`
+- tag: api,membership,subscription,cancellation,no-plan,P2,negative,api-automation-blocked
+
+#### tc-p2: membershipId与email不匹配时取消失败
+
+- pc: 准备存在生效订阅计划的membershipId，并使用不属于该会籍的另一个合法email
+- S01：以membershipId及不匹配email调用会籍取消订阅接口
+  - 响应`$.code=-1`、`$.errCode="500.020.035"`且`$.msg="Failed to cancel the subscription plan. Please try again later."`
+- S02：使用正确email查询原会籍及订阅结果
+  - 原订阅计划仍为生效中且nextBillingDate未变化，会籍、权益及已支付金额均未变化
+- rc: email用于验证membershipId归属并防止非法取消
+- tag: api,membership,subscription,cancellation,email-ownership,P2,security,api-automation-blocked
+
+### 第二期续费期间取消
+
+#### tc-p1: 第二期续费过程中取消订阅不影响本期续费
+
+- pc: 准备已完成首期扣费、订阅计划状态为生效中的会籍，并将订阅推进至第二期续费处理中
+- pc: 记录第二期应付金额、币种及本次续费交易标识，确保取消请求发出时第二期续费已开始但尚未完成
+- S01：在第二期续费过程中以正确membershipId及email调用会籍取消订阅接口
+  - 响应`$.code=0`、`$.data.subscription.status=2`且`$.data.subscription.nextBillingDate=null`
+- S02：等待并查询第二期续费结果
+  - 第二期续费照常完成，实付金额及币种等于取消前记录值，且不生成退款
+- S03：检查取消后的后续续费安排
+  - 仅停止第三期及以后续费，不再生成新的nextBillingDate
+- rc: 本场景已确认取消不终止正在处理的第二期续费，第二期完成后不退款
+- rc: 自动化需具备可控推进第二期续费并稳定命中续费处理中窗口的测试能力，未提供前保持blocked
+- tag: api,membership,subscription,cancellation,second-renewal,no-refund,P1,api-automation-blocked
+
+### 取消后重新订阅
+
+#### tc-p1: 取消订阅后通过完整购买链路重新订阅成功
+
+- pc: 准备一条生效中的订阅计划并记录原membershipId、旧订阅计划标识及取消前会籍信息
+- S01：以正确membershipId及email调用会籍取消订阅接口
+  - 响应`$.code=0`、`$.data.subscription.status=2`且`$.data.subscription.nextBillingDate=null`
+- S02：使用同一用户及对应会籍模板Program调用Purchase接口重新购买可自动续期的会籍商品
+  - Purchase不返回`500.020.032`且成功创建新的会籍购买订单
+- S03：对新购买订单完成Payment
+  - 支付成功且订单进入可发放或已发放状态
+- S04：调用PurchaseDetails查询新购买订单
+  - Details返回成功，订单、支付及激活信息与本次Purchase和Payment一致
+- S05：查询新旧订阅计划
+  - 新订阅计划为生效中且旧订阅计划保持已取消，两条计划标识不同
+- rc: 新订阅计划是否必须关联原membershipId尚未确认，本用例暂不对此字段作硬断言
+- rc: 订阅计划新旧状态不通过SaaS后台验收；需由公开查询接口提供可观察结果，否则该步骤保持blocked
+- tag: api,membership,subscription,cancellation,resubscribe,purchase,payment,details,e2e,P1,api-automation-blocked

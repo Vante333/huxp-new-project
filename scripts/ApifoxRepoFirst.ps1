@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
   Apifox CLI · Repo-first：从仓库生成器同步 Postman Collection 到指定 Apifox 项目。
@@ -11,9 +11,10 @@
   .\scripts\ApifoxRepoFirst.ps1 -Action Generate
   .\scripts\ApifoxRepoFirst.ps1 -Action Import
   .\scripts\ApifoxRepoFirst.ps1 -Action Status
-  .\scripts\ApifoxRepoFirst.ps1 -Action Run
-  .\scripts\ApifoxRepoFirst.ps1 -Action PushSteps -CheckRun
-  .\scripts\ApifoxRepoFirst.ps1 -Action SyncCheck
+  .\scripts\ApifoxRepoFirst.ps1 -Action Run -ConfirmRun
+  .\scripts\ApifoxRepoFirst.ps1 -Action Run -ConfirmRun -FullReports
+  .\scripts\ApifoxRepoFirst.ps1 -Action PushSteps -CheckRun -ConfirmRun
+  .\scripts\ApifoxRepoFirst.ps1 -Action SyncCheck -ConfirmRun
 #>
 [CmdletBinding()]
 param(
@@ -39,6 +40,9 @@ param(
     # 推送后自动 apifox run 并汇总失败步骤（需 suites.yaml environment_id）
     [switch]$CheckRun,
 
+    # 明确确认已核对数据集、业务 CSV 与 Environment；Run/SyncCheck/CheckRun 必填
+    [switch]$ConfirmRun,
+
     # 默认复用该资产 suites.yaml 的 working_branch；勿为每次改脚本新建 AI 分支
     [string]$WorkingBranch = "",
 
@@ -49,11 +53,29 @@ param(
     [int]$EnvironmentId = 0,
 
     # 仅当长期工作分支不存在时才允许 create（默认关闭，防止刷出一堆 ai/*）
-    [switch]$AllowCreateAiBranch
+    [switch]$AllowCreateAiBranch,
+
+    # 默认 cli,json；需要 HTML/JUnit 可视化时再加 -FullReports
+    [switch]$FullReports
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+function Assert-RunExplicitlyConfirmed {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$SelectedAction,
+        [Parameter(Mandatory = $true)][bool]$IsConfirmed
+    )
+    if ($IsConfirmed) {
+        return
+    }
+    throw (
+        "$SelectedAction 会执行在线 Apifox Run；请先确认：①现在要跑；" +
+        "②鉴权数据集；③业务 CSV 已导入并勾选；④Environment。确认后显式加 -ConfirmRun。"
+    )
+}
 
 function Get-RepoRoot {
     [CmdletBinding()]
@@ -116,7 +138,7 @@ function Get-SuitesYamlHelper {
     [CmdletBinding()]
     [OutputType([string])]
     param([Parameter(Mandatory = $true)][string]$RepoRoot)
-    return (Join-Path $RepoRoot "tools\ApifoxSuitesYaml.py")
+    return (Join-Path $RepoRoot "tools\apifox-cli\ApifoxSuitesYaml.py")
 }
 
 function Get-SuitesAssetKeys {
@@ -243,14 +265,17 @@ function Get-AssetPaths {
         Collection       = Resolve-RepoRelativePath -RepoRoot $RepoRoot -RelativePath $collectionRel
         OpenApi          = if ($openApiRel) { Resolve-RepoRelativePath -RepoRoot $RepoRoot -RelativePath $openApiRel } else { '' }
         ApifoxPackage    = Resolve-RepoRelativePath -RepoRoot $RepoRoot -RelativePath $apifoxPkgRel
-        OpenApiConverter = Join-Path $RepoRoot "tools\ConvertPostmanCollectionToOpenapi.py"
-        ApifoxConverter  = Join-Path $RepoRoot "tools\ConvertPostmanToApifoxScenario.py"
-        TestsSyncer      = Join-Path $RepoRoot "tools\SyncPostmanTestsViaCli.py"
-        StepsPusher      = Join-Path $RepoRoot "tools\PushApifoxScenarioSteps.py"
-        FailureSummarizer = Join-Path $RepoRoot "tools\SummarizeApifoxRunFailures.py"
-        FailureTriage    = Join-Path $RepoRoot "tools\TriageApifoxRunFailures.py"
-        CatalogUpserter  = Join-Path $RepoRoot "tools\UpsertApifoxCliCatalog.py"
-        SuitesYamlHelper = Join-Path $RepoRoot "tools\ApifoxSuitesYaml.py"
+        OpenApiConverter = Join-Path $RepoRoot "tools\apifox-cli\ConvertPostmanCollectionToOpenapi.py"
+        ApifoxConverter  = Join-Path $RepoRoot "tools\apifox-cli\ConvertPostmanToApifoxScenario.py"
+        TestsSyncer      = Join-Path $RepoRoot "tools\apifox-cli\SyncPostmanTestsViaCli.py"
+        StepsPusher      = Join-Path $RepoRoot "tools\apifox-cli\PushApifoxScenarioSteps.py"
+        FailureSummarizer = Join-Path $RepoRoot "tools\apifox-cli\SummarizeApifoxRunFailures.py"
+        FailureTriage    = Join-Path $RepoRoot "tools\apifox-cli\TriageApifoxRunFailures.py"
+        CatalogUpserter  = Join-Path $RepoRoot "tools\apifox-cli\UpsertApifoxCliCatalog.py"
+        SuitesYamlHelper = Join-Path $RepoRoot "tools\apifox-cli\ApifoxSuitesYaml.py"
+        GeneratorLinter  = Join-Path $RepoRoot "tools\apifox-cli\LintGeneratorAntiPatterns.py"
+        SuitesLinter     = Join-Path $RepoRoot "tools\apifox-cli\LintSuitesYaml.py"
+        CollectionValidator = Join-Path $RepoRoot "tools\apifox-cli\ValidatePostmanCollection.py"
         ReportDir        = Join-Path $RepoRoot (Join-Path "apifox-reports" $AssetName)
         Doc              = $docPath
         ModuleIdHint     = [string]$f['module_id']
@@ -331,12 +356,48 @@ function Ensure-ApifoxAuth {
     }
 }
 
+function Invoke-OfflineGenerateGates {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][hashtable]$Paths,
+        [Parameter(Mandatory = $true)][string]$RepoRoot
+    )
+    foreach ($tool in @($Paths.GeneratorLinter, $Paths.SuitesLinter, $Paths.CollectionValidator)) {
+        if (-not (Test-Path -LiteralPath $tool)) {
+            throw "Offline gate tool not found: $tool"
+        }
+    }
+
+    Write-Host "Running offline generator anti-pattern lint ..." -ForegroundColor Cyan
+    & python -X utf8 $Paths.GeneratorLinter
+    if ($LASTEXITCODE -ne 0) {
+        throw "Generator anti-pattern lint failed with exit code $LASTEXITCODE"
+    }
+
+    Write-Host "Running offline suites.yaml lint ..." -ForegroundColor Cyan
+    & python -X utf8 $Paths.SuitesLinter --repo-root $RepoRoot
+    if ($LASTEXITCODE -ne 0) {
+        throw "suites.yaml lint failed with exit code $LASTEXITCODE"
+    }
+}
+
+function Invoke-ValidateGeneratedCollection {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)][hashtable]$Paths)
+    Write-Host "Validating generated Postman Collection offline ..." -ForegroundColor Cyan
+    & python -X utf8 $Paths.CollectionValidator --input $Paths.Collection
+    if ($LASTEXITCODE -ne 0) {
+        throw "Postman Collection validation failed with exit code $LASTEXITCODE"
+    }
+}
+
 function Invoke-GenerateCollection {
     [CmdletBinding()]
     param([Parameter(Mandatory = $true)][hashtable]$Paths)
     if (-not (Test-Path -LiteralPath $Paths.Generator)) {
         throw "Generator not found: $($Paths.Generator)"
     }
+    Invoke-OfflineGenerateGates -Paths $Paths -RepoRoot (Get-RepoRoot)
     Write-Host "Generating $($Paths.Name) ..." -ForegroundColor Cyan
     python $Paths.Generator
     if ($LASTEXITCODE -ne 0) {
@@ -345,6 +406,7 @@ function Invoke-GenerateCollection {
     if (-not (Test-Path -LiteralPath $Paths.Collection)) {
         throw "Collection not written: $($Paths.Collection)"
     }
+    Invoke-ValidateGeneratedCollection -Paths $Paths
     $len = (Get-Item -LiteralPath $Paths.Collection).Length
     Write-Host "OK: $($Paths.Collection) ($len bytes)" -ForegroundColor Green
 }
@@ -551,6 +613,27 @@ function Invoke-PushScenarioSteps {
         if ($eid -gt 0) { $pyArgs += @("--environment-id", "$eid") }
     }
     if ($DryRunFlag) { $pyArgs += "--dry-run" }
+    # 2026-08-24：yaml 漏写时默认绑真实接口再按 UI 解绑，否则 Headers 参数值列空，
+    # UI 改 Body 会发出空鉴权头（201.000.001 invalid secret）。显式 customHttp 才关闭。
+    $pushMode = [string]$fields['push_mode']
+    $unbindRaw = [string]$fields['unbind_after_push']
+    if ([string]::IsNullOrWhiteSpace($pushMode)) {
+        $pushMode = "http"
+        Write-Host "suites.yaml 未写 push_mode，默认 http（见 apifox-cli-repo-first reference「场景 Headers 参数值为空」）" -ForegroundColor Yellow
+    }
+    $pyArgs += @("--mode", $pushMode)
+    $unbindOn = $false
+    if ($unbindRaw -in @('true', '1', 'yes')) {
+        $unbindOn = $true
+    }
+    elseif ($unbindRaw -in @('false', '0', 'no')) {
+        $unbindOn = $false
+    }
+    elseif ([string]::IsNullOrWhiteSpace($unbindRaw) -and ($pushMode -eq 'http')) {
+        $unbindOn = $true
+        Write-Host "suites.yaml 未写 unbind_after_push，http 模式默认解绑" -ForegroundColor Yellow
+    }
+    if ($unbindOn) { $pyArgs += "--unbind-after" }
     python @pyArgs
     if ($LASTEXITCODE -ne 0) {
         throw "PushApifoxScenarioSteps failed with exit code $LASTEXITCODE"
@@ -625,6 +708,44 @@ function Get-SuiteRunContext {
     }
 }
 
+function Clear-StaleApifoxRunReports {
+    <#
+      每次 Run 后只保留本资产「当前 stamp」的报告文件，删掉同目录下更早的
+      <asset>-yyyyMMdd-HHmmss(.html|.json|.xml|-failures.json) 等，避免 apifox-reports 膨胀。
+      不碰 generated/、last-failures.md、leftover-failures.md 及其它非本前缀文件。
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$ReportDir,
+        [Parameter(Mandatory = $true)][string]$SafeAsset,
+        [Parameter(Mandatory = $true)][string]$KeepPrefix
+    )
+    if ([string]::IsNullOrWhiteSpace($ReportDir) -or -not (Test-Path -LiteralPath $ReportDir)) {
+        return
+    }
+    if ([string]::IsNullOrWhiteSpace($KeepPrefix)) {
+        return
+    }
+    $pattern = '^' + [regex]::Escape($SafeAsset) + '-\d{8}-\d{6}'
+    $removed = 0
+    Get-ChildItem -LiteralPath $ReportDir -File -ErrorAction SilentlyContinue | ForEach-Object {
+        $name = $_.Name
+        $full = $_.FullName
+        if ($name -notmatch $pattern) { return }
+        if ($name.StartsWith($KeepPrefix, [System.StringComparison]::OrdinalIgnoreCase)) { return }
+        try {
+            Remove-Item -LiteralPath $full -Force -ErrorAction Stop
+            $removed++
+        }
+        catch {
+            Write-Host "Warn: could not prune ${full}: $_" -ForegroundColor DarkYellow
+        }
+    }
+    if ($removed -gt 0) {
+        Write-Host "Pruned $removed older run report(s) under $ReportDir (kept $KeepPrefix*)." -ForegroundColor DarkGray
+    }
+}
+
 function Invoke-SummarizeRunFailures {
     [CmdletBinding()]
     param(
@@ -646,10 +767,18 @@ function Invoke-SummarizeRunFailures {
     }
     if ($FailOnError) { $pyArgs += "--fail-on-error" }
     Write-Host "Summarizing failures from $ReportDir ..." -ForegroundColor Cyan
-    # 显式捕获：避免 apifox run 非 0 残留污染 $LASTEXITCODE（全绿却误报失败）
-    & python @pyArgs
+    # python stdout 必须进 Host，否则会混进函数返回值，导致 ``$code -ne 0`` 把全绿当失败
+    & python @pyArgs | ForEach-Object { Write-Host $_ }
     $code = $LASTEXITCODE
-    if ($null -eq $code) { return 0 }
+    if ($null -eq $code) { $code = 0 }
+    $md = Join-Path $ReportDir "last-failures.md"
+    if (Test-Path -LiteralPath $md) {
+        $text = Get-Content -LiteralPath $md -Raw -Encoding UTF8 -ErrorAction SilentlyContinue
+        # 汇总已写「失败: 0」且无失败章节：以报告为准，勿被 shim/残留 exit 抬成失败
+        if ($text -and ($text -match '失败:\s*0') -and ($text -notlike '*## 失败步骤*')) {
+            return 0
+        }
+    }
     return [int]$code
 }
 
@@ -665,7 +794,8 @@ function Invoke-RunMappedSuite {
         [int]$OverrideScenarioId = 0,
         [string]$OverrideBranch = "",
         [switch]$SummarizeOnly,
-        [switch]$FailOnFailures
+        [switch]$FailOnFailures,
+        [switch]$FullReports
     )
     $ctx = Get-SuiteRunContext -RepoRoot $RepoRoot -AssetName $AssetName -TargetProjectId $TargetProjectId `
         -OverrideEnvId $OverrideEnvId -OverrideScenarioId $OverrideScenarioId -OverrideBranch $OverrideBranch
@@ -677,11 +807,13 @@ function Invoke-RunMappedSuite {
             New-Item -ItemType Directory -Path $ctx.ReportDir | Out-Null
         }
         $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-        $reporters = 'cli,html,json,junit'
+        # 日常 cli+json 足够 Summarize/Triage；html/junit 体积大，需看图时用 -FullReports
+        $reporters = if ($FullReports) { 'cli,html,json,junit' } else { 'cli,json' }
         $safeAsset = ($AssetName -replace '[^\w\-]', '_')
         $outFile = "$safeAsset-$stamp"
         $failFile = "$safeAsset-$stamp-failures"
         $script:LastApifoxReportPrefix = $outFile
+        Write-Host "Reporters=$reporters out=$outFile" -ForegroundColor DarkGray
         $runArgs = @(
             'run',
             '-t', "$($ctx.ScenarioId)",
@@ -706,6 +838,8 @@ function Invoke-RunMappedSuite {
             Write-Host 'apifox run exited with errors; will parse report anyway.' -ForegroundColor Yellow
             Write-Host $_ -ForegroundColor DarkYellow
         }
+        # 新报告已落盘后再剪旧 stamp，保证 Summarize/Triage 仍能读到本次前缀
+        Clear-StaleApifoxRunReports -ReportDir $ctx.ReportDir -SafeAsset $safeAsset -KeepPrefix $outFile
     }
     $prefix = ''
     if (Get-Variable -Name LastApifoxReportPrefix -Scope Script -ErrorAction SilentlyContinue) {
@@ -754,12 +888,14 @@ function Invoke-TriageAndRerunLoop {
         [Parameter(Mandatory = $true)][string]$WorkingBranchName,
         [Parameter(Mandatory = $true)][int]$TargetScenarioId,
         [Parameter(Mandatory = $true)][string]$AssetName,
-        [int]$OverrideEnvId = 0
+        [int]$OverrideEnvId = 0,
+        [switch]$FullReports
     )
     # 首次：推送后跑，失败不直接抛（留给通用 triage；规则在 suites.yaml）
     Invoke-PushScenarioSteps -Paths $Paths -TargetProjectId $TargetProjectId -ApiBaseUrl $ApiBaseUrl -BranchName $WorkingBranchName -TargetScenarioId $TargetScenarioId
     $null = Invoke-RunMappedSuite -RepoRoot $RepoRoot -TargetProjectId $TargetProjectId -ApiBaseUrl $ApiBaseUrl -Paths $Paths `
-        -AssetName $AssetName -OverrideEnvId $OverrideEnvId -OverrideScenarioId $TargetScenarioId -OverrideBranch $WorkingBranchName
+        -AssetName $AssetName -OverrideEnvId $OverrideEnvId -OverrideScenarioId $TargetScenarioId -OverrideBranch $WorkingBranchName `
+        -FullReports:$FullReports
 
     $prefix = ''
     if (Get-Variable -Name LastApifoxReportPrefix -Scope Script -ErrorAction SilentlyContinue) {
@@ -791,7 +927,8 @@ function Invoke-TriageAndRerunLoop {
         Invoke-GenerateCollection -Paths $Paths
         Invoke-PushScenarioSteps -Paths $Paths -TargetProjectId $TargetProjectId -ApiBaseUrl $ApiBaseUrl -BranchName $WorkingBranchName -TargetScenarioId $TargetScenarioId
         $null = Invoke-RunMappedSuite -RepoRoot $RepoRoot -TargetProjectId $TargetProjectId -ApiBaseUrl $ApiBaseUrl -Paths $Paths `
-            -AssetName $AssetName -OverrideEnvId $OverrideEnvId -OverrideScenarioId $TargetScenarioId -OverrideBranch $WorkingBranchName
+            -AssetName $AssetName -OverrideEnvId $OverrideEnvId -OverrideScenarioId $TargetScenarioId -OverrideBranch $WorkingBranchName `
+            -FullReports:$FullReports
         $prefix2 = ''
         if (Get-Variable -Name LastApifoxReportPrefix -Scope Script -ErrorAction SilentlyContinue) {
             $prefix2 = [string]$script:LastApifoxReportPrefix
@@ -825,7 +962,12 @@ function Invoke-TriageAndRerunLoop {
 
 # ---- main ----
 $RepoRoot = Get-RepoRoot
-Import-DotEnvFile -EnvFile (Join-Path $RepoRoot ".env")
+if ($Action -eq "Run" -or $Action -eq "SyncCheck" -or $CheckRun) {
+    Assert-RunExplicitlyConfirmed -SelectedAction $Action -IsConfirmed ([bool]$ConfirmRun)
+}
+if ($Action -ne "Generate") {
+    Import-DotEnvFile -EnvFile (Join-Path $RepoRoot ".env")
+}
 $settings = Get-ApifoxSettings -RepoRoot $RepoRoot
 $targetProjectId = if ($ProjectId -gt 0) { $ProjectId } else { $settings.ProjectId }
 $knownAssets = Get-SuitesAssetKeys -RepoRoot $RepoRoot
@@ -873,7 +1015,8 @@ switch ($Action) {
         Write-Host "Full CLI sync done. Remote step names verified as purpose-first Chinese." -ForegroundColor Green
         if ($CheckRun) {
             Invoke-RunMappedSuite -RepoRoot $RepoRoot -TargetProjectId $targetProjectId -ApiBaseUrl $apiBaseUrl -Paths $paths `
-                -AssetName $Asset -OverrideEnvId $EnvironmentId -OverrideScenarioId $ScenarioId -OverrideBranch $WorkingBranch -FailOnFailures
+                -AssetName $Asset -OverrideEnvId $EnvironmentId -OverrideScenarioId $ScenarioId -OverrideBranch $WorkingBranch `
+                -FailOnFailures -FullReports:$FullReports
         }
         else {
             Write-Host "Tip: add -CheckRun to auto-run UAT and list failed steps." -ForegroundColor Yellow
@@ -887,7 +1030,8 @@ switch ($Action) {
         Invoke-EnsureAiBranch -TargetProjectId $targetProjectId -ApiBaseUrl $apiBaseUrl -BranchName $WorkingBranch -AllowCreate:$AllowCreateAiBranch
         # 生成 → 推送 → 跑 → triage → SCRIPT 再重跑一轮 → leftover
         Invoke-TriageAndRerunLoop -RepoRoot $RepoRoot -TargetProjectId $targetProjectId -ApiBaseUrl $apiBaseUrl -Paths $paths `
-            -WorkingBranchName $WorkingBranch -TargetScenarioId $ScenarioId -AssetName $Asset -OverrideEnvId $EnvironmentId
+            -WorkingBranchName $WorkingBranch -TargetScenarioId $ScenarioId -AssetName $Asset -OverrideEnvId $EnvironmentId `
+            -FullReports:$FullReports
     }
     "Status" {
         Assert-ApifoxCli
@@ -899,7 +1043,8 @@ switch ($Action) {
         Ensure-ApifoxAuth -ApiBaseUrl $apiBaseUrl
         Assert-ScenarioIdConfigured -AssetName $Asset -ScenarioId $ScenarioId
         Invoke-RunMappedSuite -RepoRoot $RepoRoot -TargetProjectId $targetProjectId -ApiBaseUrl $apiBaseUrl -Paths $paths `
-            -AssetName $Asset -OverrideEnvId $EnvironmentId -OverrideScenarioId $ScenarioId -OverrideBranch $WorkingBranch -FailOnFailures
+            -AssetName $Asset -OverrideEnvId $EnvironmentId -OverrideScenarioId $ScenarioId -OverrideBranch $WorkingBranch `
+            -FailOnFailures -FullReports:$FullReports
     }
     "SyncTests" {
         Assert-ApifoxCli
@@ -921,7 +1066,8 @@ switch ($Action) {
         Invoke-PushScenarioSteps -Paths $paths -TargetProjectId $targetProjectId -ApiBaseUrl $apiBaseUrl -BranchName $WorkingBranch -TargetScenarioId $ScenarioId -DryRunFlag:$DryRun
         if ($CheckRun -and -not $DryRun) {
             Invoke-RunMappedSuite -RepoRoot $RepoRoot -TargetProjectId $targetProjectId -ApiBaseUrl $apiBaseUrl -Paths $paths `
-                -AssetName $Asset -OverrideEnvId $EnvironmentId -OverrideScenarioId $ScenarioId -OverrideBranch $WorkingBranch -FailOnFailures
+                -AssetName $Asset -OverrideEnvId $EnvironmentId -OverrideScenarioId $ScenarioId -OverrideBranch $WorkingBranch `
+                -FailOnFailures -FullReports:$FullReports
         }
         elseif (-not $CheckRun) {
             Write-Host "Tip: add -CheckRun to auto-run UAT and list failed steps after push." -ForegroundColor Yellow

@@ -2,163 +2,84 @@
 
 仓库根目录执行下列命令（Windows / macOS / Linux 均需已配置好对应依赖与 PATH）。
 
-## 工具总览
+## 目录
 
-| 脚本 | 一句话用途 |
-|------|------------|
-| `xmind_to_testcases_md.py` | XMind `tc-p*` → `testcases/` 风格 Markdown（**替换 md 时默认用此脚本**） |
-| `xmind_to_markdown_v2.py` | XMind（`tc-p*` 结构）→ 另一套 tc 汇总 Markdown |
-| `xmind2md.py` | 通用脑图 → 标题 + 列表式 Markdown（无 tc-p* 专用结构） |
-| `md_tables_to_xmind_lists.py` | Markdown 管道表格 → 无序列表，便于 XMind「从 Markdown 导入」 |
-| `jira_sync.py` | 从 Jira 拉取 Issue 为 Markdown，可批量、可下图 |
-| `fetch_confluence.py` | Confluence 页面导出 HTML/JSON/Markdown 或下载附件图片 |
-| `ServePapi2548Allure.py` | 清空 Allure 结果目录 → 跑 PAPI-2548 pytest → `allure serve` |
-| `GenerateRequirementsIndex.py` | 扫描 `requirements/` 各迭代，刷新总览与各迭代 README 中的索引表 |
+| 目录 | 对应分类 | 内容 |
+|------|----------|------|
+| `apifox-cli/` | Apifox CLI 流水线 | `ApifoxRepoFirst.ps1` 调用的转换 / Push / 失败分流 |
+| `payment-js/` | Payment 断言 JS | 生成器 `LoadToolsJsLines` 读取；**勿删** |
+| `req-docs/` | 需求 / 用例文档 | Confluence / Jira / XMind ↔ Markdown |
+| `data-check/` | 接口清单 / 数据核对 | 接口用例 Excel、OAS 落盘、Redis 对拍 |
+| （根） | 其它 | `ServePapi2548Allure.py`、探测/并发脚本、本 README、`requirements.txt` |
 
-配置文件（非脚本）：`jira_sync_config.example.txt` → 复制为 `jira_sync_config.txt` 供 Jira 批量同步使用（见 Jira 一节）。
+依赖：`pip install -r tools/requirements.txt`。调试草稿勿落本目录；结束后自动删 `_tmp_*`（见 `.cursor/rules/local-scratch-hygiene.mdc`）。
+
+配置文件（非脚本）：`req-docs/jira_sync_config.example.txt` → 复制为 `jira_sync_config.txt` 供 Jira 批量同步。
 
 ---
 
-## 2. 需求文档索引（GenerateRequirementsIndex.py）
+## Apifox CLI（`apifox-cli/`）
 
-根据 [`requirements/`](../requirements/) 下各一级子目录中的 `.md` 文件（不含各目录下的 `README.md`），自动更新 [`requirements/README.md`](../requirements/README.md) 中的「迭代一览」表，以及各迭代目录 `README.md` 中 `<!-- REQ_INDEX_START -->` … `<!-- REQ_INDEX_END -->` 之间的**需求文档索引**表。手写段落（如迭代目标、跨需求依赖）不会被覆盖。
+日常请走 `.\scripts\ApifoxRepoFirst.ps1`，不要手搓下面脚本。解析 suites 可单独：
 
-```bash
-python tools/GenerateRequirementsIndex.py
+```powershell
+python tools/apifox-cli/ApifoxSuitesYaml.py --list-keys
 ```
 
-依赖：Python 标准库（无第三方包）。
-
 ---
 
-## 3. XMind 测试用例脑图 → Markdown（xmind_to_testcases_md.py）
+## XMind → testcases Markdown（`req-docs/xmind_to_testcases_md.py`）
 
-将带 **`tc-p*`** 优先级语义的 XMind 转为 [`testcases/`](../testcases/) 风格的用例 Markdown（嵌套模块标题 + `tc-p1:` + `pc`/步骤/预期）。**用户要求用 XMind 替换 testcases 下 md 时优先用本脚本**，勿临时写转换代码。
+将带 **`tc-p*`** 优先级语义的 XMind 转为 [`testcases/`](../testcases/) 风格 Markdown。**用户要求用 XMind 替换 testcases 下 md 时优先用本脚本**，勿临时写转换代码。
 
-```bash
-python tools/xmind_to_testcases_md.py \
-  --xmind path/to/file.xmind \
-  --out testcases/2026Q2SP4/PAPI-xxxx-测试用例-001.md \
+```powershell
+python tools/req-docs/xmind_to_testcases_md.py `
+  --xmind path/to/file.xmind `
+  --out testcases/2026Q2SP4/PAPI-xxxx-测试用例-001.md `
   --requirement requirements/2026Q2SP4/PAPI-xxxx.md
 ```
 
-- **仅导出**脑图中 `tc-p*` / `tc:` 节点；判定表、分析表若未挂在用例树下不会出现在输出中。
-- **保留脑图模块层级**：祖先文件夹按深度输出为 `##` / `###` / …，用例标题在下一层（不再把路径用 `-` 拼成单层 H2）。
-- `--requirement` 可选，用于生成正确的 `## 测试范围说明`（避免残留其他需求文案）。
+- **仅导出**脑图中 `tc-p*` / `tc:` 节点。
+- 备用：`xmind_to_markdown_v2.py`（另一套 tc 格式）、`xmind2md.py`（通用大纲）、`xmind_workbook_to_testcase_md.py`（带表格工作簿）。
+- Markdown 表 → 列表（便于导回 XMind）：`python tools/req-docs/md_tables_to_xmind_lists.py input.md -o output-xmind.md`
 
-另见 `tools/xmind_to_markdown_v2.py`（另一套 tc 格式）、`tools/xmind2md.py`（通用大纲）。
+---
 
-## 4. XMind 通用大纲 → Markdown（xmind2md.py）
+## Jira 需求同步（`req-docs/jira_sync.py`）
 
-将 XMind 8+（`content.json`）按树结构转为普通 Markdown 大纲（`#` 标题 + 缩进列表），**不**解析 `tc-p*` 用例模板。仅依赖 Python 标准库。
+```powershell
+python tools/req-docs/jira_sync.py PAPI-2199 -o requirements/2026Q1_SP3/entilement.md
+python tools/req-docs/jira_sync.py --config tools/req-docs/jira_sync_config.txt
+```
 
-```bash
-python tools/xmind2md.py path/to/file.xmind -o output.md
-python tools/xmind2md.py path/to/folder/   # 批量转换目录下所有 .xmind
+环境变量：`JIRA_BASE_URL`（默认 `https://dragonpass.atlassian.net`）、`JIRA_EMAIL`、`JIRA_API_TOKEN`。VS Code Task 见 [`.vscode/tasks.json`](../.vscode/tasks.json)。
+
+---
+
+## Confluence 拉取（`req-docs/fetch_confluence.py`）
+
+```powershell
+python tools/req-docs/fetch_confluence.py markdown <PAGE_ID> path/to/output.md
+```
+
+排查见 [`.cursor/skills/fetch-confluence-troubleshooting/SKILL.md`](../.cursor/skills/fetch-confluence-troubleshooting/SKILL.md)。
+
+---
+
+## 接口清单 / 对拍（`data-check/`）
+
+```powershell
+python tools/data-check/export_api_main_testcase_xlsx.py
+python tools/data-check/CompareRedisExcelResourcesPipeline.py --help
 ```
 
 ---
 
-## 5. Markdown 表格 → 列表（md_tables_to_xmind_lists.py）
+## PAPI-2548 Allure（根目录，冻结 pytest）
 
-将 Markdown 中的管道表格转为无序列表，便于 XMind「从 Markdown 导入」时展开子主题。
-
-```bash
-python tools/md_tables_to_xmind_lists.py input.md -o output-xmind.md
-# 默认输出：同目录下 input-xmind.md
-```
-
----
-
-## 6. Jira 需求同步（jira_sync.py）
-
-从 Jira Cloud 拉取 Issue 描述并导出为 Markdown，支持**描述中的图片**下载到本地并替换为相对路径，便于「手动点击」同步更新需求文档。
-
-### 依赖
-
-```bash
-pip install requests
-```
-
-或：
-
-```bash
-pip install -r tools/requirements.txt
-```
-
-### 环境变量
-
-| 变量 | 说明 | 默认 |
-|------|------|------|
-| `JIRA_BASE_URL` | Jira 站点地址 | `https://dragonpass.atlassian.net` |
-| `JIRA_EMAIL` | 登录邮箱（API Token 所属账号） | 必填 |
-| `JIRA_API_TOKEN` | [Atlassian API Token](https://id.atlassian.com/manage-profile/security/api-tokens) | 必填 |
-
-### 用法
-
-**同步单个 Issue，输出到指定文件：**
-
-```bash
-python tools/jira_sync.py PAPI-2199 -o requirements/2026Q1_SP3/entilement.md
-```
-
-**输出到目录（自动生成 `{IssueKey}.md`）：**
-
-```bash
-python tools/jira_sync.py PAPI-2199 -o requirements/2026Q1_SP3/
-```
-
-**使用配置文件批量同步：**
-
-1. 复制 `jira_sync_config.example.txt` 为 `jira_sync_config.txt`（或任意文件名）。
-2. 每行写：`ISSUE_KEY: path/to/output.md`。
-3. 执行：
-
-```bash
-python tools/jira_sync.py --config tools/jira_sync_config.txt
-```
-
-**可选参数：**
-
-- `--images-dir images`：图片存放子目录名（相对每个 MD 所在目录），默认 `images`。图片会保存到 `{输出目录}/{images-dir}/`。
-
-### 行为说明
-
-- 使用 Jira REST API v3 获取 Issue 的 `summary`、`description`（ADF）、`attachment`。
-- 将 ADF 描述转为 Markdown（标题、列表、代码块、引用、段落、加粗/斜体/链接等）。
-- 描述中的**图片**（ADF `mediaSingle`/`media`）通过附件列表按文件名匹配，下载到本地 `images/`（或 `--images-dir`），并在 Markdown 中替换为 `![](images/xxx.png)`。
-- 生成的 MD 顶部会包含标题和 Jira 链接，便于追溯。
-
-### 在 Cursor / VS Code 中「一键同步」
-
-1. 在项目根目录下执行上述命令即可。
-2. 已预置 Task：见 [`.vscode/tasks.json`](../.vscode/tasks.json)（如「Jira 同步: 使用配置文件」）。
-3. 配置好 `JIRA_EMAIL` 与 `JIRA_API_TOKEN`（本机环境变量或根目录 `.env`）。
-
----
-
-## 7. Confluence 拉取（fetch_confluence.py）
-
-通过 Confluence REST API 导出页面或附件（需在脚本/环境中配置认证，可读根目录 `.env`）。常用子命令示例：
-
-```bash
-python tools/fetch_confluence.py content <PAGE_ID>
-python tools/fetch_confluence.py attachments <PAGE_ID>
-python tools/fetch_confluence.py download_images <PAGE_ID>
-python tools/fetch_confluence.py markdown <PAGE_ID> path/to/output.md
-```
-
-排查认证、路径、Windows 文件名等问题时可让 Cursor Agent 先读 [`.cursor/skills/fetch-confluence-troubleshooting/SKILL.md`](../.cursor/skills/fetch-confluence-troubleshooting/SKILL.md)。
-
----
-
-## 8. PAPI-2548 Allure 一键清空+pytest+serve（ServePapi2548Allure.py）
-
-默认：删除 `reports/papi2548-allure-results` 与 `reports/papi2548-allure-report`（若存在）→ 运行 PAPI-2548 pytest → `allure serve`。需本机已安装 Allure Commandline。
-
-```bash
+```powershell
 python tools/ServePapi2548Allure.py
-python tools/ServePapi2548Allure.py --serve-only   # 仅打开当前结果，不删、不跑测试
+python tools/ServePapi2548Allure.py --serve-only
 ```
 
 详见 [api-testcases/2026Q2_SP1/README.md](../api-testcases/2026Q2_SP1/README.md) 中 Allure 章节。

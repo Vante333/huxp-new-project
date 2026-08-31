@@ -55,7 +55,7 @@ allure serve ..\..\reports\papi2548-allure-results
 ## Postman 生成器（2548/2515 金样例形态）
 
 - **Schema**：`https://schema.getpostman.com/json/collection/v2.1.0/collection.json`
-- **脚本单一来源（与 2548 一致）**：公共 JavaScript 写在 **`postman/generators/GeneratePostmanCollection<需求>.py`** 的 **`Build<需求>JsHelpersLines()`** 内（`js = r"""..."""`，再 `splitlines()` 写入 `event`），**不要**单独维护与生成器并行的仓库根 `*.js` 作为唯一规范（除非团队明确要求）。集合写出到 **`postman/collections/`**。
+- **脚本单一来源（与 2548 一致）**：公共 JavaScript 写在 **`apifox-cli/generators/GeneratePostmanCollection<需求>.py`** 的 **`Build<需求>JsHelpersLines()`** 内（`js = r"""..."""`，再 `splitlines()` 写入 `event`），**不要**单独维护与生成器并行的仓库根 `*.js` 作为唯一规范（除非团队明确要求）。集合写出到 **`apifox-cli/collections/`**。
 - **结构**：**多文件夹**（如 `00 Auth`、按 `Test*` 区分的 E2E / Doc gap）；**主链路 HTTP 顺序**对齐对应 `Run…MainE2EScenario` 与 helpers **主链路**表（例：2515 含多次 `entitlements/search`、按池 update 与集合变量 `p2515_pool_update_body_raw` 等）。
 
 ### 测试目的前置命名（默认，非可选）
@@ -64,15 +64,15 @@ allure serve ..\..\reports\papi2548-allure-results
 
 - **展示名**：`【测试目的】| 步骤ID | METHOD /path简写`（禁止 `S02 POST prebooking（…）` 旧式）。
 - **实现**：`PurposeName()` + `RequestItem(name=...)`；多模块用 `StepSpec(purpose=..., step_id=...)`，封装函数带 **`purpose=`** 关键字参数。
-- **金样例对照**：`api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLocalOfferEpass.py`（P1）、`GeneratePostmanCollectionLocalOfferEpassFull.py`（Full）。
+- **金样例对照**：`api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionLocalOfferEpass.py`（P1）、`GeneratePostmanCollectionLocalOfferEpassFull.py`（Full）。
 - **2548/2515 新建集合**：在对应 `GeneratePostmanCollection*.py` 中**同样引入** `PurposeName`，逐步把 `name=` 从步骤描述改为目的前置（与 pytest 断言意图一致）。
 - **事件**：每个请求的 `event` 中 `listen: "test"`，`script.exec` 为字符串数组：先整段 helpers，再 `save_token` / `save_mid` / 场景专属 `Lines_*`（见 `MakeTestEvent` / `MakeP2515TestEvent` 模式）。
-- **变量**：集合（及可选环境 JSON）中定义 `baseUrl`、`programId`、`clientId`、`clientSecret` 等，与 `postman/README.md` 中 `DP_*` 对照表一致。
+- **变量**：集合（及可选环境 JSON）中定义 `baseUrl`、`programId`、`clientId`、`clientSecret` 等，与 `apifox-cli/README.md` 中 `DP_*` 对照表一致。
 - **注册体**：`firstName` / `lastName` 等若网关要求**仅拉丁字母**，模板中勿填中文或数字；标识可用 `email` 前缀等。
 - **生成命令**（仓库根）：`python api-testcases/2026Q2_SP1/postman/GeneratePostmanCollectionPapi2548.py` 或 `…Papi2515.py`。
-- **导入**：Postman / Apifox **Import** 写出的 `*.postman_collection.json`；Apifox 中脚本在「后置操作」。团队流程见 [`postman/README.md`](../../../api-testcases/2026Q2_SP1/postman/README.md)。
+- **导入**：Postman / Apifox **Import** 写出的 `*.postman_collection.json`；Apifox 中脚本在「后置操作」。团队流程见 [`apifox-cli/README.md`](../../../api-testcases/2026Q2_SP1/postman/README.md)。
 - **Apifox 排障（Agent 必读）**：[`postman-apifox-troubleshooting.md`](./postman-apifox-troubleshooting.md) — 后置 `fp*` 未定义、永久 loading、取消重试、schedule 动态日期、busy-wait 卡顿；**§0 决策树**。
-- **预预约 payment 断言（Lounge / FT）**：[`prebooking-payment-apifox-assertions.md`](./prebooking-payment-apifox-assertions.md) — Preview/Create/Detail 三接口、`payableAmount` 分支、C-1～C-3 算价；脚本 [`tools/apifox_payment_assert_pre.js`](../../../tools/apifox_payment_assert_pre.js)、[`tools/apifox_payment_assert_post.js`](../../../tools/apifox_payment_assert_post.js)。
+- **预预约 payment 断言（Lounge / FT）**：[`prebooking-payment-apifox-assertions.md`](./prebooking-payment-apifox-assertions.md) — Preview/Create/Detail 三接口、`payableAmount` 分支、C-1～C-3 算价；脚本 [`tools/payment-js/apifox_payment_assert_pre.js`](../../../tools/payment-js/apifox_payment_assert_pre.js)、[`tools/payment-js/apifox_payment_assert_post.js`](../../../tools/payment-js/apifox_payment_assert_post.js)。
 - **pytest ↔ 片段索引（可选）**：2515 示例 [`PAPI-2515-apifox-export-from-pytest.md`](../../../api-testcases/2026Q2_SP1/postman/PAPI-2515-apifox-export-from-pytest.md)。
 
 ## 依赖

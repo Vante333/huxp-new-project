@@ -100,18 +100,18 @@ description: >-
 用户要求 **用 XMind 覆盖/替换** `testcases/**/*.md`，或 **XMind 转 Markdown 落盘** 时：
 
 1. **禁止**新建转换脚本、禁止用 Shell 解压 `content.json` 手写解析；仓库已有工具。
-2. **默认工具**：`tools/xmind_to_testcases_md.py`（`tc-p*` 团队格式、`### tc-p1:` 层级）。细则见 [reference.md](reference.md) §8.4。
+2. **默认工具**：`tools/req-docs/xmind_to_testcases_md.py`（`tc-p*` 团队格式、`### tc-p1:` 层级）。细则见 [reference.md](reference.md) §8.4。
 3. **直接执行**（PowerShell，路径按用户给定替换）：
 
 ```powershell
-python tools/xmind_to_testcases_md.py `
+python tools/req-docs/xmind_to_testcases_md.py `
   --xmind "path/to/源.xmind" `
   --out "testcases/{迭代}/PAPI-xxxx-测试用例-001.md" `
   --requirement "requirements/{迭代}/PAPI-xxxx.md"
 ```
 
 4. **转换后必查**：只保留H1、业务/接口模块和`tc-p*`用例；删除`测试范围说明`、分析表、公共数据表、追溯表及自动化门禁等全局章节。脑图未挂`tc-p*`的分析节点不应合并进用例文件。
-5. **仅通用大纲**（无 `tc-p*`）时用 `tools/xmind2md.py`；另一套 tc 结构见 `tools/xmind_to_markdown_v2.py`（见 `tools/README.md`）。
+5. **仅通用大纲**（无 `tc-p*`）时用 `tools/req-docs/xmind2md.py`；另一套 tc 结构见 `tools/req-docs/xmind_to_markdown_v2.py`（见 `tools/README.md`）。
 
 ## 核心检查清单（简版）
 

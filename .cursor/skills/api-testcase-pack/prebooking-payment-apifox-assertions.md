@@ -1,5 +1,5 @@
-> **放置与读取方式**：本文件位于 **`.cursor/skills/api-testcase-pack/`**，与 [`SKILL.md`](./SKILL.md) 中「预预约 payment 断言（Lounge / FT）」互链。处理 **Membership 预预约 Preview / Create / Detail** 的 **Apifox 后置 payment 断言**、**预收费权益现金**、**lounge / fastTrack 算价校验** 时，Agent **先读本文件**，再改 Apifox 脚本或 `tools/apifox_payment_assert_*.js`。  
-> **扩品类场景/生成器**（非仅改断言脚本）另读：[`Prebooking-Payment-品类扩展指南.md`](../../../api-testcases/api_tests/postman/docs/Prebooking-Payment-品类扩展指南.md)。
+> **放置与读取方式**：本文件位于 **`.cursor/skills/api-testcase-pack/`**，与 [`SKILL.md`](./SKILL.md) 中「预预约 payment 断言（Lounge / FT）」互链。处理 **Membership 预预约 Preview / Create / Detail** 的 **Apifox 后置 payment 断言**、**预收费权益现金**、**lounge / fastTrack 算价校验** 时，Agent **先读本文件**，再改 Apifox 脚本或 `tools/payment-js/apifox_payment_assert_*.js`。  
+> **扩品类场景/生成器**（非仅改断言脚本）另读：[`Prebooking-Payment-品类扩展指南.md`](../../../api-testcases/api_tests/apifox-cli/docs/Prebooking-Payment-品类扩展指南.md)。
 
 # 预预约 payment 断言（Apifox · Lounge / FT 通用）
 
@@ -13,10 +13,10 @@
 - **响应路径**：`json.data.extra.payment`（兼容 `json.data.payment` / `json.payment`）。
 - **需求来源**：[`requirements/2026Q2SP4/Confluence-1906049058.md`](../../../requirements/2026Q2SP4/Confluence-1906049058.md) §2.2.1 payment object；测试分析 [`testcases/2026Q2SP4/订单流-预览订单接口-预收费权益现金-测试分析-001.md`](../../../testcases/2026Q2SP4/订单流-预览订单接口-预收费权益现金-测试分析-001.md)。
 - **脚本权威副本**（ES5 安全，Apifox 可直接粘贴）：
-  - 通用前置：[`tools/apifox_payment_assert_pre.js`](../../../tools/apifox_payment_assert_pre.js)
-  - 通用后置：[`tools/apifox_payment_assert_post.js`](../../../tools/apifox_payment_assert_post.js)
-  - **客户预收款**前置：[`tools/apifox_client_collect_assert_pre.js`](../../../tools/apifox_client_collect_assert_pre.js)
-  - **客户预收款**后置：[`tools/apifox_client_collect_assert_post.js`](../../../tools/apifox_client_collect_assert_post.js)
+  - 通用前置：[`tools/payment-js/apifox_payment_assert_pre.js`](../../../tools/payment-js/apifox_payment_assert_pre.js)
+  - 通用后置：[`tools/payment-js/apifox_payment_assert_post.js`](../../../tools/payment-js/apifox_payment_assert_post.js)
+  - **客户预收款**前置：[`tools/payment-js/apifox_client_collect_assert_pre.js`](../../../tools/payment-js/apifox_client_collect_assert_pre.js)
+  - **客户预收款**后置：[`tools/payment-js/apifox_client_collect_assert_post.js`](../../../tools/payment-js/apifox_client_collect_assert_post.js)
 
 Lounge 与 FT **共用同一套断言逻辑**；差异仅在 URL path 中的 module 段（`lounges` / `fastTrack`）。
 
@@ -166,7 +166,7 @@ Lounge 与 FT **共用同一套断言逻辑**；差异仅在 URL path 中的 mod
 ## 扩展到 pytest / Postman 生成器
 
 1. **pytest**：在 `*_helpers.py` 增加 `AssertPaymentPriceSummary`、`AssertPaymentStageStatus`，语义与本文件表格一致；可复用 `papi2548_helpers._RunAllureAssertionStep`。
-2. **Postman 生成器**：在 `Build*JsHelpersLines()` 内联与本文件等价的 ES5 函数，或 `exec` 首行注释引用「与 `tools/apifox_payment_assert_post.js` 同步」；改断言后 **运行生成脚本** 重写 JSON（见 [`postman-apifox-troubleshooting.md`](./postman-apifox-troubleshooting.md)）。
+2. **Postman 生成器**：在 `Build*JsHelpersLines()` 内联与本文件等价的 ES5 函数，或 `exec` 首行注释引用「与 `tools/payment-js/apifox_payment_assert_post.js` 同步」；改断言后 **运行生成脚本** 重写 JSON（见 [`postman-apifox-troubleshooting.md`](./postman-apifox-troubleshooting.md)）。
 3. **新 module**（如 `fitness` 预预约）：若 URL 仍含 `/memberships/prebooking`，**无需改分支逻辑**；若 path 不同，仅扩展前置 `DetectOrderApiStageFromUrl` 中的正则。
 
 ---
@@ -175,7 +175,7 @@ Lounge 与 FT **共用同一套断言逻辑**；差异仅在 URL path 中的 mod
 
 ```
 - [ ] 已读 Confluence-1906049058 payment 阶段表与测试分析 R1-R7
-- [ ] 前置/后置使用 tools/apifox_payment_assert_*.js，无 ?. / ?? / 特殊 Unicode
+- [ ] 前置/后置使用 tools/payment-js/apifox_payment_assert_*.js，无 ?. / ?? / 特殊 Unicode
 - [ ] Preview 现金/权益支付 vs 客户预收 vs 权益抵扣0元 由 payableAmount + original/discount 分支，非 payment_product_type；权益支付与现金同预期
 - [ ] Preview 权益抵扣0元 status=null（同现金/权益支付）；Create/Detail 权益抵扣0元 timeline={ paidAt:null, refundedAt:null }
 - [ ] Detail 已退款/客户预收 timeline=null；需支付 timeline 含 paidAt/refundedAt

@@ -69,7 +69,7 @@ Tests:
 
 - 主链路：`test_historical_epass_fasttrack.py` · `RunHistoricalEpass*MainE2EScenario(catalog_label='fastTrack')`
 - 服务层：`historical_epass_service` · `AssertHistoricalPrebookingOrderSuccessForCatalog` / `AssertHistoricalBundleOrderSuccess`
-- 重新生成 Postman P0：`python api-testcases/api_tests/postman/generators/GeneratePostmanCollectionFastTrackEpass.py`
+- 重新生成 Postman P0：`python api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionFastTrackEpass.py`
 - **勿**再跑 `_build_fasttrack_from_lounge.py` 覆盖手写差异（该脚本为一次性派生工具；日常改 `GeneratePostmanCollectionFastTrackEpass.py`）
 
 ## 六、新建 / 扩展检查清单（P0 通用）
@@ -78,6 +78,7 @@ Tests:
 - [ ] prebooking / bundle 是否 **Pre-request** 调 `ftSyncPrebookingPassengersBody()`（或专项集合的等价逻辑）？
 - [ ] Tests 是否含 `ftAssertPrebookingPassengersShape`（正向）？
 - [ ] P0 是否仍断言 `usedUsages === 1`（非 `adultCount+childCount`）？
+- [ ] 订单详情（`/v2/orders/ePasses/details` / memberships/details）是否断言 `extra.bookingCounts === adultCount+childCount`（可用性入参，取消后仍为原始人数）？
 - [ ] lead 姓名是否与 `prebookingRequiredInfo` 一致且无数字？
 - [ ] 改断言后是否重跑生成器写出 JSON？
 - [ ] Apifox 负向步是否说明关闭「校验响应」（§八）？
@@ -93,18 +94,24 @@ Tests:
 | 文件 | 用途 |
 |------|------|
 | `testcases/2026Q2SP4/PAPI-2839-修复FT联系人firstName-lastName正则-测试分析-001.md` | 用例与场景 |
-| `postman/generators/GeneratePostmanCollectionPapi2839.py` | 生成器 |
-| `postman/collections/PAPI-2839-FastTrack-NameRegex-P1.postman_collection.json` | 导入 JSON |
+| `apifox-cli/generators/GeneratePostmanCollectionPapi2839.py` | 生成器 |
+| `apifox-cli/collections/PAPI-2839-FastTrack-NameRegex-P1.postman_collection.json` | 导入 JSON |
 
 **生成命令**（仓库根）：
 
 ```powershell
-python api-testcases/api_tests/postman/generators/GeneratePostmanCollectionPapi2839.py
+python api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionPapi2839.py
 ```
 
-### 7.1 目录结构（ePass / membership 分组 + 前置）
+### 7.1 目录结构（ePass / membership **分场景** + 前置）
+
+2026-08-23 起 ePass / membership **不再混在同一场景**，分别挂：
+
+- ePass：`epass/P1（全量用例）/prebooking` · 资产 `papi_2839`
+- membership：`membership/P1（全量用例）/prebooking` · 资产 `papi_2839_membership`
 
 ```text
+# ePass 场景
 00 Auth
 P1 · ePass
   00 前置/
@@ -115,6 +122,9 @@ P1 · ePass
   bundle/
     prebookingRequiredInfo/   P1-BU-* / P1-PX-BU-*
     passengers/
+
+# membership 场景（独立 Collection / 独立场景 ID）
+00 Auth
 P1 · membership
   00 前置/
     SETUP-MS-S01  POST /v2/memberships          ← 不是 entitlements/update 加点

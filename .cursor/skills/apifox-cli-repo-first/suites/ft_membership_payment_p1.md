@@ -5,10 +5,13 @@
 - **分支**：`ai/apifox-cli-sync`
 - **环境**：351893 · UAT（canary）
 - **数据集**：3475754
-- **详解**：[`FT-Membership-Payment-P1-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/postman/docs/FT-Membership-Payment-P1-apifox-cli-repo-first.md)
-- **跨品类通识**（Lounge 等抄作业）：[`Prebooking-Payment-品类扩展指南.md`](../../../../api-testcases/api_tests/postman/docs/Prebooking-Payment-品类扩展指南.md)
+- **详解**：[`FT-Membership-Payment-P1-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/apifox-cli/docs/FT-Membership-Payment-P1-apifox-cli-repo-first.md)
+- **跨品类通识**（Lounge 等抄作业）：[`Prebooking-Payment-品类扩展指南.md`](../../../../api-testcases/api_tests/apifox-cli/docs/Prebooking-Payment-品类扩展指南.md)
 - **报告目录**：`apifox-reports/ft_membership_payment_p1/`
 - **生成器**：`generators/GeneratePostmanCollectionFtMembershipPaymentP1.py`
+- **Push**：`push_mode: http` + `unbind_after_push: true`。金样 header：`name`+`value`+**`sampleValue`**，相对 path。**禁止** Postman `key`、path 带 `{{baseUrl}}`、只清 bind 留 `type=http`。
+- **Helpers**：Auth 写入 `ftPayHelpersSource`；其它步 eval loader；payment 断言只挂 Preview/Create/Detail
+- **Headers 验收**：关掉整条场景标签再打开；应无「已关联接口文档」，参数值列有蓝色 `{{变量}}`。
 
 ## 场景内分组（对齐手工 Apifox）
 
@@ -33,7 +36,7 @@
 6. **入参冲突**：`cashPaymentApplied=true` + `DP_COLLECT` → Preview+Create（`500.051.023` + 固定 msg）。
 7. 国内 async：缺失（权益足额）/ `false`（权益足额、现金1/3）/ `true`（现金0）分散覆盖，不单开分组。
 8. Preview/Create/Detail 额外一致性：`usedEntitlementDetails[key] === sum(breakdown[].entitlements[key])`；有入参时 `cashPaymentApplied`/`cashier` 与请求一致。
-9. 取消：待支付 status=9 不可取消时 msg=`Order cancellation failed. Please try again later.`；取消后详情/列表 **status=3 或 9**。
+9. 取消：待支付 status=9 不可取消时 msg=`The current order status does not allow cancellation.`；取消后详情/列表 **status=3 或 9**。
 10. 可用性后 **多作用域** 写入 `prebookingToken`（variables/collection/env/globals），Preview 前置强制注入，避免旧/空 token。
 11. **单一环境定价**：只改 Apifox Environment（与 BOSS「单一价结算」一致），不换 Program。
     - **只测 5 种**：场景 **1 / 2 / 3 / 5 / 7**（超人次非 0）；**不测** 4（超人次未配置）、6（超人次=0）
@@ -48,8 +51,8 @@
 
 完整症状表与约束见通识文档，勿在本文件重复维护细则：
 
-→ [`Prebooking-Payment-品类扩展指南.md` §9](../../../../api-testcases/api_tests/postman/docs/Prebooking-Payment-品类扩展指南.md)  
-→ [`Apifox-CLI-Repo-First-问题回顾.md` §11](../../../../api-testcases/api_tests/postman/docs/Apifox-CLI-Repo-First-问题回顾.md)  
+→ [`Prebooking-Payment-品类扩展指南.md` §9](../../../../api-testcases/api_tests/apifox-cli/docs/Prebooking-Payment-品类扩展指南.md)  
+→ [`Apifox-CLI-Repo-First-问题回顾.md` §11](../../../../api-testcases/api_tests/apifox-cli/docs/Apifox-CLI-Repo-First-问题回顾.md)  
 → Skill [`reference.md`「症状 → 自动处置」](../reference.md)（含预预约行）
 
 ```powershell

@@ -1,5 +1,5 @@
 ---
-description: api-testcases 下 pytest、分层环境变量、Allure 与 Postman 双轨约定
+description: api-testcases 下冻结 pytest / Allure 约定（正式验收已单轨 Apifox CLI）
 globs: api-testcases/**/*.py
 alwaysApply: false
 ---
@@ -38,7 +38,8 @@ alwaysApply: false
 - 响应按 **信封**解析：`ParseResponseEnvelope`、`IsBusinessSuccess`；extensions 可能来自 `extensions` 或 `feature`（含 JSON 字符串）路径，比对前用 **`NormalizeExtensionsForCompare`** 等与 Postman Tests（JS）语义对齐。
 - **`/v2/memberships/extensions`** 的 HTTP 方法由环境（如 `DP_MEMBERSHIP_EXTENSIONS_METHOD`）选择，默认与沙箱常见行为一致；变更时同步文档与 Postman 生成脚本。
 
-## Postman / Apifox 双轨
+## 与 Apifox CLI 单轨的关系
 
-- Collection 使用 **v2.1** schema；修改 Python helpers 时**同步** `postman/Generate*.py` 内嵌 JS 与导出 JSON，必要时增加 **parity** 小测（参见金样例 `test_p2548_normalize_parity.py` 一类做法）。
-- 变量与 `DP_*` 映射写在套件 `postman/README.md`，不在规则中重复维护表格。
+- **正式验收**只走 `apifox-cli/generators/` + SyncCheck；本规则仅约束仍存活的冻结 pytest 代码。
+- 若改历史 helpers 语义且对应能力仍有 CLI 资产，必须同步生成器内嵌 JS 并 Push；勿只改 pytest。
+- 变量与换测说明见 `apifox-cli/README.md` 与各资产 docs。

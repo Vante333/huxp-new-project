@@ -5,17 +5,19 @@
 - **分支**：`ai/apifox-cli-sync`
 - **环境**：351893
 - **数据集**：3475756
-- **详解**：[`Lounge-Epass-Payment-P0-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/postman/docs/Lounge-Epass-Payment-P0-apifox-cli-repo-first.md)
-- **跨品类通识**：[`Prebooking-Payment-品类扩展指南.md`](../../../../api-testcases/api_tests/postman/docs/Prebooking-Payment-品类扩展指南.md)
+- **详解**：[`Lounge-Epass-Payment-P0-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/apifox-cli/docs/Lounge-Epass-Payment-P0-apifox-cli-repo-first.md)
+- **跨品类通识**：[`Prebooking-Payment-品类扩展指南.md`](../../../../api-testcases/api_tests/apifox-cli/docs/Prebooking-Payment-品类扩展指南.md)
 - **生成器**：`GeneratePostmanCollectionLoungeEpassPaymentP0.py`（`category=lounge`）
+- **Push**：`push_mode: http` + `unbind_after_push: true`
 
 ## 场景内分组（对齐 FT E-pass P0）
 
 - **权益支付** → 点数 3 冒烟（发起支付 REDIRECT）
 - **现金** → 点数 0 冒烟（仅 `DP_COLLECT`、不传 `cashPaymentApplied` → REDIRECT）
 - **客户预收款** → 点数 1 冒烟（显式 `CLIENT_COLLECT` → conflict msg；ePass 无预收款能力）
+- **Bundle** → 纯权益冒烟（Create 后查详情/列表再取消）
 
-Bundle / Preview 全量 / 支付链接 / 点数矩阵 → 仅 P1。
+Preview 全量 / Bundle 现金与预收款 / 支付链接 / 点数矩阵 → 仅 P1。
 
 ## 可复用点
 

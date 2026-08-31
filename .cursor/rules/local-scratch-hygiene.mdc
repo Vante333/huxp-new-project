@@ -1,0 +1,32 @@
+---
+description: 本机草稿纸与报告落盘约定——少生成、可丢、勿提交、勿当真相源；调试结束自动删
+alwaysApply: true
+---
+
+# 本机草稿纸与报告卫生
+
+## 目录角色（勿混淆）
+
+| 路径 | 角色 | 可否删 |
+|------|------|--------|
+| `apifox-reports/` | Apifox CLI Run 报告 + `generated/` 中间包（gitignore） | 随时可删 |
+| `reports/` | pytest/Allure 本地结果（gitignore） | 随时可删 |
+| `api-testcases/**/postman/generated/` 或 `apifox-cli/generated/` | 本地 Apifox 导入包（gitignore） | 随时可删 |
+| `generators/` + `collections/` + `.apifox/suites.yaml` | **真相源** | 勿当垃圾删 |
+| `tools/apifox-cli/` `tools/payment-js/` | 正式流水线 / 生成器读的 JS | 勿当垃圾删 |
+
+## Agent / 脚本硬约束
+
+1. **禁止**新建 `tools/_tmp_*.py`、`tools/**/_tmp_*`、仓库根 `_tmp*`、把 `*.raw` / `scenario-get.*` / `_proj_export_*` 写进 `apifox-reports/` 或仓库根。调试落盘用系统临时目录（`$env:TEMP` / `tempfile`），用完即删。
+2. **调试收尾必须自动删（勿等用户开口）**：本轮排查 / 探测 / 一次性改写结束后，Agent **主动**删除本次产生且无正式调用方的草稿，再结束回复。结论写进生成器 / `suites.yaml` / Skill，不要把探测脚本留在 `tools/`。
+   - **必删**：`**/_tmp_*`、仓库根 `_tmp*`、无 README / 流水线 / 生成器引用的一次性 `_patch_*` `_gen_*` `_restore_*`、本轮 dump（环境导出 JSON、`*.raw`）。
+   - **勿删**：`tools/apifox-cli/`、`tools/payment-js/`、被 `ApifoxRepoFirst.ps1` / 生成器 `LoadToolsJsLines` / Skill 引用的正式脚本。
+3. **禁止**把 `apifox-reports`、`reports`、`generated/`、`ai-branches.json` 当正本或提交进 Git。
+4. **少跑带 Run 的流水线**：默认只 `PushSteps`。**禁止**在用户未明确同意时擅自 `SyncCheck` / `Run` / `-CheckRun`。开跑前须问：①要不要跑 ②用哪套鉴权 `use_data_set_id` ③业务 CSV 是否已在 Apifox 导入并勾选 ④Environment。用户要「先导入数据集」时，等其确认后再跑。细则见 `apifox-cli-repo-first` Skill 硬约束 6a。
+5. **Reporter 默认精简**：`ApifoxRepoFirst.ps1` 默认 `cli,json`；需要 HTML/JUnit 时显式 `-FullReports`。自写 `apifox run` 同样默认不要带 `html,junit`。
+6. **报告须可覆盖或可剪旧**：时间戳报告须「只留最新一套」或固定 `*-latest`（已在 RepoFirst / Redis pipeline 落地）；**禁止**只追加不清理。
+7. **一次性抽数 / 对比草稿**（如根目录 `resource_ids_*.json`、`_xmind_*.md`）：任务结束后删除，或明确不进仓库；勿长期留在工作区。
+
+## 人对齐（一句话）
+
+能再生的中间件与报告不进 Git、不进 PR；调试不落仓库；**调试完自动删草稿纸**；验收跑完以 `last-failures.md` 为准，旧 stamp 可丢；**跑测前先问人**。

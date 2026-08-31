@@ -1,8 +1,6 @@
-# lounge_epass_p0 · CLI 落地笔记
+# lounge_epass_p0 · 已从 Apifox 删除
 
-- **场景**：366656 · `lounge ePass P0 · CLI sync`
-- **目录**：folderId **350048** · `common/P1（全量用例）/others`
-- **分支**：`ai/apifox-cli-sync`
-- **环境**：351893 · 数据集 3475756（ePass）
-- **生成器**：`generators/GeneratePostmanCollectionLoungeEpass.py`
-- **来源**：main 旧场景「lounge ePass · P0 E2E 核心」全量迁移（2026-07-29）
+- **原场景**：366656 · `lounge ePass P0 · CLI sync`
+- **删除**：2026-08-22 · AI 分支 `ai/apifox-cli-sync`（用户确认 `common/P1/others` 与 Lounge payment P0 重复）
+- **生成器仍保留**：`generators/GeneratePostmanCollectionLoungeEpass.py`（未再登记 `suites.yaml`，勿 Push）
+- **正式入口**：`lounge_epass_payment_p0` / `lounge_epass_payment_p1`（`epass/P0|P1/prebooking`）

@@ -1,32 +1,35 @@
 # membership_purchase_p1 · CLI 落地笔记
 
 - **场景**：366626 · `Membership Purchase P1 · CLI sync`
-- **目录**：folderId **350048** · `common/P1（全量用例）/others`（2026-07-29 全量迁移）
+- **目录**：folderId **350046** · `common/P1（全量用例）/prebooking`（2026-08-23 按用户指定挪目录）
 - **分支**：`ai/apifox-cli-sync`
 - **环境**：351893 · UAT（canary）— 与 P0 共用；鉴权 `.env` 的 `MP_P0_*`
-- **详解**：[`Membership-Purchase-P1-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/postman/docs/Membership-Purchase-P1-apifox-cli-repo-first.md)
+- **详解**：[`Membership-Purchase-P1-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/apifox-cli/docs/Membership-Purchase-P1-apifox-cli-repo-first.md)
 - **报告**：`apifox-reports/membership_purchase_p1/`
 - **生成器**：`generators/GeneratePostmanCollectionMembershipPurchaseP1.py`
+- **Push**：`push_mode: http` + `unbind_after_push: true`
 
 ## 场景内分组
 
 - **正向 E2E**
-  - 商品B-无券-原价（P0 冒烟）+ 子组：已配置/未配置币种 E2E
+  - 默认项目配置中的首个商品-无券-原价（P0 冒烟）+ 子组：已配置/未配置币种 E2E
   - 商品A-传券-订阅引导期（P0；Create **status=9**；0 元 Payments 失败；**activationMethod=1**）+ 币种子组
   - 商品A-引导期未开-原价（**activationMethod=2**）+ 币种子组
   - **隔离负向（嵌主链路）**：Create/`purchase/details`(DET1) 后 → `POST /v2/orders/memberships/details`（`*-MS-DET`）用同一购买 orderId；期望 `code=-1` 且 `msg/errCode` 非空（不钉精确码）
   - 再次取链（email 必填见 Preview 字段校验同组）
+  - Create 后挂 `POST /v2/memberships/subscriptions/cancellation`（membershipId+email 对齐本次注册）
   - 币种键：B=`productBCurrencyConfigured|Unconfigured`；A=`productACurrencyConfigured|Unconfigured`；未配置回落 `productBCurrency`/`productACurrency`；已配置断言 `payment.currency=入参`
 - **负向-Preview/Create**：无订阅/订阅关 `autoRenewal=false`（Preview `valid=false` 原价、Create **500.020.031**）；B/A autoRenewal=true、无效/过期/跨 Program/非周期/不满足条件券
 - **Preview字段校验**：必填缺失/null（appId/autoRenewal/**email**）；类型错误（appId 字符串 / autoRenewal=1 / profile=[] / email=123）；**email 必填且 clientUserId 选填（同组含 Create/purchase：仅 email / 同时传 / cuid-only / 都不传 / email=null）**
 - **Create字段校验**：必填缺失/null（appId/autoRenewal/email）；类型错误（appId 字符串 / autoRenewal=1 / email=123）；email 必填变体见 Preview email 同组
+- **取消订阅字段校验**：必填缺失/null（membershipId/email）；类型错误（number）；membershipId 非16位；email 非法格式；**与 Create 注册的 membershipId/email 不一致 → 500.020.035**
 - **负向-Create**：033/031/702/032、email 必填负向
 - **Details字段校验**：orderId `{}` / null / number / 空串
 - **负向-Payments**：缺 orderId（造数 Create 同组）
 
 ## P1 业务变量（数据集选行，勿写 Environment）
 
-**按场景选变量 / Apifox 数据集**：[`datasets/membership_purchase_p1/`](../../../../api-testcases/api_tests/postman/datasets/membership_purchase_p1/)  
+**按场景选变量 / Apifox 数据集**：[`datasets/membership_purchase_p1/`](../../../../api-testcases/api_tests/apifox-cli/datasets/membership_purchase_p1/)  
 - **导入全量数据**：`apifox-dataset-business-ascii.csv`，编码选 **UTF-8**  
 - 对照表：`scenario-env-matrix.csv`（勿当数据集）  
 - Environment **351893** 只留 `baseUrl` / `x-version`（与其它套件共用，**勿整表删**）；券码/金额等业务键请从 Environment 手动删掉，改到数据集对应行。
@@ -35,11 +38,13 @@
 `CouponExpired`、`CouponIneligible`、`CouponWrongType`、
 `ExistingActiveProfileEmail/clientUserId`；不存在券用生成器默认 `CouponNotFoundCode`。
 
-## Create 业务失败 errCode（已确认）
+## 业务失败 errCode（已确认）
 
-- **500.020.033**：autoRenewal 不支持（含：B/A autoRenewal=true）
-- **500.020.031**：不存在券；无订阅/订阅关且 autoRenewal=false
-- **500.000.702**：过期 / 非周期 / 有效但不满足条件
+- **Preview 500.020.030**：B/A autoRenewal=true（Unable to preview the order…）
+- **Create 500.020.031**：B/A autoRenewal=true；不存在券；无订阅/订阅关且 autoRenewal=false（Sorry, we’re unable to process…）
+- **Create 500.000.702**：过期 / 非周期 / 有效但不满足条件
+- **取消订阅 500.020.034**：无有效订阅计划
+- **取消订阅 500.020.035**：取消失败兜底（含 membershipId 与 email 不匹配）
 
 ## 本批排除
 
@@ -59,6 +64,7 @@ callback、支付成功 activation、redemptionCode、失败单 Details、下游
 10. **Details `deductionAmount` 期望=0、实际=original−payable**（2026-08）：`Lines_DetailsPending` 曾读 `productADeduction||0`，与 Preview/Create 的 `money2(price−payable)` 不一致（例 MOP：14.37−10→期望应为 4.37）。已改 Details 与公式对齐；`productADeduction` 仅参考、不作硬期望。
 11. **单步调试 `301.000.001` · X-Request-ID 非法**（2026-08）：curl 出现 `--header 'X-Request-ID;'`（无值）。根因 Apifox 常不展开头里的 `{{$guid}}`。已统一走 `collection_builder_common.Lines_EnsureRequestIdHeader`（P0/P1 EnsureAuth 挂载）；全量同类套件同修。改后须 Generate + Push。
 12. **usage details 隔离**（2026-08）：正向 E2E 在 DET1 后插入 `POST /v2/orders/memberships/details`（`*-MS-DET`），用购买 orderId；断言仅 `code=-1` + `msg/errCode` 非空（HTTP 200/400 均可）。沙箱实测 `errCode=500.000.006`（暂不硬化）。**勿**在非 f-string 片段写 `}}` 收尾（曾导致 `missing ) after argument list`）。
+13. **取消订阅 PAPI-3056**（2026-08）：`POST /v2/memberships/subscriptions/cancellation`。鉴权须会籍模板 Program，不是 Retail 商品 Program。正向挂在 Create 后；待支付 Create 常无生效订阅，成功（status=2）与 034/035 均接受。归属不一致钉 **500.020.035**。
 
 ## 未开引导期·原价（ANI）换测
 

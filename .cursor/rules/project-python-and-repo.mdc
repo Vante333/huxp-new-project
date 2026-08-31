@@ -7,12 +7,11 @@ alwaysApply: true
 
 ## 范围与权威
 
-- 接口自动化长期主线目录：`api-testcases/api_tests/`（`conftest.py`、`clients/`、`services/`、`scenarios/`、`tests/`、`postman/`）。
-- 历史金样例 / 迁移参考目录：`api-testcases/2026Q2_SP1/`；后续新需求、大改和公共能力默认进入 `api-testcases/api_tests/`，避免按迭代复制整套自动化。
-- 详细工作流与环境变量表见 `.cursor/skills/api-testcase-pack/SKILL.md` 与主线套件 `README.md`；本规则只写必须一致的短约束。
-- **新建或扩展需求专属 `*_helpers.py`（接口自动化）**：须采用 **模块 docstring「主链路」+ 单一编排函数 `Run…MainE2EScenario`**（与金样例 `RunPapi2548MainE2EScenario`、`RunP2515MainE2EScenario` 同构）；主 E2E 用例只调编排入口，避免与 helpers 双份维护。细则见 `api-testcase-pack` Skill。
-- **helpers 内可复用 `Assert*`**：Allure 上报须走 **`papi2548_helpers._RunAllureAssertionStep`**（`allure.step` + **`断言结果_*`** 附件），与金样例一致；细则见 **`.cursor/rules/api-testcases-pytest-allure.mdc`**。
-- **Postman Collection v2.1 导出**：与 **`GeneratePostmanCollectionPapi2548.py` / `GeneratePostmanCollectionPapi2515.py`** 同构——多文件夹、请求对齐 `test_*` 与主链路、公共 JS 仅在生成器内 **`Build*JsHelpersLines()`**（勿单独 `*.js` 作唯一源，除非团队另定）；**请求 `name` 测试目的前置**（`【目的】| 步骤ID | METHOD /path`，生成器内 `PurposeName` / `StepSpec.purpose`）；改断言后运行生成脚本重写 JSON。详见 **`.cursor/skills/api-testcase-pack/SKILL.md`** 与 **`postman-purpose-first-naming.md`**。
+- 接口自动化**执行单轨**：`api-testcases/api_tests/apifox-cli/`（生成器正本）+ `.apifox/suites.yaml` + `.\scripts\ApifoxRepoFirst.ps1`（SyncCheck）。Agent 必读 `.cursor/skills/apifox-cli-repo-first/SKILL.md` 与 `catalog.md`。
+- 目录主线仍为 `api-testcases/api_tests/`；其中 `tests/` / `services/` / `scenarios/` / `clients/` 为**冻结的历史 pytest**，禁止新增 `test_*.py` 作正式验收；退役对照见 `api_tests/docs/pytest-retirement-map.md`。
+- 历史金样例：`api-testcases/2026Q2_SP1/`（只读参考）。避免按迭代复制整套自动化。
+- **新建/扩展自动化**：只改 `apifox-cli/generators/GeneratePostmanCollection*.py`（及 helpers 公共 JS），再 SyncCheck；禁止只改 Apifox UI。Collection 格式为 Postman v2.1；**请求 `name` 测试目的前置**（`PurposeName`）。细则见 `apifox-cli-repo-first` 与 `postman-purpose-first-naming.md`。
+- 若仍维护冻结 pytest 内的可复用 `Assert*`：Allure 须走 **`papi2548_helpers._RunAllureAssertionStep`**；细则见 **`.cursor/rules/api-testcases-pytest-allure.mdc`**（历史约定）。
 
 ## 语言与类型
 
@@ -42,6 +41,7 @@ alwaysApply: true
 
 - 凭据与密钥放在仓库根 `.env` 与 `env/.env.<profile>`（`profile` 仅 `a-zA-Z0-9_-`），**勿提交**真实值；示例仅保留 `*.example`。
 - 文档与命令示例需考虑 **PowerShell**（如 `Resolve-Path`、`$env:VAR`）。路径说明见 `env/README.md`。
+- **本机草稿纸**（`apifox-reports/`、`reports/`、`**/generated/`、禁止 `tools/_tmp_*`）：见 **`.cursor/rules/local-scratch-hygiene.mdc`**。
 
 ## 与用户的交互
 

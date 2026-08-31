@@ -1,0 +1,7 @@
+name,scenario_key,title,polarity,notes,scanPageSize,scanMaxDetails,scanResourceIds,scanLanguage
+_FULL_SUITE,_FULL_SUITE,full_suite,full,fill_biz_cols; auth=auth_dataset; scanMaxDetails=0_full,100,0,,en-US
+M1_en_US,M1_en_US,M1_en_US,positive,module=1,100,30,,en-US
+M2_en_US,M2_en_US,M2_en_US,positive,module=2,100,30,,en-US
+M7_en_US,M7_en_US,M7_en_US,positive,module=7,100,30,,en-US
+M8_en_US,M8_en_US,M8_en_US,positive,module=8,100,30,,en-US
+M11_en_US,M11_en_US,M11_en_US,positive,module=11,100,30,,en-US

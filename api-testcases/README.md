@@ -1,18 +1,27 @@
 # API 测试用例目录
 
-与 `testcases`（功能测试用例）平级，用于存放 API 自动化测试用例。
+与 `testcases`（功能测试用例）平级，用于存放接口自动化。
 
-## 长期主线
+## 长期主线（单轨）
 
-[`api_tests/`](api_tests/) 是后续长期维护的业务接口自动化主线。新增接口能力、新需求扩展、公共断言、回归分层和 Postman 导出默认进入该目录，以接口能力为长期资产维护，不再按迭代复制整套自动化。
+[`api_tests/`](api_tests/) 为长期主线；**正式执行与验收 = Apifox CLI · Repo-first**：
 
-[`2026Q2_SP1/`](2026Q2_SP1/) 保留为历史金样例与迁移参考，原则上不再作为新需求默认开发目录；确需修复历史样例时，应同步评估是否也需要更新 `api_tests/`。
+- 正本目录：[`api_tests/apifox-cli/`](api_tests/apifox-cli/)
+- 入口：`.\scripts\ApifoxRepoFirst.ps1 -Action SyncCheck -Asset <key>`
+- 资产表：[`.cursor/skills/apifox-cli-repo-first/catalog.md`](../.cursor/skills/apifox-cli-repo-first/catalog.md)
+
+[`2026Q2_SP1/`](2026Q2_SP1/) 保留为历史金样例，不再作为新需求默认开发目录。
+
+pytest（`api_tests/tests/` 等）已**冻结**，不得再扩新用例作第二套真相；退役对照见 [`api_tests/docs/pytest-retirement-map.md`](api_tests/docs/pytest-retirement-map.md)。
 
 ## 协作入口
 
 - 主线 README：[`api_tests/README.md`](api_tests/README.md)
-- 自动化覆盖索引：[`docs/automation-coverage-index.md`](docs/automation-coverage-index.md)
+- 框架演进：[`api_tests/docs/framework-evolution.md`](api_tests/docs/framework-evolution.md)
+- Apifox CLI 协作：[`api_tests/apifox-cli/docs/Apifox-CLI-Repo-First-协作指南.md`](api_tests/apifox-cli/docs/Apifox-CLI-Repo-First-协作指南.md)
 - 主调用链：[`docs/api-main-call-chains.md`](docs/api-main-call-chains.md)
-- 跨迭代追溯：[`../knowledge/traceability.md`](../knowledge/traceability.md)
+- 覆盖索引（历史）：[`docs/automation-coverage-index.md`](docs/automation-coverage-index.md)
 
-涉及 **接口自动化**，或在讨论本目录 API/pytest/Allure/Postman 时提到 **自动化**，请让 Cursor Agent 先读并遵循：[`../.cursor/skills/api-testcase-pack/SKILL.md`](../.cursor/skills/api-testcase-pack/SKILL.md)。
+涉及接口自动化 / Apifox CLI / SyncCheck，请让 Agent 先读：  
+[`.cursor/skills/apifox-cli-repo-first/SKILL.md`](../.cursor/skills/apifox-cli-repo-first/SKILL.md)  
+（pytest 历史约定仍见 [`api-testcase-pack`](../.cursor/skills/api-testcase-pack/SKILL.md)，但**新需求不得走双轨**。）

@@ -1,0 +1,85 @@
+﻿scenario_key,group_name,polarity,env_key,placeholder,role,manual_fill,short_meaning,notes
+_SHARED_BASELINE,公共基线（全场景共用，填一次）,baseline,baseUrl,https://developer-sandbox.dragonpass.com/api,环境,Y,环境·网关,鉴权三列 ProgramID/clientId/secret 走 .env MP_P0_* 或数据集，不进本 CSV。
+_SHARED_BASELINE,公共基线（全场景共用，填一次）,baseline,x-version,canary,环境,Y,环境·路由头,鉴权三列 ProgramID/clientId/secret 走 .env MP_P0_* 或数据集，不进本 CSV。
+_SHARED_BASELINE,公共基线（全场景共用，填一次）,baseline,returnUrl,https://www.ly.com,入参,N,入参 Payments 回跳URL,鉴权三列 ProgramID/clientId/secret 走 .env MP_P0_* 或数据集，不进本 CSV。
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,productBProgramId,2032786406298624,断言,Y,断言商品B programId,不传券 · autoRenewal=false · 商品 B 原价 E2E；币种变体见同级【币种·*】Group
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,productBProgramName,会籍购买测试-无优惠订阅15/15eur,断言,Y,断言商品B programName,不传券 · autoRenewal=false · 商品 B 原价 E2E；币种变体见同级【币种·*】Group
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,productBPrice,15,断言,Y,断言商品B原价=应付,不传券 · autoRenewal=false · 商品 B 原价 E2E；币种变体见同级【币种·*】Group
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,productBCurrency,EUR,断言,Y,断言商品B币种,不传券 · autoRenewal=false · 商品 B 原价 E2E；币种变体见同级【币种·*】Group
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,productBCurrencyConfigured,EUR,其它,Y,,不传券 · autoRenewal=false · 商品 B 原价 E2E；币种变体见同级【币种·*】Group
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,productBCurrencyUnconfigured,XXX,其它,Y,,不传券 · autoRenewal=false · 商品 B 原价 E2E；币种变体见同级【币种·*】Group
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,productBDeduction,0,断言,N,断言商品B扣减（无券常0）,不传券 · autoRenewal=false · 商品 B 原价 E2E；币种变体见同级【币种·*】Group
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,returnUrl,https://www.ly.com,入参,N,入参 Payments 回跳URL,不传券 · autoRenewal=false · 商品 B 原价 E2E；币种变体见同级【币种·*】Group
+pos_a_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,CouponIntroValid,PC9850UZX4MWDU9RHW04,入参,Y,入参 couponCode（周期订阅券）,引导期 · activationMethod=1 · payable 常 0 · Create status=9；币种变体见同级【币种·*】Group
+pos_a_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,CouponIntroValidName,会籍购买测试-有优惠10/0EUR,断言,Y,断言券 description,引导期 · activationMethod=1 · payable 常 0 · Create status=9；币种变体见同级【币种·*】Group
+pos_a_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,productAProgramId,2032786406298624,断言,Y,断言商品A programId,引导期 · activationMethod=1 · payable 常 0 · Create status=9；币种变体见同级【币种·*】Group
+pos_a_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,productAProgramName,会籍购买测试-有优惠10/0usd,断言,Y,断言商品A programName,引导期 · activationMethod=1 · payable 常 0 · Create status=9；币种变体见同级【币种·*】Group
+pos_a_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,productAPrice,10,断言,Y,断言商品A原价,引导期 · activationMethod=1 · payable 常 0 · Create status=9；币种变体见同级【币种·*】Group
+pos_a_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,productAPayableAmount,0,断言,Y,断言商品A应付（引导期，常0）,引导期 · activationMethod=1 · payable 常 0 · Create status=9；币种变体见同级【币种·*】Group
+pos_a_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,productACurrency,USD,断言,Y,断言商品A币种,引导期 · activationMethod=1 · payable 常 0 · Create status=9；币种变体见同级【币种·*】Group
+pos_a_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,productACurrencyConfigured,USD,入参,Y,入参+断言·已配置币种,引导期 · activationMethod=1 · payable 常 0 · Create status=9；币种变体见同级【币种·*】Group
+pos_a_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,productACurrencyUnconfigured,XXX,其它,Y,,引导期 · activationMethod=1 · payable 常 0 · Create status=9；币种变体见同级【币种·*】Group
+pos_a_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,returnUrl,https://www.ly.com,入参,N,入参 Payments 回跳URL,引导期 · activationMethod=1 · payable 常 0 · Create status=9；币种变体见同级【币种·*】Group
+pos_a_no_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,CouponIntroValid,PC9850UZX4MWDU9RHW04,入参,Y,入参 couponCode（周期订阅券）,未开引导期 · activationMethod=2 · productANoIntroPayableAmount 通常=productAPrice；币种变体见同级【币种·*】Group
+pos_a_no_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,productAProgramId,2032786406298624,断言,Y,断言商品A programId,未开引导期 · activationMethod=2 · productANoIntroPayableAmount 通常=productAPrice；币种变体见同级【币种·*】Group
+pos_a_no_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,productAProgramName,会籍购买测试-有优惠10/0usd,断言,Y,断言商品A programName,未开引导期 · activationMethod=2 · productANoIntroPayableAmount 通常=productAPrice；币种变体见同级【币种·*】Group
+pos_a_no_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,productAPrice,10,断言,Y,断言商品A原价,未开引导期 · activationMethod=2 · productANoIntroPayableAmount 通常=productAPrice；币种变体见同级【币种·*】Group
+pos_a_no_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,productANoIntroPayableAmount,10,断言,Y,断言应付(未开引导期，通常=原价),未开引导期 · activationMethod=2 · productANoIntroPayableAmount 通常=productAPrice；币种变体见同级【币种·*】Group
+pos_a_no_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,productACurrency,USD,断言,Y,断言商品A币种,未开引导期 · activationMethod=2 · productANoIntroPayableAmount 通常=productAPrice；币种变体见同级【币种·*】Group
+pos_a_no_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,productACurrencyConfigured,USD,入参,Y,入参+断言·已配置币种,未开引导期 · activationMethod=2 · productANoIntroPayableAmount 通常=productAPrice；币种变体见同级【币种·*】Group
+pos_a_no_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,productACurrencyUnconfigured,XXX,其它,Y,,未开引导期 · activationMethod=2 · productANoIntroPayableAmount 通常=productAPrice；币种变体见同级【币种·*】Group
+pos_a_no_intro,商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,returnUrl,https://www.ly.com,入参,N,入参 Payments 回跳URL,未开引导期 · activationMethod=2 · productANoIntroPayableAmount 通常=productAPrice；币种变体见同级【币种·*】Group
+pos_payments_retry,再次调用Payments获取新支付链接,positive,productBProgramId,2032786406298624,断言,Y,断言商品B programId,再次取链 · Create 商品 B + Payments×2
+pos_payments_retry,再次调用Payments获取新支付链接,positive,productBProgramName,会籍购买测试-无优惠订阅15/15eur,断言,Y,断言商品B programName,再次取链 · Create 商品 B + Payments×2
+pos_payments_retry,再次调用Payments获取新支付链接,positive,productBPrice,15,断言,Y,断言商品B原价=应付,再次取链 · Create 商品 B + Payments×2
+pos_payments_retry,再次调用Payments获取新支付链接,positive,productBCurrency,EUR,断言,Y,断言商品B币种,再次取链 · Create 商品 B + Payments×2
+pos_payments_retry,再次调用Payments获取新支付链接,positive,returnUrl,https://www.ly.com,入参,N,入参 Payments 回跳URL,再次取链 · Create 商品 B + Payments×2
+neg_a_no_sub_ar_false,商品A不支持订阅且autoRenewal为false时按A原价预览（传couponCode）,negative,CouponIntroNoRenew,3UVFFEA89K9V08Y7U37NI4Z13N27OY,入参,Y,入参 couponCode（无引导期/订阅关）,Preview valid=false + details对象 → Create 500.020.031
+neg_a_no_sub_ar_false,商品A不支持订阅且autoRenewal为false时按A原价预览（传couponCode）,negative,CouponIntroNoRenewName,会籍购买商品_不支持订阅,断言,Y,断言券 description,Preview valid=false + details对象 → Create 500.020.031
+neg_a_no_sub_ar_false,商品A不支持订阅且autoRenewal为false时按A原价预览（传couponCode）,negative,productANoSubProgramId,2032786406298624,断言,Y,断言无订阅A programId,Preview valid=false + details对象 → Create 500.020.031
+neg_a_no_sub_ar_false,商品A不支持订阅且autoRenewal为false时按A原价预览（传couponCode）,negative,productANoSubProgramName,会籍购买-商品A无订阅,断言,Y,断言无订阅A programName,Preview valid=false + details对象 → Create 500.020.031
+neg_a_no_sub_ar_false,商品A不支持订阅且autoRenewal为false时按A原价预览（传couponCode）,negative,productANoSubPrice,10.43,断言,Y,断言无订阅A原价,Preview valid=false + details对象 → Create 500.020.031
+neg_a_sub_off_ar_false,商品A支持订阅但autoRenewal为false时按A原价预览（传couponCode）,negative,CouponIntroNoRenew,3UVFFEA89K9V08Y7U37NI4Z13N27OY,入参,Y,入参 couponCode（无引导期/订阅关）,Preview valid=false + details对象 → Create 500.020.031
+neg_a_sub_off_ar_false,商品A支持订阅但autoRenewal为false时按A原价预览（传couponCode）,negative,productASubOffCouponName,会籍购买商品支持订阅_未开引导,其它,Y,,Preview valid=false + details对象 → Create 500.020.031
+neg_a_sub_off_ar_false,商品A支持订阅但autoRenewal为false时按A原价预览（传couponCode）,negative,productASubOffProgramId,2032786406298624,断言,Y,断言订阅关A programId,Preview valid=false + details对象 → Create 500.020.031
+neg_a_sub_off_ar_false,商品A支持订阅但autoRenewal为false时按A原价预览（传couponCode）,negative,productASubOffProgramName,会籍购买-商品A订阅关原价,断言,Y,断言订阅关A programName,Preview valid=false + details对象 → Create 500.020.031
+neg_a_sub_off_ar_false,商品A支持订阅但autoRenewal为false时按A原价预览（传couponCode）,negative,productASubOffPrice,10.43,断言,Y,断言订阅关A原价,Preview valid=false + details对象 → Create 500.020.031
+neg_b_ar_true,不传券选择商品B但autoRenewal为true回兜底错误,negative,productBProgramId,2032786406298624,断言,Y,断言商品B programId,Preview 030 / Create 031；不传券
+neg_b_ar_true,不传券选择商品B但autoRenewal为true回兜底错误,negative,productBPrice,15,断言,Y,断言商品B原价=应付,Preview 030 / Create 031；不传券
+neg_b_ar_true,不传券选择商品B但autoRenewal为true回兜底错误,negative,productBCurrency,EUR,断言,Y,断言商品B币种,Preview 030 / Create 031；不传券
+neg_a_no_sub_ar_true,商品A不支持订阅但autoRenewal为true时返回兜底错误（传couponCode）,negative,CouponIntroNoRenew,3UVFFEA89K9V08Y7U37NI4Z13N27OY,入参,Y,入参 couponCode（无引导期/订阅关）,Preview 030 / Create 031
+neg_a_no_sub_ar_true,商品A不支持订阅但autoRenewal为true时返回兜底错误（传couponCode）,negative,productANoSubProgramId,2032786406298624,断言,Y,断言无订阅A programId,Preview 030 / Create 031
+neg_a_no_sub_ar_true,商品A不支持订阅但autoRenewal为true时返回兜底错误（传couponCode）,negative,productANoSubPrice,10.43,断言,Y,断言无订阅A原价,Preview 030 / Create 031
+neg_coupon_not_found,优惠券不存在Preview按原价且详情为空（传couponCode）,negative,CouponNotFoundCode,MP_P1_NONEXISTENT_COUPON_XYZ,入参,N,入参·不存在券（可不改）,Create 031；假券码默认可不改
+neg_coupon_not_found,优惠券不存在Preview按原价且详情为空（传couponCode）,negative,productBPrice,15,断言,N,断言商品B原价=应付,Create 031；假券码默认可不改
+neg_coupon_not_found,优惠券不存在Preview按原价且详情为空（传couponCode）,negative,productBCurrency,EUR,断言,N,断言商品B币种,Create 031；假券码默认可不改
+neg_coupon_expired,已过期周期优惠券Preview结构符合最终约定（传couponCode）,negative,CouponExpired,PLACEHOLDER_EXPIRED,入参,Y,入参·过期券,Create 031
+neg_coupon_expired,已过期周期优惠券Preview结构符合最终约定（传couponCode）,negative,productBPrice,15,断言,Y,断言商品B原价=应付,Create 031
+neg_coupon_expired,已过期周期优惠券Preview结构符合最终约定（传couponCode）,negative,productBCurrency,EUR,断言,Y,断言商品B币种,Create 031
+neg_coupon_wrong_type,非周期优惠券Preview按原价且详情为空（传couponCode）,negative,CouponWrongType,PLACEHOLDER_WRONG_TYPE,入参,Y,入参·非周期券,Create 702
+neg_coupon_wrong_type,非周期优惠券Preview按原价且详情为空（传couponCode）,negative,productBPrice,15,断言,Y,断言商品B原价=应付,Create 702
+neg_coupon_wrong_type,非周期优惠券Preview按原价且详情为空（传couponCode）,negative,productBCurrency,EUR,断言,Y,断言商品B币种,Create 702
+neg_coupon_ineligible,有效但不满足条件优惠券保留详情并按原价（传couponCode），例如优惠券未在使用有效期内,negative,CouponIneligible,PLACEHOLDER_INELIGIBLE,入参,Y,入参·不满足条件券,Create 702
+neg_coupon_ineligible,有效但不满足条件优惠券保留详情并按原价（传couponCode），例如优惠券未在使用有效期内,negative,productANoSubPrice,10.43,断言,Y,断言无订阅A原价,Create 702
+neg_coupon_ineligible,有效但不满足条件优惠券保留详情并按原价（传couponCode），例如优惠券未在使用有效期内,negative,productANoSubCurrency,USD,断言,Y,断言无订阅A币种,Create 702
+neg_coupon_ineligible,有效但不满足条件优惠券保留详情并按原价（传couponCode），例如优惠券未在使用有效期内,negative,productAPrice,10,断言,Y,断言商品A原价,Create 702
+neg_dup_subscription,已有生效订阅用户重复购买被拒绝,negative,ExistingActiveProfileEmail,mp_p1_active_sub@example.com,入参,Y,入参·已有订阅用户email,仅 Create · 032
+neg_dup_subscription,已有生效订阅用户重复购买被拒绝,negative,ExistingActiveProfileClientUserId,mp_p1_active_sub_cuid,入参,Y,入参·已有订阅用户cuid,仅 Create · 032
+neg_preview_required_body,Preview必填Body字段缺失或null均拒绝,negative,,,,N,,缺/null appId·autoRenewal·profile.email；clientUserId 不测必填缺失
+neg_preview_type_enum,Preview字段类型与枚举错误均拒绝,negative,,,,N,,类型错误组脚本写死；无额外 Environment 差分键
+pos_preview_email_required,Preview的email必填且clientUserId选填（支持同时入参）,positive,productBProgramId,2032786406298624,断言,Y,断言商品B programId,Preview+Create 同规则：仅 email / 同时传成功；cuid-only·都不传·null 负向；正向 Create 后 Cancel
+pos_preview_email_required,Preview的email必填且clientUserId选填（支持同时入参）,positive,productBProgramName,会籍购买测试-无优惠订阅15/15eur,断言,Y,断言商品B programName,Preview+Create 同规则：仅 email / 同时传成功；cuid-only·都不传·null 负向；正向 Create 后 Cancel
+pos_preview_email_required,Preview的email必填且clientUserId选填（支持同时入参）,positive,productBPrice,15,断言,Y,断言商品B原价=应付,Preview+Create 同规则：仅 email / 同时传成功；cuid-only·都不传·null 负向；正向 Create 后 Cancel
+pos_preview_email_required,Preview的email必填且clientUserId选填（支持同时入参）,positive,productBCurrency,EUR,断言,Y,断言商品B币种,Preview+Create 同规则：仅 email / 同时传成功；cuid-only·都不传·null 负向；正向 Create 后 Cancel
+neg_create_required_type,Create必填字段和类型边界校验,negative,,,,N,,缺/null appId·autoRenewal·email；类型错误 appId/autoRenewal(number 1)/email
+neg_sub_cancel_required_type,取消订阅必填字段和类型边界校验,negative,,,,N,,缺/null membershipId·email；类型 number；membershipId 非16位；email 非法格式
+neg_sub_cancel_mismatch,membershipId与email不匹配Create注册时拒绝,negative,productBProgramId,2032786406298624,断言,Y,断言商品B programId,Create 商品B注册后：异 membershipId / 异 email 期望 500.020.035
+neg_sub_cancel_mismatch,membershipId与email不匹配Create注册时拒绝,negative,productBProgramName,会籍购买测试-无优惠订阅15/15eur,断言,Y,断言商品B programName,Create 商品B注册后：异 membershipId / 异 email 期望 500.020.035
+neg_sub_cancel_mismatch,membershipId与email不匹配Create注册时拒绝,negative,productBPrice,15,断言,Y,断言商品B原价=应付,Create 商品B注册后：异 membershipId / 异 email 期望 500.020.035
+neg_sub_cancel_mismatch,membershipId与email不匹配Create注册时拒绝,negative,productBCurrency,EUR,断言,Y,断言商品B币种,Create 商品B注册后：异 membershipId / 异 email 期望 500.020.035
+neg_details_order_id,Details_orderId必填与类型校验,negative,,,,N,,orderId：{} / null / number / 空串
+neg_payments_details,Payments/Details 缺 orderId,negative,productBProgramId,2032786406298624,断言,Y,断言商品B programId,先 Create 商品 B 造数，再缺 orderId 负向
+neg_payments_details,Payments/Details 缺 orderId,negative,productBProgramName,会籍购买测试-无优惠订阅15/15eur,断言,Y,断言商品B programName,先 Create 商品 B 造数，再缺 orderId 负向
+neg_payments_details,Payments/Details 缺 orderId,negative,productBPrice,15,断言,Y,断言商品B原价=应付,先 Create 商品 B 造数，再缺 orderId 负向
+neg_payments_details,Payments/Details 缺 orderId,negative,productBCurrency,EUR,断言,Y,断言商品B币种,先 Create 商品 B 造数，再缺 orderId 负向
+neg_payments_details,Payments/Details 缺 orderId,negative,returnUrl,https://www.ly.com,入参,N,入参 Payments 回跳URL,先 Create 商品 B 造数，再缺 orderId 负向

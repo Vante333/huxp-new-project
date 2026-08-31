@@ -8,7 +8,7 @@
 
 本文不包含创建用户、查询资源列表等测试数据准备接口。
 
-后续新增或扩展接口自动化代码时，应先读取本文，再设计 helpers、fixture、pytest 主链路用例、Allure 步骤和 Postman Collection。
+后续新增或扩展接口自动化时，应先读取本文，再设计 Apifox CLI 生成器步骤序与 Tests（正式验收单轨）；冻结的 pytest 仅作历史对照。
 
 ## 一、Membership 主链路
 
@@ -77,6 +77,7 @@ POST /v2/orders/lounges/memberships/prebooking
 POST /v2/orders/fastTrack/memberships/prebooking
 POST /v2/orders/fitness/memberships/prebooking
 POST /v2/orders/esims/memberships/prebooking
+POST /v2/orders/localOffers/memberships/prebooking
 ```
 
 ### 3. Membership 订单查询链
@@ -101,6 +102,34 @@ POST /v2/orders/memberships/details
 clientUserId -> /v2/users/memberships -> membershipId
 membershipId -> /v2/orders/memberships -> orderId
 orderId -> /v2/orders/memberships/details
+```
+
+### 4. Membership 首次购买链（含取消订阅）
+
+```text
+POST /v2/orders/memberships/purchase/preview
+-> 入参 appId + autoRenewal + profile.email
+-> 校验算价
+
+POST /v2/orders/memberships/purchase
+-> 入参同 Preview
+-> 取 orderId；若响应含 membershipId 则保存
+
+POST /v2/memberships/subscriptions/cancellation
+-> 入参 membershipId + email（须与 Create 注册一致）
+-> 校验取消订阅或归属/无有效计划拒绝
+
+POST /v2/orders/memberships/purchase/details
+-> 入参 orderId
+-> 校验购买单详情
+```
+
+字段流转：
+
+```text
+profile.email -> /v2/orders/memberships/purchase -> orderId + membershipId（支付前可能尚未发放）
+membershipId + email -> /v2/memberships/subscriptions/cancellation
+orderId -> /v2/orders/memberships/purchase/details
 ```
 
 ## 二、EPass 主链路

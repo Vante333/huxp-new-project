@@ -1,0 +1,22 @@
+﻿scenario_key,group_name,polarity,env_key,default_value,role,manual,short,notes
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,productBProgramId,2032786406298624,断言,Y,断言商品B programId,不传券 · autoRenewal=false · 商品 B 原价 E2E
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,productBProgramName,会籍购买测试-无优惠订阅15/15eur,断言,Y,断言商品B programName,不传券 · autoRenewal=false · 商品 B 原价 E2E
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,productBPrice,15,断言,Y,断言商品B原价=应付,不传券 · autoRenewal=false · 商品 B 原价 E2E
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,productBCurrency,EUR,断言,Y,断言商品B币种,不传券 · autoRenewal=false · 商品 B 原价 E2E
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,productBDeduction,0,断言,Y,断言商品B扣减（无券常0）,不传券 · autoRenewal=false · 商品 B 原价 E2E
+pos_b_no_coupon,不传券选择默认项目配置中的首个商品并按首月原价预览(EUR),positive,returnUrl,https://www.ly.com,入参,Y,入参 Payments 回跳URL,不传券 · autoRenewal=false · 商品 B 原价 E2E
+pos_a_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,CouponIntroValid,PC9850UZX4MWDU9RHW04,入参,Y,入参 couponCode（周期订阅券）,引导期 · activationMethod=1 · 已配置币种 · Create status=9
+pos_a_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,CouponIntroValidName,会籍购买测试-有优惠10/0EUR,断言,Y,断言券 description,引导期 · activationMethod=1 · 已配置币种 · Create status=9
+pos_a_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,productAProgramId,2032786406298624,断言,Y,断言商品A programId,引导期 · activationMethod=1 · 已配置币种 · Create status=9
+pos_a_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,productAProgramName,会籍购买测试-有优惠10/0usd,断言,Y,断言商品A programName,引导期 · activationMethod=1 · 已配置币种 · Create status=9
+pos_a_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,productAPrice,10,断言,Y,断言商品A原价,引导期 · activationMethod=1 · 已配置币种 · Create status=9
+pos_a_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,productAPayableAmount,0,断言,Y,断言商品A应付（引导期，常0）,引导期 · activationMethod=1 · 已配置币种 · Create status=9
+pos_a_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,productACurrencyConfigured,USD,其它,Y,入参+断言·已配置币种,引导期 · activationMethod=1 · 已配置币种 · Create status=9
+pos_a_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，开启引导期阶段计费，activationMethod=1）,positive,returnUrl,https://www.ly.com,入参,Y,入参 Payments 回跳URL,引导期 · activationMethod=1 · 已配置币种 · Create status=9
+pos_a_no_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,CouponIntroValid,PC9850UZX4MWDU9RHW04,入参,Y,入参 couponCode（周期订阅券）,未开引导期 · activationMethod=2 · 已配置币种
+pos_a_no_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,productAProgramId,2032786406298624,断言,Y,断言商品A programId,未开引导期 · activationMethod=2 · 已配置币种
+pos_a_no_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,productAProgramName,会籍购买测试-有优惠10/0usd,断言,Y,断言商品A programName,未开引导期 · activationMethod=2 · 已配置币种
+pos_a_no_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,productAPrice,10,断言,Y,断言商品A原价,未开引导期 · activationMethod=2 · 已配置币种
+pos_a_no_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,productANoIntroPayableAmount,10,断言,Y,断言应付(未开引导期，通常=原价),未开引导期 · activationMethod=2 · 已配置币种
+pos_a_no_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,productACurrencyConfigured,USD,其它,Y,入参+断言·已配置币种,未开引导期 · activationMethod=2 · 已配置币种
+pos_a_no_intro_currency_configured,【币种·已配置】商品A支持订阅时autoRenewal为true使用阶段价（传couponCode，未开启引导期阶段计费，activationMethod=2）-原价计算,positive,returnUrl,https://www.ly.com,入参,Y,入参 Payments 回跳URL,未开引导期 · activationMethod=2 · 已配置币种

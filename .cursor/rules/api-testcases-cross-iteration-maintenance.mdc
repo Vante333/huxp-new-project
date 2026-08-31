@@ -7,20 +7,19 @@ alwaysApply: false
 # 接口自动化：跨迭代维护与历史回归
 
 - **适用场景**：同一接口在不同 Jira / 迭代下继续扩展时，默认以**接口能力**为长期资产维护，而不是按需求复制一套自动化。
-- **主线目录**：新增接口能力、新需求扩展、公共断言、Postman 生成器和回归分层默认维护在 `api-testcases/api_tests/`；`api-testcases/2026Q2_SP1/` 保留为历史金样例与迁移参考。
-- **复用优先**：优先在既有 `*_helpers.py` 中补 `Post*`、`Assert*`、`Run…MainE2EScenario` 或新增独立编排函数；不要仅因新迭代到来就复制 `*_helpers_v2.py`、`*_helpers_<迭代>.py` 一类平移文件。
-- **回归分层**：新需求接入时，除新增验证外，至少保留该接口的**历史最小回归集**：`contract`（结构/字段/核心语义）、`smoke`（老主流程）、`regression`（历史缺陷与关键回归点）。
-- **兼容新增字段**：若只是新增字段、节点或放宽返回结构，历史用例优先断言原需求关心的**核心字段、核心结构与关键语义**；不要默认做“全量响应完全相等”而误伤兼容新增。新增字段由新需求用例单独覆盖。
-- **增量补点**：新增需求优先补到公共断言、主链路编排、doc gap / 对拍 / 边界回归用例；不要为了让新需求通过而直接改写旧用例语义，让旧用例“顺便覆盖”新行为。
+- **主线目录（单轨）**：新需求扩展默认维护在 `api-testcases/api_tests/apifox-cli/generators/` + `.apifox/suites.yaml`；验收 `SyncCheck`。`2026Q2_SP1/` 仅历史参考。
+- **复用优先**：优先扩展既有生成器 / catalog 最近似资产；不要按迭代复制整套自动化。冻结的 pytest helpers 勿再扩新 E2E。
+- **回归**：在 Apifox 场景（P0 冒烟 / P1 全量）中保留历史关键断言；P0 减场景不减字段断言。
+- **兼容新增字段**：历史步骤优先断言核心字段与语义；新增字段由新 Group/步骤覆盖。
+- **增量补点**：补生成器 Tests + Push；禁止只改 Apifox UI；禁止新增 `test_*.py` 作第二真相源。
 
 ## 快速判断
 
-- `BAD`：为 `PAPI-2515` 新迭代直接新建 `papi2515_helpers_2026Q3.py`，复制旧 helper 再改。
-- `GOOD`：继续扩展原 `papi2515_helpers.py`，新增 `Assert*` / `Run…MainE2EScenario` / 独立回归用例，并保留旧 `contract` / `smoke` / `regression`。
+- `BAD`：为新迭代新建一套 pytest + 再手写一份 Apifox。
+- `GOOD`：扩展 `GeneratePostmanCollection*.py`，登记 `suites.yaml`，`SyncCheck`，更新 catalog。
 
-## 对照金样例
+## 对照
 
-- `api-testcases/api_tests/services/papi2515_service.py` 与 `api-testcases/api_tests/scenarios/papi2515_scenarios.py`：`RunP2515MainE2EScenario` 体现主链路单一入口与 services/scenarios 持续演进。
-- `api-testcases/api_tests/tests/features/test_cross_module_entitlements.py`：主 E2E、doc gap、隔离回归分层并存，不互相覆盖。
-- `api-testcases/2026Q2_SP1/`：历史金样例与迁移参考，修复时需评估是否同步回长期主线 `api_tests/`。
-- 详细工作流与清单见 `.cursor/skills/api-testcase-pack/SKILL.md`。
+- catalog 金样例：`papi_2548` / `membership_purchase_p1` 等（见 `apifox-cli-repo-first/catalog.md`）。
+- pytest 退役对照：`api-testcases/api_tests/docs/pytest-retirement-map.md`。
+- 详细流程：`.cursor/skills/apifox-cli-repo-first/SKILL.md`。

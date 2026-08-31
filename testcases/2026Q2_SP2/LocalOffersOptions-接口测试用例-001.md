@@ -3,8 +3,7 @@
 ## 测试范围说明
 
 - rc: MCP OpenAPI `project-0-interface_cursor-Q2 local offer`：`GET /v2/resources/localOffers/{resourceId}/options`
-- rc: 自动化入口 [`api-testcases/api_tests/tests/features/test_local_offers_options.py`](../../api-testcases/api_tests/tests/features/test_local_offers_options.py)
-- rc: 契约入口 [`api-testcases/api_tests/tests/contract/test_local_offers_options_contract.py`](../../api-testcases/api_tests/tests/contract/test_local_offers_options_contract.py)
+- rc: 自动化入口 Apifox CLI 资产 `local_offers_options`（场景 365976；pytest 已删）
 - 环境：优先 `DP_PROFILE=canary`；正向用例依赖 `DP_LOCAL_OFFER_RESOURCE_ID` 指向 canary 中存在且可返回 options 的 Local Offer 资源。
 - 接口口径：只读查询接口，必填 path `resourceId`，必填 headers `Authorization`、`X-Program-ID`、`X-Request-ID`、`Content-Type`，可选 query `duration`、`pageSize`、`pageNumber`、`language`。
 
@@ -102,7 +101,7 @@
   - 预期契约断言失败并能定位字段。
 - 构造 `validity.type` 越界、`unit` 非法、固定日期缺少 `startTime/endTime` 的响应。
   - 预期契约断言失败并能定位字段。
-- rc: pytest `test_local_offers_options_contract.py`
+- rc: 契约断言已迁入 Apifox CLI `local_offers_options` 生成器 Tests（原 pytest contract 已删）
 - tag: contract,local_offers
 
 ### tc-p3: canary正向数据未准备时的跳过策略

@@ -16,6 +16,7 @@ apifox-reports/
 
 # Postman 流水线中间件（Apifox 导入包等；正本在 generators/，集合在 collections/）
 api-testcases/api_tests/postman/generated/
+api-testcases/api_tests/apifox-cli/generated/
 
 # Python cache artifacts
 .pytest_cache/

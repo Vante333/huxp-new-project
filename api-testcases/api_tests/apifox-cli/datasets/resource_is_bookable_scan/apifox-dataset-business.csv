@@ -1,0 +1,7 @@
+﻿name,scenario_key,title,polarity,notes,scanPageSize,scanMaxDetails,scanResourceIds,scanLanguage
+全量并集（填齐后勾选本行跑整场景）,_FULL_SUITE,全量并集（填齐后勾选本行跑整场景）,full,填齐业务列后勾选；鉴权仍用鉴权数据集三列；scanMaxDetails=0 全量,100,0,,en-US
+P1 · module=1 Lounge · en-US isBookable,M1_en_US,P1 · module=1 Lounge · en-US isBookable,positive,module=1 language=en-US,100,30,,en-US
+P1 · module=2 FastTrack · en-US isBookable,M2_en_US,P1 · module=2 FastTrack · en-US isBookable,positive,module=2 language=en-US,100,30,,en-US
+P1 · module=7 eSIM · en-US isBookable,M7_en_US,P1 · module=7 eSIM · en-US isBookable,positive,module=7 language=en-US,100,30,,en-US
+P1 · module=8 Fitness/eSIM 变体 · en-US isBookable,M8_en_US,P1 · module=8 Fitness/eSIM 变体 · en-US isBookable,positive,module=8 language=en-US,100,30,,en-US
+P1 · module=11 Local Offer · en-US isBookable,M11_en_US,P1 · module=11 Local Offer · en-US isBookable,positive,module=11 language=en-US,100,30,,en-US

@@ -12,13 +12,16 @@
 
 - **数据集**：3475756
 
-- **详解**：[`FT-Epass-Payment-P1-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/postman/docs/FT-Epass-Payment-P1-apifox-cli-repo-first.md)
+- **详解**：[`FT-Epass-Payment-P1-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/apifox-cli/docs/FT-Epass-Payment-P1-apifox-cli-repo-first.md)
 
-- **跨品类通识**（Lounge 等抄作业）：[`Prebooking-Payment-品类扩展指南.md`](../../../../api-testcases/api_tests/postman/docs/Prebooking-Payment-品类扩展指南.md)
+- **跨品类通识**（Lounge 等抄作业）：[`Prebooking-Payment-品类扩展指南.md`](../../../../api-testcases/api_tests/apifox-cli/docs/Prebooking-Payment-品类扩展指南.md)
 
 - **报告目录**：`apifox-reports/ft_epass_payment_p1/`
 
 - **生成器**：`generators/GeneratePostmanCollectionFtEpassPaymentP1.py` + `ft_prebooking_payment_p1_gaps.py`
+- **Push**：`push_mode: http` + `unbind_after_push: true`。金样 header：`name`+`value`+**`sampleValue`**，相对 path。**禁止** Postman `key`、path 带 `{{baseUrl}}`、只清 bind 留 `type=http`。
+- **Helpers**：Auth 写入 `ftPayHelpersSource`；其它步 eval loader；payment 断言只挂 Preview/Create/Detail
+- **Headers 验收**：关掉整条场景标签再打开；应无「已关联接口文档」，参数值列有蓝色 `{{变量}}`。
 
 
 
@@ -36,7 +39,7 @@
 
 - **客户预收款** → ePass **无此能力**：`CLIENT_COLLECT` 一律期望 conflict msg（`500.051.023`/`500.042.023`）
 
-- **Bundle** → 纯权益成功（Create 后取消 usage，status=9 断言取消失败文案）；现金入参忽略不报错；预收款报错（不传 `cashPaymentApplied`，钉 conflict msg）
+- **Bundle** → 纯权益成功；现金/客户预收款入参均忽略不报错；Create 后查详情+列表再取消 usage
 
 - **Preview全量校验** → module / ePassId / token / 次数不足 / 现金 usage+cashier / 出参（不抽样）
 
@@ -54,7 +57,7 @@
 
 3. ePass **无客户预收款**：`CLIENT_COLLECT` → msg=`The specified collection method conflicts with the cash payment parameter. Please verify the request parameters.`
 
-4. Bundle：现金忽略不报错；预收款 conflict；成功单取消用 `ftPayAssertCancelUsageResponse`。
+4. Bundle：现金/客户预收款入参均忽略不报错；成功单先详情+列表，再取消用 `ftPayAssertCancelUsageResponse`。
 
 5. Preview / 支付链接缺口：`generators/ft_prebooking_payment_p1_gaps.py`。
 
@@ -66,7 +69,7 @@
 
 9. Preview「token 由 membership 可用性」：注册 membership（复用 clientUserId）→ 会籍可用性 → ePass Preview。
 
-10. **P1 包体过大 → Push `422001`**：勿内联整包 FastTrack helpers；用精简 `ft*` + `CompactJsLines`。
+10. **P1 包体过大 → Push `422001`**：Auth 写入 `ftPayHelpersSource`，业务步 eval loader（见 Skill reference「多步 helpers」）；勿每步内联完整 helpers。
 
 11. **次数不足 errCode 族**：Preview/Create 接受 `500.042.005` / `500.051.005` / `500.051.010` / `500.051.020`（沙箱 Preview 常 051.020、Create 常 051.005）。
 
@@ -78,7 +81,7 @@
 
 用户报本场景 / ePass Preview·Bundle·缺参类失败时：
 
-1. 先读 [品类扩展指南 §9.1 #10–#15](../../../../api-testcases/api_tests/postman/docs/Prebooking-Payment-品类扩展指南.md) 与 [问题回顾 §12](../../../../api-testcases/api_tests/postman/docs/Apifox-CLI-Repo-First-问题回顾.md)。  
+1. 先读 [品类扩展指南 §9.1 #10–#15](../../../../api-testcases/api_tests/apifox-cli/docs/Prebooking-Payment-品类扩展指南.md) 与 [问题回顾 §12](../../../../api-testcases/api_tests/apifox-cli/docs/Apifox-CLI-Repo-First-问题回顾.md)。  
 2. 改 `ft_prebooking_payment_common.py` / `ft_prebooking_payment_p1_gaps.py`（勿只改 Apifox UI）。  
 3. `PushSteps -Asset ft_epass_payment_p1`；若动缺参助手则同步 `ft_membership_payment_p1`、`lounge_epass_payment_p1`、`lounge_membership_payment_p1`。  
 4. 提醒：`ai/apifox-cli-sync` + 硬刷新。

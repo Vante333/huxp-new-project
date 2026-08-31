@@ -3,7 +3,7 @@ name: fetch-confluence-troubleshooting
 description: >-
   指导从 Confluence 通过 API 拉取需求/技术文档为本地 Markdown、下载图片附件、拉取后 Markdown
   格式自检与修复，以及网络/认证/Windows 文件名等常见问题。在用户给出 Confluence URL、要求拉取
-  Confluence、使用 tools/fetch_confluence.py、PAGE_ID、requirements 或 tech-docs 目录落盘、
+  Confluence、使用 tools/req-docs/fetch_confluence.py、PAGE_ID、requirements 或 tech-docs 目录落盘、
   或 Confluence 拉取失败排查时使用；Agent 应先读本 Skill 再执行命令与修复。
 ---
 
@@ -32,13 +32,13 @@ description: >-
 **必须使用 `full_network` 权限**执行：
 
 ```bash
-python tools/fetch_confluence.py markdown <PAGE_ID> <输出路径>
+python tools/req-docs/fetch_confluence.py markdown <PAGE_ID> <输出路径>
 ```
 
 示例：
 
 ```bash
-python tools/fetch_confluence.py markdown 1577484335 requirements/2026Q1_SP5/V3.17.0.md
+python tools/req-docs/fetch_confluence.py markdown 1577484335 requirements/2026Q1_SP5/V3.17.0.md
 ```
 
 ### 步骤 3：下载图片附件
@@ -154,7 +154,7 @@ for att in data.get('results', []):
 
 **现象**：WebFetch 返回 Atlassian 登录页面。
 
-**解决**：不要用 WebFetch，使用 `tools/fetch_confluence.py`，它通过 `.env` 中的 `JIRA_EMAIL` / `JIRA_API_TOKEN` 进行 API 认证。
+**解决**：不要用 WebFetch，使用 `tools/req-docs/fetch_confluence.py`，它通过 `.env` 中的 `JIRA_EMAIL` / `JIRA_API_TOKEN` 进行 API 认证。
 
 ### 问题 3：Windows 下中文文件名导致 OSError
 
@@ -193,10 +193,10 @@ for att in data.get('results', []):
 
 ```bash
 # 1. 拉取 Markdown（需要 full_network 权限）
-python tools/fetch_confluence.py markdown <PAGE_ID> <输出路径>
+python tools/req-docs/fetch_confluence.py markdown <PAGE_ID> <输出路径>
 
 # 2. 列出附件
-python tools/fetch_confluence.py attachments <PAGE_ID>
+python tools/req-docs/fetch_confluence.py attachments <PAGE_ID>
 
 # 3. 下载图片（使用内联脚本，需要 full_network 权限）
 # 见步骤 3 的完整脚本

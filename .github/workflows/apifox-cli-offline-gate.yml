@@ -1,0 +1,33 @@
+name: Apifox CLI offline gate
+
+on:
+  pull_request:
+    paths:
+      - ".apifox/**"
+      - "api-testcases/api_tests/apifox-cli/**"
+      - "scripts/ApifoxRepoFirst*.ps1"
+      - "tools/apifox-cli/**"
+      - "tools/payment-js/**"
+  workflow_dispatch:
+
+jobs:
+  offline-gate:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+
+      - name: Validate all configured assets offline
+        shell: pwsh
+        run: .\scripts\ApifoxRepoFirstBatch.ps1 -Action Generate -Group all -FailFast
+
+      - name: Ensure generated collections are committed
+        shell: pwsh
+        run: git diff --exit-code -- api-testcases/api_tests/apifox-cli/collections

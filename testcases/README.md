@@ -19,7 +19,7 @@
 用评审脑图 **覆盖** 本目录下用例/测试分析 md 时，在仓库根执行（勿手写转换脚本）：
 
 ```powershell
-python tools/xmind_to_testcases_md.py `
+python tools/req-docs/xmind_to_testcases_md.py `
   --xmind "D:\path\源.xmind" `
   --out "testcases/2026Q2SP4/PAPI-xxxx-测试用例-001.md" `
   --requirement "requirements/2026Q2SP4/PAPI-xxxx.md"

@@ -5,9 +5,11 @@
 - **分支**：`ai/apifox-cli-sync`
 - **环境**：351893 · UAT（canary）
 - **数据集**：3475754（与 papi_2548 共用会籍鉴权三列）
-- **详解**：[`LocalOffers-Options-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/postman/docs/LocalOffers-Options-apifox-cli-repo-first.md)
+- **详解**：[`LocalOffers-Options-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/apifox-cli/docs/LocalOffers-Options-apifox-cli-repo-first.md)
 - **报告目录**：`apifox-reports/local_offers_options/`
 - **生成器**：`generators/GeneratePostmanCollectionLocalOffersOptions.py`
+- **Push**：`push_mode: http` + `unbind_after_push: true`
+- **pytest**：已删 features/smoke/contract 三文件（2026-08-12）
 
 ## 下次自动处置（本资产 + 同类只读 GET）
 
@@ -19,6 +21,8 @@
 | 分页不回显 / 非法 query 却成功 | 查 Convert query 是否透传 + Push 是否把 query 拼进 path；修工具链后 SyncCheck |
 | 非法 pageSize/language | `loAssertInvalidFieldRejected(label, field, errCode)`：固定 msg 模板 + `301.020.001`/`300.020.001` |
 | CLI 绿、UI 红 | 先确认 UI 在 `ai/apifox-cli-sync`（本场景 main 常无 steps）+ 环境 351893 + 硬刷新 |
+| 后置脚本 `Cannot read properties of undefined (reading 'length')`（断言面板前几条绿） | `fmtJsonBrief`：`JSON.stringify(undefined)` 非字符串；对齐 MembershipPurchaseP0 兜底；`validity`/`pagination` 排除 `null`；改生成器后 PushSteps |
+| `validity.type` 实际=undefined / 部分 SKU `validity:{}` | BOSS 未配有效期；`loAssertValidity` 对空 type 软通过（`assertInfo`），有 type 仍硬断言 1\|2\|3；改生成器后 PushSteps |
 
 一键：`.\scripts\ApifoxRepoFirst.ps1 -Action SyncCheck -Asset local_offers_options`
 

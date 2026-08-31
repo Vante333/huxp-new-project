@@ -4,7 +4,7 @@
 
 - rc: 源脑图：`D:\fenxi\API\2026_Q2\评审后\Q2_SP3\local offer订单相关-epass.xmind`；结构与导入约定见 `.cursor/skills/test-case-design-with-priority/reference.md` 第四节及仓库 `testcases` Markdown 约定。
 - rc: 覆盖 **Local Offer** 品类（module=11）ePass 下单、查询、Bundle 预约、取消及可用性校验等接口；路径、错误码、字段枚举以 **Apifox/MCP** 与当前联调环境为准。
-- rc: 本文件由 `tools/xmind_workbook_to_testcase_md.py` 导出；**树形层级与 XMind 原图一致**；未打标识的「错误码」「入参校验」叶节点已自动补 ``tc-p1:``；内联/纯路径 ``/v2/...`` 已转为 ``v2_...``。
+- rc: 本文件由 `tools/req-docs/xmind_workbook_to_testcase_md.py` 导出；**树形层级与 XMind 原图一致**；未打标识的「错误码」「入参校验」叶节点已自动补 ``tc-p1:``；内联/纯路径 ``/v2/...`` 已转为 ``v2_...``。
 
 ## local offer订单相关-epass
 

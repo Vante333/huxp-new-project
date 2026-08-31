@@ -6,7 +6,7 @@
       "type": "shell",
       "command": "python",
       "args": [
-        "tools/jira_sync.py",
+        "tools/req-docs/jira_sync.py",
         "PAPI-2199",
         "-o",
         "requirements/2026Q1_SP3/entilement.md"
@@ -26,9 +26,9 @@
       "type": "shell",
       "command": "python",
       "args": [
-        "tools/jira_sync.py",
+        "tools/req-docs/jira_sync.py",
         "--config",
-        "tools/jira_sync_config.txt"
+        "tools/req-docs/jira_sync_config.txt"
       ],
       "options": {
         "cwd": "${workspaceFolder}",
@@ -41,7 +41,41 @@
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
-      "label": "PAPI-2548: 清空 Allure 结果 + pytest + serve",
+      "label": "Apifox CLI: SyncCheck papi_2548",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-File",
+        "scripts/ApifoxRepoFirst.ps1",
+        "-Action",
+        "SyncCheck",
+        "-Asset",
+        "papi_2548"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Apifox CLI: Generate papi_2548",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-File",
+        "scripts/ApifoxRepoFirst.ps1",
+        "-Action",
+        "Generate",
+        "-Asset",
+        "papi_2548"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "(冻结) PAPI-2548: Allure pytest + serve",
       "type": "shell",
       "command": "python",
       "args": ["tools/ServePapi2548Allure.py"],
@@ -50,7 +84,7 @@
       "presentation": { "reveal": "always", "panel": "shared" }
     },
     {
-      "label": "PAPI-2548: 仅 allure serve（不删、不跑测试）",
+      "label": "(冻结) PAPI-2548: 仅 allure serve",
       "type": "shell",
       "command": "python",
       "args": ["tools/ServePapi2548Allure.py", "--serve-only"],

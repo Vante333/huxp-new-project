@@ -6,8 +6,8 @@
 
 1. **迭代约定**：新需求统一落在同名迭代目录（如 `2026Q2_SP1/`），见下文「使用约定」。
 2. **需求溯源**：业务说明以 [`requirements/`](requirements/) 下对应迭代的 Markdown 为准（可由 Jira 同步）。
-3. **功能 vs 自动化**：[`testcases/`](testcases/) 为功能测试用例；[`api-testcases/`](api-testcases/) 为接口自动化（pytest / Allure / Postman 等），二者平级、勿混放。
-4. **本地报告**：[`reports/`](reports/) 为 pytest、Allure 等**本机生成**结果，已在 [`.gitignore`](.gitignore) 中忽略，**勿提交**。
+3. **功能 vs 自动化**：[`testcases/`](testcases/) 为功能测试用例；[`api-testcases/`](api-testcases/) 为接口自动化。**正式验收单轨为 Apifox CLI**（`api_tests/apifox-cli/` + `.\scripts\ApifoxRepoFirst.ps1`）；pytest 已冻结待退役。二者与功能用例平级、勿混放。
+4. **本地报告**：[`reports/`](reports/) / [`apifox-reports/`](apifox-reports/) 为本机生成结果（gitignore），**勿提交**。
 5. **密钥与多环境**：勿提交根目录 `.env` 与 `env/.env.*` 实值；仅维护示例文件。详见 [`env/README.md`](env/README.md) 与根目录 [`.env.example`](.env.example)。
 
 ## 协作与目录关系（概览）
@@ -67,7 +67,8 @@ flowchart LR
 | 功能用例目录约定 | [testcases/README.md](testcases/README.md) |
 | 技术文档目录约定 | [tech-docs/README.md](tech-docs/README.md) |
 | 接口自动化目录与 Cursor Skill | [api-testcases/README.md](api-testcases/README.md) |
-| PAPI-2548 金样例（pytest / Allure / Postman） | [api-testcases/2026Q2_SP1/README.md](api-testcases/2026Q2_SP1/README.md) |
+| 接口自动化单轨（Apifox CLI） | [api-testcases/api_tests/README.md](api-testcases/api_tests/README.md)、[apifox-cli README](api-testcases/api_tests/apifox-cli/README.md) |
+| PAPI-2548 历史金样例（pytest，只读参考） | [api-testcases/2026Q2_SP1/README.md](api-testcases/2026Q2_SP1/README.md) |
 | 评审产出说明 | [review-reports/README.md](review-reports/README.md) |
 | 多环境与 `env/` | [env/README.md](env/README.md) |
 

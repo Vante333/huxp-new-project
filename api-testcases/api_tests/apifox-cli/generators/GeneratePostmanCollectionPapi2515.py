@@ -1,0 +1,2150 @@
+"""
+根据 tests/features/test_cross_module_entitlements.py / services/papi2515_service.py 生成 Postman Collection v2.1 JSON。
+
+风格对齐 ``GeneratePostmanCollectionPapi2548.py``：多文件夹、请求名对应 pytest、Tests 内联完整 P2515 公共 JS
+（``BuildP2515JsHelpersLines()``，与 ``papi2515_helpers`` / ``BuildP2515PoolUpdatePlan`` 语义对齐）。
+
+用法（仓库根目录）::
+
+    python api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionPapi2515.py
+"""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from collection_builder_common import CollectionPath, Lines_EnsureRequestIdHeader
+from typing import Any, Dict, Final, List, Mapping, Optional, Sequence, Union
+
+JsonObject = Dict[str, Any]
+
+POSTMAN_SCHEMA: Final[str] = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+OUT_NAME: Final[str] = "PAPI-2515-cross-module-entitlements.postman_collection.json"
+
+
+def PurposeName(purpose: str, step_id: str, method: str, path_hint: str = "") -> str:
+    """测试目的前置：``【目的】| 步骤ID | METHOD /path``（与 PAPI-2548 / purpose-first 规范一致）。"""
+    hint = (path_hint or "").strip()
+    if hint:
+        return f"【{purpose}】| {step_id} | {method} {hint}"
+    return f"【{purpose}】| {step_id} | {method}"
+
+
+# E2E 多按池：``postman.setNextRequest`` 参数须与本请求 ``name`` 字符串完全一致（含 ``{{entitlementPoolId}}`` 字面量）。
+P2515_E2E_S05_REQUEST_NAME: Final[str] = PurposeName(
+    "按池 entitlements update（计划首条；多池时 Allure 为 S05…S(4+N)）",
+    "S05",
+    "POST",
+    "/v2/entitlements/{{entitlementPoolId}}/update",
+)
+P2515_E2E_S06_REQUEST_NAME: Final[str] = PurposeName(
+    "全部单池更新后 entitlements/search",
+    "S06",
+    "POST",
+    "/v2/entitlements/search",
+)
+
+
+def BuildP2515JsHelpersLines() -> List[str]:
+    """与 papi2515_helpers 语义对齐的 Postman Tests 公共脚本（同 GeneratePostmanCollectionPapi2548.BuildHelpersJsLines）。
+    修改后请重新运行本生成器写出 JSON。
+    """
+    inject = (
+        "var P2515_E2E_S05_REQUEST_NAME = "
+        + json.dumps(P2515_E2E_S05_REQUEST_NAME, ensure_ascii=False)
+        + ";\n"
+        "var P2515_E2E_S06_REQUEST_NAME = "
+        + json.dumps(P2515_E2E_S06_REQUEST_NAME, ensure_ascii=False)
+        + ";\n\n"
+    )
+    js = inject + r"""
+var P2515_METRIC_KEYS = [
+  "cardholderExclusiveEntitlements",
+  "guestsExclusiveEntitlements",
+  "sharedEntitlements",
+  "purchasedEntitlements",
+];
+
+/** cross ``pools[].details`` 不得含此二键；moduleExclusive ``details`` 可出现（常为 null，见 ``p2515AssertModuleExclusiveDetailsContract``） */
+var P2515_POOL_GUEST_AGGREGATE_KEYS = ["allowedGuestsPerUsage", "maxGuestsNextUse"];
+
+/** 对齐 ``papi2548_helpers.IsBusinessSuccess``：无 ``code`` 键时视为成功（仅依赖 HTTP）。 */
+function p2515IsBusinessSuccess(json) {
+  if (!json || typeof json !== "object") return false;
+  if (!Object.prototype.hasOwnProperty.call(json, "code")) return true;
+  var c = json.code;
+  return c === 0 || c === "0";
+}
+
+/** 对齐 pytest skip：记一条通过断言，避免 Apifox 场景因缺 program/探测 ID 整场 leftover。 */
+function p2515SkipOk(pm, reason) {
+  pm.test("跳过 | " + String(reason || "条件不满足"), function () {
+    pm.expect(true).to.eql(true);
+  });
+}
+
+/** ``pm.sendRequest`` 回调里解析 JSON（Apifox/Postman 对 ``res.json()``/``res.text()`` 支持不一）。 */
+function p2515ParseSendResponseBody(res) {
+  if (!res || typeof res !== "object") return null;
+  try {
+    if (typeof res.json === "function") {
+      var j = res.json();
+      if (j && typeof j === "object") return j;
+    }
+  } catch (eJ) {}
+  try {
+    if (typeof res.text === "function") {
+      var t = res.text();
+      if (t && String(t).trim()) return JSON.parse(String(t));
+    }
+  } catch (eT) {}
+  return null;
+}
+
+/** 对齐 ``IsEntitlementPoolUpdateDeniedByProgram``。 */
+function p2515IsPoolUpdateDeniedByProgram(env) {
+  if (!env || typeof env !== "object") return false;
+  return String(env.errCode || "").trim() === "500.030.024";
+}
+
+function p2515UnwrapMembershipRecord(inner) {
+  if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+    var m = inner.memberships;
+    if (Array.isArray(m) && m.length && m[0] && typeof m[0] === "object") return m[0];
+    return inner;
+  }
+  if (Array.isArray(inner) && inner.length && inner[0] && typeof inner[0] === "object") return inner[0];
+  return {};
+}
+
+/** 对齐 ``ExtractEntitlements``：优先 ``data.entitlements``，否则从会籍记录取。 */
+function p2515ExtractEntitlementsFromData(data) {
+  if (!data || typeof data !== "object") return {};
+  var ent = data.entitlements;
+  if (ent && typeof ent === "object" && !Array.isArray(ent)) return ent;
+  var rec = p2515UnwrapMembershipRecord(data);
+  ent = rec.entitlements;
+  if (ent && typeof ent === "object" && !Array.isArray(ent)) return ent;
+  return {};
+}
+
+function p2515GetCrossModule(entitlements) {
+  if (!entitlements || typeof entitlements !== "object") return [];
+  var raw = entitlements.crossModuleEntitlements;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(function (x) {
+    return x && typeof x === "object";
+  });
+}
+
+function p2515GetModuleExclusive(entitlements) {
+  if (!entitlements || typeof entitlements !== "object") return [];
+  var raw = entitlements.moduleExclusiveEntitlements;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(function (x) {
+    return x && typeof x === "object";
+  });
+}
+
+function p2515ApplicableModulesKey(am) {
+  if (!Array.isArray(am) || am.length === 0) return [];
+  return am
+    .map(function (x) {
+      var n = parseInt(x, 10);
+      return isNaN(n) ? 0 : n;
+    })
+    .sort(function (a, b) {
+      return a - b;
+    });
+}
+
+function p2515ApplicableModulesKeyStr(am) {
+  return JSON.stringify(p2515ApplicableModulesKey(am));
+}
+
+function p2515IntDetail(details, key) {
+  if (!details || typeof details !== "object" || !(key in details)) return null;
+  var v = details[key];
+  if (v === true || v === false) return null;
+  if (typeof v === "number" && Number.isInteger(v)) return v;
+  var n = parseInt(v, 10);
+  return isNaN(n) ? null : n;
+}
+
+function p2515DetailMetricOrZero(details, key) {
+  var iv = p2515IntDetail(details, key);
+  return iv === null || iv === undefined ? 0 : iv;
+}
+
+function p2515SummaryMetrics(summary) {
+  var o = {};
+  var s = summary && typeof summary === "object" ? summary : {};
+  P2515_METRIC_KEYS.forEach(function (k) {
+    var iv = p2515IntDetail(s, k);
+    o[k] = iv === null || iv === undefined ? 0 : iv;
+  });
+  return o;
+}
+
+function p2515SumPoolDetailsMetrics(pools) {
+  var sums = {};
+  P2515_METRIC_KEYS.forEach(function (k) {
+    var acc = 0;
+    var anyNeg = false;
+    (pools || []).forEach(function (p) {
+      var d =
+        p && p.details && typeof p.details === "object" ? p.details : {};
+      var iv = p2515IntDetail(d, k);
+      if (iv === null || iv === undefined) return;
+      if (iv === -1) {
+        anyNeg = true;
+        return;
+      }
+      acc += iv;
+    });
+    sums[k] = anyNeg ? -1 : acc;
+  });
+  return sums;
+}
+
+function p2515MetricsObjectsEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/** 对齐 ``NormalizeCrossModuleEntitlementsForCompare``（仅结构字段参与比较）。 */
+function p2515NormalizeCross(cross) {
+  if (!Array.isArray(cross)) return [];
+  var groups = cross
+    .filter(function (g) {
+      return g && typeof g === "object";
+    })
+    .map(function (g) {
+      var am = p2515ApplicableModulesKey(g.applicableModules);
+      var poolsRaw = Array.isArray(g.pools) ? g.pools : [];
+      var pools = poolsRaw
+        .filter(function (p) {
+          return p && typeof p === "object";
+        })
+        .map(function (p) {
+          var det =
+            p.details && typeof p.details === "object"
+              ? JSON.parse(JSON.stringify(p.details))
+              : {};
+          return {
+            entitlementPoolId: p.entitlementPoolId,
+            details: det,
+          };
+        })
+        .sort(function (a, b) {
+          return String(a.entitlementPoolId).localeCompare(String(b.entitlementPoolId));
+        });
+      var summary =
+        g.summary && typeof g.summary === "object"
+          ? JSON.parse(JSON.stringify(g.summary))
+          : {};
+      return { applicableModules: am, summary: summary, pools: pools };
+    });
+  groups.sort(function (a, b) {
+    return JSON.stringify(a.applicableModules).localeCompare(JSON.stringify(b.applicableModules));
+  });
+  return groups;
+}
+
+function p2515NormalizeCrossString(cross) {
+  return JSON.stringify(p2515NormalizeCross(cross));
+}
+
+function p2515ShouldStrictSummaryPoolSum(pm, options) {
+  if (options && options.strictSummaryPoolSum === false) return false;
+  if (options && options.strictSummaryPoolSum === true) return true;
+  var relax = String(
+    pm.collectionVariables.get("DP_RELAX_SUMMARY_POOL_SUM") || ""
+  ).toLowerCase();
+  if (relax === "1" || relax === "true" || relax === "yes" || relax === "on")
+    return false;
+  return true;
+}
+
+/**
+ * 对齐 ``AssertCrossModuleContract``：结构 + 可选 summary/pools 四指标聚合（缺键按 0；任池 -1 则该指标为 -1）。
+ * @param {object} pm Postman / Apifox pm
+ * @param {Array} cross crossModuleEntitlements
+ * @param {{context?: string, strictSummaryPoolSum?: boolean}} options
+ */
+function p2515AssertCrossModuleContract(pm, cross, options) {
+  options = options || {};
+  var ctx = options.context || "PAPI-2515";
+  var strict = p2515ShouldStrictSummaryPoolSum(pm, options);
+
+  pm.test(ctx + "：cross 组为数组", function () {
+    pm.expect(Array.isArray(cross)).to.be.true;
+  });
+  if (!Array.isArray(cross) || cross.length === 0) return;
+
+  cross.forEach(function (g, idx) {
+    pm.test(ctx + "：组[" + idx + "] 结构", function () {
+      pm.expect(g).to.be.an("object");
+      pm.expect(g).to.have.property("applicableModules");
+      pm.expect(g).to.have.property("summary");
+      pm.expect(g).to.have.property("pools");
+      pm.expect(g.summary).to.be.an("object");
+      pm.expect(g.pools).to.be.an("array");
+    });
+    (g.pools || []).forEach(function (p, j) {
+      pm.test(ctx + "：组[" + idx + "].pools[" + j + "] 池与 details", function () {
+        pm.expect(p).to.be.an("object");
+        pm.expect(p.entitlementPoolId).to.be.ok;
+        pm.expect(p.details).to.be.an("object");
+        var det = p.details;
+        P2515_POOL_GUEST_AGGREGATE_KEYS.forEach(function (fk) {
+          var has = Object.prototype.hasOwnProperty.call(det, fk);
+          pm.expect(
+            has,
+            ctx +
+              " cross 组[" +
+              idx +
+              "].pools[" +
+              j +
+              "].details 不应含键 " +
+              fk +
+              (has ? "，实际存在且值=" + JSON.stringify(det[fk]) : "")
+          ).to.be.false;
+        });
+      });
+    });
+    if (strict) {
+      pm.test(ctx + "：组[" + idx + "] summary 与 pools 四指标聚合一致（缺键按 0；任池 -1 则该指标为 -1）", function () {
+        var sm = p2515SummaryMetrics(g.summary);
+        var pmSum = p2515SumPoolDetailsMetrics(g.pools);
+        var ok = p2515MetricsObjectsEqual(sm, pmSum);
+        var lines = P2515_METRIC_KEYS.map(function (k) {
+          return k + ": summary=" + sm[k] + " pools_agg=" + pmSum[k];
+        });
+        pm.expect(
+          ok,
+          ctx +
+            " 组[" +
+            idx +
+            "]：预期每组 summary 四类指标等于各池 details 跨池聚合（缺键按 0；任池 -1 则该指标为 -1）。\n" +
+            lines.join("\n") +
+            "\n完整: summary_metrics=" +
+            JSON.stringify(sm) +
+            " pools_sum=" +
+            JSON.stringify(pmSum)
+        ).to.be.true;
+      });
+    }
+  });
+}
+
+/** 优先 ``pm.execution.setNextRequest``（Postman 新版），其次 ``postman.setNextRequest``；Apifox 常缺其一。 */
+function p2515ResolveSetNextRequest() {
+  try {
+    if (typeof pm !== "undefined" && pm.execution && typeof pm.execution.setNextRequest === "function") {
+      return function (name) {
+        pm.execution.setNextRequest(name);
+      };
+    }
+  } catch (eR1) {}
+  try {
+    if (typeof postman !== "undefined" && typeof postman.setNextRequest === "function") {
+      return function (name) {
+        postman.setNextRequest(name);
+      };
+    }
+  } catch (eR2) {}
+  return null;
+}
+
+/**
+ * 读取变量：与界面 ``{{key}}`` 解析尽量一致。Postman/Apifox 新版优先用 ``pm.variables`` 统一作用域；
+ * 再 ``replaceIn('{{key}}')``；最后 collection → environment → globals。
+ */
+function p2515VarGet(pm, key) {
+  var v;
+  try {
+    if (pm.variables && typeof pm.variables.get === "function") {
+      v = pm.variables.get(key);
+      if (v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim();
+    }
+  } catch (eu) {}
+  try {
+    if (pm.variables && typeof pm.variables.replaceIn === "function") {
+      var rx = pm.variables.replaceIn("{{" + key + "}}");
+      if (rx && String(rx).indexOf("{{") < 0 && String(rx).trim() !== "") return String(rx).trim();
+    }
+  } catch (er) {}
+  v = pm.collectionVariables.get(key);
+  if (v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim();
+  try {
+    if (pm.environment && typeof pm.environment.get === "function") {
+      v = pm.environment.get(key);
+      if (v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim();
+    }
+  } catch (e1) {}
+  try {
+    if (pm.globals && typeof pm.globals.get === "function") {
+      v = pm.globals.get(key);
+      if (v !== undefined && v !== null && String(v).trim() !== "") return String(v).trim();
+    }
+  } catch (e2) {}
+  return "";
+}
+
+/**
+ * Apifox 等对 ``setNextRequest(S06)`` 不跳转时：集合/环境变量 ``DP_P2515_FORCE_INLINE_TAIL`` 或 ``P2515_FORCE_INLINE_TAIL``
+ * 为 ``1`` / ``true`` / ``yes`` / ``on`` 则 [S05] 收尾强制内联 [S06][S07]；场景中请取消勾选 [S06][S07] 以免与列表顺序重复。
+ */
+function p2515ForceInlineTailEnabled(pm) {
+  var raw = p2515VarGet(pm, "DP_P2515_FORCE_INLINE_TAIL");
+  if (!raw) raw = p2515VarGet(pm, "P2515_FORCE_INLINE_TAIL");
+  var s = String(raw || "").toLowerCase().trim();
+  return s === "1" || s === "true" || s === "yes" || s === "on";
+}
+
+/** 仅 [S05] 按池内联 ``pm.sendRequest``（``plan[1..]``）：控制台打印入参/出参（``Authorization`` 脱敏）；设 ``DP_P2515_VERBOSE_SEND_IO`` 或 ``P2515_VERBOSE_SEND_IO`` 为 1/true/yes/on。 */
+var P2515_SEND_IO_LOG_MAX = 16000;
+
+function p2515VerboseSendIoEnabled(pm) {
+  var raw = p2515VarGet(pm, "DP_P2515_VERBOSE_SEND_IO");
+  if (!raw) raw = p2515VarGet(pm, "P2515_VERBOSE_SEND_IO");
+  var s = String(raw || "").toLowerCase().trim();
+  return s === "1" || s === "true" || s === "yes" || s === "on";
+}
+
+function p2515TruncateForLog(text, maxLen) {
+  maxLen = maxLen == null ? P2515_SEND_IO_LOG_MAX : maxLen;
+  var t = String(text || "");
+  if (t.length <= maxLen) return t;
+  return t.slice(0, maxLen) + "\n...（已截断，共 " + t.length + " 字符）";
+}
+
+function p2515RedactHeaderListForLog(hdr) {
+  if (!hdr) return [];
+  return (Array.isArray(hdr) ? hdr : []).map(function (h) {
+    if (!h) return {};
+    var k = String(h.key || "");
+    var v = String(h.value || "");
+    if (k.toLowerCase() === "authorization") {
+      v = v.toLowerCase().indexOf("bearer ") === 0 ? "Bearer ***" : "***";
+    }
+    return { key: k, value: v };
+  });
+}
+
+function p2515SendResponseStatus(res) {
+  if (!res || typeof res !== "object") return undefined;
+  if (res.code != null) return res.code;
+  if (res.statusCode != null) return res.statusCode;
+  if (res.status != null) return res.status;
+  return undefined;
+}
+
+function p2515MaybeLogSendRequest(pm, label, reqOpt) {
+  if (!p2515VerboseSendIoEnabled(pm)) return;
+  try {
+    var u = reqOpt && reqOpt.url != null ? String(reqOpt.url) : "";
+    var m = reqOpt && reqOpt.method ? String(reqOpt.method) : "POST";
+    var hdr = (reqOpt && reqOpt.header) || (reqOpt && reqOpt.headers) || [];
+    var raw = "";
+    if (reqOpt && reqOpt.body && reqOpt.body.mode === "raw") {
+      raw = String(reqOpt.body.raw || "");
+    }
+    console.log("[PAPI-2515 IO] 入参 " + label + " " + m + " " + u);
+    console.log(
+      "[PAPI-2515 IO] 入参 " + label + " headers=" + JSON.stringify(p2515RedactHeaderListForLog(hdr))
+    );
+    console.log("[PAPI-2515 IO] 入参 " + label + " body=" + p2515TruncateForLog(raw));
+  } catch (eIo1) {}
+}
+
+function p2515MaybeLogSendResponse(pm, label, err, res) {
+  if (!p2515VerboseSendIoEnabled(pm)) return;
+  try {
+    var sc = p2515SendResponseStatus(res);
+    var errStr = err != null && err !== undefined ? String(err) : "";
+    var bodyTxt = "";
+    try {
+      if (res && typeof res.text === "function") {
+        bodyTxt = res.text();
+      } else {
+        var j = p2515ParseSendResponseBody(res);
+        bodyTxt = j != null ? JSON.stringify(j) : "";
+      }
+    } catch (eB) {
+      bodyTxt = "(无法读取 body: " + String(eB) + ")";
+    }
+    console.log(
+      "[PAPI-2515 IO] 出参 " + label + " http=" + String(sc) + " err=" + (errStr ? errStr : "null")
+    );
+    console.log("[PAPI-2515 IO] 出参 " + label + " body=" + p2515TruncateForLog(bodyTxt));
+  } catch (eIo2) {}
+}
+
+/** 供 ``pm.sendRequest`` 使用：与当前主请求头一致（回退读 ``pm.request.headers.Authorization``）。 */
+function p2515ResolveAccessToken(pm) {
+  // 统一 accessToken：优先 collection/globals/env（Auth 写入），勿先读 dataset 空列
+  var t = "";
+  try {
+    t = String(pm.collectionVariables.get("accessToken") || "").trim();
+  } catch (eAt1) {}
+  if (!t) {
+    try {
+      t = String((pm.globals && pm.globals.get("accessToken")) || "").trim();
+    } catch (eAtG) {}
+  }
+  if (!t) {
+    try {
+      t = String((pm.environment && pm.environment.get("accessToken")) || "").trim();
+    } catch (eAt2) {}
+  }
+  if (!t) t = p2515VarGet(pm, "accessToken");
+  if (!t) t = p2515VarGet(pm, "access_token");
+  if (!t) t = p2515VarGet(pm, "token");
+  if (t) return t;
+  try {
+    var h = pm.request && pm.request.headers;
+    if (!h) return "";
+    var auth = null;
+    if (typeof h.get === "function") auth = h.get("Authorization");
+    if (!auth && typeof h === "object") {
+      var hk = h.Authorization;
+      if (hk) auth = hk;
+    }
+    if (!auth && Array.isArray(h)) {
+      for (var i = 0; i < h.length; i++) {
+        var hi = h[i];
+        if (hi && String(hi.key || "").toLowerCase() === "authorization") {
+          auth = hi.value;
+          break;
+        }
+      }
+    }
+    auth = auth ? String(auth) : "";
+    var up = auth.toLowerCase().indexOf("bearer ");
+    if (up === 0) return auth.slice(7).trim();
+  } catch (e3) {}
+  return "";
+}
+
+function p2515ResolveProgramId(pm) {
+  // 与 Apifox env 351893 / 2548 对齐：环境变量名为 ProgramID
+  var p = p2515VarGet(pm, "ProgramID");
+  if (p) return p;
+  p = p2515VarGet(pm, "programId");
+  if (p) return p;
+  return p2515VarGet(pm, "X-Program-ID");
+}
+
+/** 不依赖动态变量：``pm.sendRequest`` 内 ``replaceIn('{{$guid}}')`` 在 Apifox 常未展开，会触发 301.000.001。 */
+function p2515JsUuidV4() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    var r = (Math.random() * 16) | 0;
+    var v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+/** 每次内联请求一条新 ``X-Request-ID``（避免复用主请求 ID 或未解析的 ``{{$guid}}``）。 */
+function p2515FreshRequestIdForSend(pm) {
+  var rid = "";
+  try {
+    if (pm.variables && typeof pm.variables.replaceIn === "function") {
+      rid = String(pm.variables.replaceIn("{{$guid}}") || "");
+    }
+  } catch (eR) {}
+  if (!rid || rid.indexOf("{{") >= 0 || rid.indexOf("}}") >= 0) {
+    rid = p2515JsUuidV4();
+  }
+  return rid;
+}
+
+function p2515ApplyFreshRequestIdToHeaderList(list, pm) {
+  var rid = p2515FreshRequestIdForSend(pm);
+  var out = [];
+  var seen = false;
+  list.forEach(function (x) {
+    if (String(x.key || "").toLowerCase() === "x-request-id") {
+      if (!seen) {
+        out.push({ key: "X-Request-ID", value: rid });
+        seen = true;
+      }
+    } else {
+      out.push(x);
+    }
+  });
+  if (!seen) out.push({ key: "X-Request-ID", value: rid });
+  return out;
+}
+
+/**
+ * 优先克隆当前步骤 ``pm.request`` 已解析的请求头（Apifox/Runner 里与主请求一致），
+ * 再回退手工拼装（``p2515VarGet`` + Bearer）。
+ */
+function p2515SendHeadersForP2515(pm) {
+  function authLooksReal(av) {
+    av = String(av || "");
+    var i = av.toLowerCase().indexOf("bearer ");
+    if (i !== 0) return false;
+    var t = av.slice(7).trim();
+    return t.length > 0 && t !== "undefined" && t !== "null";
+  }
+  try {
+    var headers = pm.request && pm.request.headers;
+    if (headers) {
+      var list = [];
+      if (typeof headers.each === "function") {
+        headers.each(function (h) {
+          if (!h || !h.key) return;
+          var k = String(h.key);
+          if (k.toLowerCase() === "content-length") return;
+          list.push({ key: k, value: String(h.value || "") });
+        });
+      } else if (typeof headers.toJSON === "function") {
+        var arr = headers.toJSON();
+        if (Array.isArray(arr)) {
+          arr.forEach(function (one) {
+            if (!one || !one.key) return;
+            var k = String(one.key);
+            if (k.toLowerCase() === "content-length") return;
+            list.push({ key: k, value: String(one.value || "") });
+          });
+        }
+      }
+      var okAuth = false;
+      for (var j = 0; j < list.length; j++) {
+        if (String(list[j].key || "").toLowerCase() === "authorization" && authLooksReal(list[j].value)) {
+          okAuth = true;
+          break;
+        }
+      }
+      if (okAuth && list.length) return p2515ApplyFreshRequestIdToHeaderList(list, pm);
+    }
+  } catch (eClone) {}
+  var rid = p2515FreshRequestIdForSend(pm);
+  var tok = p2515ResolveAccessToken(pm);
+  var pid = p2515ResolveProgramId(pm);
+  var xv = p2515VarGet(pm, "x-version");
+  var headers = [
+    { key: "Authorization", value: "Bearer " + tok },
+    { key: "X-Program-ID", value: String(pid) },
+    { key: "X-Request-ID", value: rid },
+    { key: "Content-Type", value: "application/json" },
+    { key: "Accept", value: "*/*" },
+  ];
+  if (xv && String(xv).toLowerCase() !== "omit" && String(xv).toLowerCase() !== "none" && String(xv).toLowerCase() !== "off") {
+    headers.splice(2, 0, { key: "x-version", value: String(xv) });
+  }
+  return headers;
+}
+
+function p2515E2eEntitlementsSearchUrl(pm) {
+  var base = String(p2515VarGet(pm, "baseUrl")).replace(/\/$/, "");
+  return base + "/v2/entitlements/search";
+}
+
+/**
+ * 无 ``setNextRequest`` 时内联执行两次 entitlements/search（对齐 S06/S07 断言）。
+ * 使用 ``setInterval`` 保活，避免 Runner 在异步 ``pm.sendRequest`` 完成前进下一请求。
+ */
+function p2515E2eInlineS06S07(pm, opts) {
+  opts = opts || {};
+  var mid = p2515VarGet(pm, "membershipId");
+  var bodyRaw = JSON.stringify({ membershipId: String(mid) });
+  var url = p2515E2eEntitlementsSearchUrl(pm);
+  var hdr = p2515SendHeadersForP2515(pm);
+  var reqOpt = {
+    url: url,
+    method: "POST",
+    header: hdr,
+    body: { mode: "raw", raw: bodyRaw },
+  };
+  var hold = setInterval(function () {}, 5000);
+  function release() {
+    clearInterval(hold);
+  }
+  if (!opts.skipGenericWarn) {
+    console.warn(
+      "P2515：当前运行器未提供可用的 setNextRequest；已内联 [S06][S07]。若 Runner 仍顺序执行 [S06][S07] 则可能重复，可在场景中取消勾选后两条 search。"
+    );
+  }
+  pm.sendRequest(reqOpt, function (e1, r1) {
+    pm.test("E2E S06：HTTP 200（内联）", function () {
+      pm.expect(e1).to.be.null;
+      pm.expect(r1.code).to.eql(200);
+    });
+    var j1 = p2515ParseSendResponseBody(r1) || {};
+    pm.test("E2E S06：业务成功（内联）", function () {
+      pm.expect(p2515IsBusinessSuccess(j1)).to.be.true;
+    });
+    var cross1 = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j1.data));
+    p2515AssertCrossModuleContract(pm, cross1, { context: "PAPI-2515-S06" });
+    pm.sendRequest(reqOpt, function (e2, r2) {
+      pm.test("E2E S07：HTTP 200（内联）", function () {
+        pm.expect(e2).to.be.null;
+        pm.expect(r2.code).to.eql(200);
+      });
+      var j2 = p2515ParseSendResponseBody(r2) || {};
+      pm.test("E2E S07：业务成功（内联）", function () {
+        pm.expect(p2515IsBusinessSuccess(j2)).to.be.true;
+      });
+      var cross2 = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j2.data));
+      p2515AssertCrossModuleContract(pm, cross2, { context: "PAPI-2515-S07" });
+      release();
+    });
+  });
+}
+
+/**
+ * [S05] 主请求已执行 ``plan[0]`` 后：用 ``pm.sendRequest`` 串行执行 ``plan[1..]``，再跳转 [S06] 或内联收尾。
+ * 不依赖多次 ``setNextRequest`` 回到 [S05]（Apifox 常失败）。
+ */
+function p2515E2eS05AfterResponseContinueFlow(pm) {
+  var plan = [];
+  try {
+    plan = JSON.parse(pm.collectionVariables.get("p2515_pool_plan_json") || "[]");
+  } catch (ePl) {
+    plan = [];
+  }
+  var hold = setInterval(function () {}, 5000);
+  function releaseHold() {
+    clearInterval(hold);
+  }
+  function goS06OrInline() {
+    releaseHold();
+    if (p2515ForceInlineTailEnabled(pm)) {
+      try {
+        console.warn(
+          "P2515：已启用 DP_P2515_FORCE_INLINE_TAIL / P2515_FORCE_INLINE_TAIL，跳过 setNextRequest，强制内联 [S06][S07]；列表中请取消勾选 [S06][S07] 以免重复。"
+        );
+      } catch (eF) {}
+      p2515E2eInlineS06S07(pm, { skipGenericWarn: true });
+      return;
+    }
+    var sn = p2515ResolveSetNextRequest();
+    if (sn) {
+      sn(P2515_E2E_S06_REQUEST_NAME);
+    } else {
+      p2515E2eInlineS06S07(pm);
+    }
+  }
+  function runPoolFrom(i) {
+    if (i >= plan.length) {
+      goS06OrInline();
+      return;
+    }
+    var item = plan[i];
+    var base = String(p2515VarGet(pm, "baseUrl")).replace(/\/$/, "");
+    var url = base + "/v2/entitlements/" + item.entitlementPoolId + "/update";
+    var sendOpt = {
+      url: url,
+      method: "POST",
+      header: p2515SendHeadersForP2515(pm),
+      body: { mode: "raw", raw: JSON.stringify(item.body) },
+    };
+    p2515MaybeLogSendRequest(pm, "按池 update plan[" + i + "] pool=" + item.entitlementPoolId, sendOpt);
+    pm.sendRequest(sendOpt, function (err, res) {
+        p2515MaybeLogSendResponse(pm, "按池 update plan[" + i + "] pool=" + item.entitlementPoolId, err, res);
+        pm.test("E2E 按池 update（内联 " + i + "）：HTTP 200", function () {
+          pm.expect(err).to.be.null;
+          var sc =
+            res && res.code != null
+              ? res.code
+              : res && res.statusCode != null
+                ? res.statusCode
+                : res && res.status != null
+                  ? res.status
+                  : undefined;
+          pm.expect(Number(sc)).to.eql(200);
+        });
+        var jr = p2515ParseSendResponseBody(res) || {};
+        pm.test("E2E 按池 update（内联 " + i + "）：业务成功或可接受的 program 拒绝", function () {
+          if (p2515IsPoolUpdateDeniedByProgram(jr)) {
+            console.warn(
+              "P2515：内联按池 " +
+                i +
+                " program 禁止按池编辑（errCode=500.030.024），与 pytest PostEntitlementsPoolUpdateOrRecord 一致，跳过业务成功断言"
+            );
+            return;
+          }
+          pm.expect(
+            p2515IsBusinessSuccess(jr),
+            "pool=" +
+              item.entitlementPoolId +
+              " body片段=" +
+              JSON.stringify(jr).slice(0, 600)
+          ).to.be.true;
+        });
+        runPoolFrom(i + 1);
+      });
+  }
+  if (plan.length <= 1) {
+    goS06OrInline();
+  } else {
+    runPoolFrom(1);
+  }
+}
+
+function p2515GuestKeyNames(pm) {
+  var a = pm.collectionVariables.get("DP_P2515_SUMMARY_GUEST_KEY_ALLOWED");
+  var b = pm.collectionVariables.get("DP_P2515_SUMMARY_GUEST_KEY_MAX");
+  return {
+    allowed: a && String(a).trim() ? String(a).trim() : "allowedGuestsPerUsage",
+    max: b && String(b).trim() ? String(b).trim() : "maxGuestsNextUse",
+  };
+}
+
+/** 对齐 ``AssertCrossModuleSummaryGuestAggregateKeys``（tc-P1-GEN-002）。 */
+function p2515AssertSummaryGuestAggregateKeys(pm, cross, context) {
+  context = context || "PAPI-2515-tc-P1-GEN-002";
+  var keys = p2515GuestKeyNames(pm);
+  (cross || []).forEach(function (g, idx) {
+    if (!g || typeof g !== "object") return;
+    pm.test(context + "：组[" + idx + "] summary 含携伴聚合键", function () {
+      pm.expect(g.summary).to.be.an("object");
+      pm.expect(g.summary).to.have.property(keys.allowed);
+      pm.expect(g.summary).to.have.property(keys.max);
+      pm.expect(p2515IntDetail(g.summary, keys.allowed)).to.not.equal(null);
+      pm.expect(p2515IntDetail(g.summary, keys.max)).to.not.equal(null);
+    });
+  });
+}
+
+/** 对齐 ``AssertCrossModuleSingleRowPerApplicableModules``（tc-P1-GEN-005）。 */
+function p2515AssertSingleRowPerApplicableModules(pm, cross, context) {
+  context = context || "PAPI-2515-tc-P1-GEN-005";
+  var keys = [];
+  (cross || []).forEach(function (g) {
+    if (!g || typeof g !== "object") return;
+    var k = p2515ApplicableModulesKeyStr(g.applicableModules);
+    if (k !== "[]") keys.push(k);
+  });
+  pm.test(context + "：applicableModules 分组唯一（无重复 cross 行）", function () {
+    var uniq = {};
+    keys.forEach(function (k) {
+      uniq[k] = true;
+    });
+    pm.expect(keys.length).to.eql(Object.keys(uniq).length);
+  });
+}
+
+/** 对齐 ``DetailsOnlyPurchasedEntitlements``。 */
+function p2515DetailsOnlyPurchasedEntitlements(details) {
+  if (!details || typeof details !== "object") return false;
+  var keys = Object.keys(details);
+  if (keys.indexOf("purchasedEntitlements") < 0) return false;
+  var other = {
+    cardholderExclusiveEntitlements: 1,
+    guestsExclusiveEntitlements: 1,
+    sharedEntitlements: 1,
+  };
+  for (var i = 0; i < keys.length; i++) {
+    if (other[keys[i]]) return false;
+  }
+  return true;
+}
+
+/** 对齐 ``AssertFictiveZeroPurchasedPoolInSearch``（tc-P2-GEN-005）。 */
+function p2515AssertFictiveZeroPurchasedPool(pm, cross, context) {
+  context = context || "PAPI-2515-tc-P2-GEN-005";
+  var found = false;
+  (cross || []).forEach(function (g, gi) {
+    (g.pools || []).forEach(function (p, j) {
+      if (!p || !p.details || typeof p.details !== "object") return;
+      if (!p2515DetailsOnlyPurchasedEntitlements(p.details)) return;
+      if (p2515IntDetail(p.details, "purchasedEntitlements") === 0) found = true;
+    });
+  });
+  pm.test(context + "：存在 purchasedEntitlements=0 的买点池", function () {
+    pm.expect(found).to.be.true;
+  });
+}
+
+/** 各组 applicableModules → summary 四指标（对齐 ``CrossModuleGroupMetricsByKey`` 的 JSON 键形式）。 */
+function p2515CrossGroupMetricsByKey(cross) {
+  var out = {};
+  (cross || []).forEach(function (g) {
+    if (!g || typeof g !== "object") return;
+    var k = p2515ApplicableModulesKeyStr(g.applicableModules);
+    if (k === "[]") return;
+    out[k] = p2515SummaryMetrics(g.summary);
+  });
+  return out;
+}
+
+function p2515CrossMetricsFromResponseJson(json) {
+  var data = json && json.data;
+  var ent = p2515ExtractEntitlementsFromData(data);
+  return p2515CrossGroupMetricsByKey(p2515GetCrossModule(ent));
+}
+
+/** 对齐 ``AssertCrossModuleMetricsEqualBetweenDataInners``：两次完整响应 JSON。 */
+function p2515AssertCrossMetricsEqualBetweenResponses(pm, jsonA, jsonB, context) {
+  context = context || "PAPI-2515-tc-P2-GEN-001";
+  var ma = p2515CrossMetricsFromResponseJson(jsonA);
+  var mb = p2515CrossMetricsFromResponseJson(jsonB);
+  pm.test(context + "：cross 各组 summary 四指标一致（update vs search）", function () {
+    pm.expect(JSON.stringify(ma)).to.eql(JSON.stringify(mb));
+  });
+}
+
+function p2515NormalizedSingleGroup(g) {
+  var one = p2515NormalizeCross([g]);
+  return one[0] || {};
+}
+
+function p2515MapByApplicableModulesKey(cross) {
+  var m = {};
+  (cross || []).forEach(function (g) {
+    if (!g || typeof g !== "object") return;
+    var k = p2515ApplicableModulesKeyStr(g.applicableModules);
+    if (k === "[]") return;
+    m[k] = p2515NormalizedSingleGroup(g);
+  });
+  return m;
+}
+
+/**
+ * 对齐 ``AssertCrossModuleOtherGroupsNormalizedUnchanged``（tc-P3-GEN-001）。
+ * @param {string} touchedKeyStr ``p2515ApplicableModulesKeyStr(被更新池所属组的 applicableModules)``
+ */
+function p2515AssertOtherGroupsNormalizedUnchanged(
+  pm,
+  crossBefore,
+  crossAfter,
+  touchedKeyStr,
+  context
+) {
+  context = context || "PAPI-2515-tc-P3-GEN-001";
+  var b = p2515MapByApplicableModulesKey(crossBefore);
+  var a = p2515MapByApplicableModulesKey(crossAfter);
+  pm.test(context + "：更新前后 cross 分组键集合一致", function () {
+    pm.expect(Object.keys(b).sort().join(",")).to.eql(Object.keys(a).sort().join(","));
+  });
+  Object.keys(b).forEach(function (k) {
+    if (k === touchedKeyStr) return;
+    pm.test(context + "：非 touched 组归一化不变 " + k, function () {
+      pm.expect(JSON.stringify(a[k])).to.eql(JSON.stringify(b[k]));
+    });
+  });
+}
+
+function p2515AssertAtLeastTwoDistinctCrossGroups(pm, cross, context) {
+  context = context || "PAPI-2515-tc-P2-GEN-004";
+  var keys = {};
+  (cross || []).forEach(function (g) {
+    if (!g || typeof g !== "object") return;
+    var k = p2515ApplicableModulesKeyStr(g.applicableModules);
+    if (k !== "[]") keys[k] = true;
+  });
+  pm.test(context + "：至少两组不同 applicableModules", function () {
+    pm.expect(Object.keys(keys).length).to.be.at.least(2);
+  });
+}
+
+/** 对齐 ``AssertModuleExclusiveDetailsContract``：携伴二键可出现；若非 null 须可解析为整数（cross 池 details 仍禁此二键）。 */
+function p2515AssertModuleExclusiveDetailsContract(pm, rows, context) {
+  context = context || "PAPI-2515-moduleExclusive";
+  (rows || []).forEach(function (row, idx) {
+    if (!row || typeof row !== "object") return;
+    var det = row.details;
+    if (!det || typeof det !== "object") return;
+    pm.test(
+      context + "：moduleExclusive[" + idx + "] details 携伴键仅 null 或整数（异于 cross pools[].details 禁键）",
+      function () {
+        P2515_POOL_GUEST_AGGREGATE_KEYS.forEach(function (fk) {
+          if (!Object.prototype.hasOwnProperty.call(det, fk)) return;
+          var v = det[fk];
+          if (v === null || v === undefined) return;
+          var iv = p2515IntDetail(det, fk);
+          pm.expect(
+            iv !== null,
+            context +
+              " moduleExclusive[" +
+              idx +
+              "].details." +
+              fk +
+              " 若非 null 须为可解析整数，实际=" +
+              JSON.stringify(v)
+          ).to.be.true;
+        });
+      }
+    );
+  });
+}
+
+/** 归零后校验：仍存在买点池且某池 purchasedEntitlements===0（对齐 tc-P2-GEN-002 收尾）。 */
+function p2515HasFictiveZeroPurchasedPool(cross) {
+  var found = false;
+  (cross || []).forEach(function (g) {
+    (g.pools || []).forEach(function (p) {
+      var det = p && p.details;
+      if (!det || typeof det !== "object") return;
+      if (!p2515DetailsOnlyPurchasedEntitlements(det)) return;
+      if (p2515IntDetail(det, "purchasedEntitlements") === 0) found = true;
+    });
+  });
+  return found;
+}
+
+/** 首个 purchasedEntitlements>0 的买点池 ID；无则返回 null（对齐 doc gap 选池逻辑）。 */
+function p2515FindFirstPurchasedPoolId(cross) {
+  for (var gi = 0; gi < (cross || []).length; gi++) {
+    var g = cross[gi];
+    var pools = g && g.pools;
+    if (!Array.isArray(pools)) continue;
+    for (var j = 0; j < pools.length; j++) {
+      var p = pools[j];
+      var det = p && p.details;
+      if (!det || typeof det !== "object") continue;
+      if (!p2515DetailsOnlyPurchasedEntitlements(det)) continue;
+      var v = p2515IntDetail(det, "purchasedEntitlements");
+      if (v !== null && v > 0 && p.entitlementPoolId)
+        return String(p.entitlementPoolId);
+    }
+  }
+  return null;
+}
+
+function p2515PoolQtyFromEnv(pm) {
+  var v = parseInt(String(pm.collectionVariables.get("DP_P2515_ATTACH2_POOL_QUANTITY") || "2"), 10);
+  return isNaN(v) ? 2 : v;
+}
+
+function p2515PoolPurchasedQtyFromEnv(pm) {
+  var v = parseInt(String(pm.collectionVariables.get("DP_P2515_ATTACH2_POOL_PURCHASED_QTY") || "1"), 10);
+  return isNaN(v) ? 1 : v;
+}
+
+/**
+ * 对齐 ``papi2515_helpers.BuildP2515PoolUpdatePlan``（与 pytest 单一真相源一致）：
+ *
+ * - 遍历 ``crossModuleEntitlements``：按组（``applicableModules``）再按 ``pools[]`` 轮询每个 ``entitlementPoolId``。
+ * - **（1）仅买点池**：``details`` 仅有 ``purchasedEntitlements``（无持卡人/携伴/共享三键）且值非 ``null``/``-1`` 时，
+ *   ``body = { membershipId, purchasedQuantity }``，数量来自集合变量 ``DP_P2515_ATTACH2_POOL_PURCHASED_QTY``（默认 1）。
+ * - **（2）其余池**：对 ``details`` 中 ``cardholderExclusiveEntitlements`` / ``guestsExclusiveEntitlements`` / ``sharedEntitlements``
+ *   分别判断（值为 ``null`` 或 ``-1`` 则跳过该条），每条 ``body = { membershipId, quantity, usageRestriction }``，
+ *   ``quantity`` 来自 ``DP_P2515_ATTACH2_POOL_QUANTITY``（默认 2）；映射：1=持卡人，2=携伴，3=共享（**JSON 数字**，非字符串模板）。
+ *
+ * 计划写入 ``p2515_pool_plan_json``；主请求与内联 ``pm.sendRequest`` 均使用各条的 ``body`` 序列化结果。
+ */
+function p2515BuildPoolUpdatePlan(mid, cross, pm) {
+  var pq = pm ? p2515PoolQtyFromEnv(pm) : 2;
+  var puch = pm ? p2515PoolPurchasedQtyFromEnv(pm) : 1;
+  var out = [];
+  (cross || []).forEach(function (g) {
+    if (!g || typeof g !== "object") return;
+    var gkStr = p2515ApplicableModulesKeyStr(g.applicableModules);
+    var pools = g.pools;
+    if (!Array.isArray(pools)) return;
+    pools.forEach(function (p) {
+      if (!p || typeof p !== "object") return;
+      var pid = p.entitlementPoolId;
+      if (!pid) return;
+      var det = p.details;
+      if (!det || typeof det !== "object") return;
+      if (p2515DetailsOnlyPurchasedEntitlements(det)) {
+        var pv = p2515IntDetail(det, "purchasedEntitlements");
+        if (pv === null || pv === -1) return;
+        out.push({
+          applicableModulesKeyStr: gkStr,
+          entitlementPoolId: String(pid),
+          body: { membershipId: mid, purchasedQuantity: puch },
+        });
+        return;
+      }
+      var pairs = [
+        ["cardholderExclusiveEntitlements", 1],
+        ["guestsExclusiveEntitlements", 2],
+        ["sharedEntitlements", 3],
+      ];
+      pairs.forEach(function (pair) {
+        var field = pair[0];
+        var ur = pair[1];
+        var v = p2515IntDetail(det, field);
+        if (v === null || v === -1) return;
+        out.push({
+          applicableModulesKeyStr: gkStr,
+          entitlementPoolId: String(pid),
+          body: { membershipId: mid, quantity: pq, usageRestriction: ur },
+        });
+      });
+    });
+  });
+  return out;
+}
+
+/**
+ * 对齐 ``BuildP2515PoolUpdatePlan`` 全量写入：``p2515_pool_plan_json``、``p2515_pool_plan_index``=0、
+ * 以及首项 ``entitlementPoolId`` / ``p2515_pool_update_body_raw`` / ``p2515_touched_am_key``（与 pytest 计划顺序一致）。
+ */
+function p2515ApplyPoolPlanToCollectionVars(pm, mid, cross) {
+  var plan = p2515BuildPoolUpdatePlan(String(mid), cross, pm);
+  pm.collectionVariables.set("p2515_pool_plan_json", JSON.stringify(plan));
+  pm.collectionVariables.set("p2515_pool_plan_index", "0");
+  if (!plan.length) {
+    pm.collectionVariables.set("entitlementPoolId", "");
+    pm.collectionVariables.set("p2515_pool_update_body_raw", "");
+    pm.collectionVariables.set("p2515_touched_am_key", "");
+    return plan;
+  }
+  var item = plan[0];
+  pm.collectionVariables.set("entitlementPoolId", item.entitlementPoolId);
+  pm.collectionVariables.set("p2515_pool_update_body_raw", JSON.stringify(item.body));
+  pm.collectionVariables.set("p2515_touched_am_key", item.applicableModulesKeyStr);
+  return plan;
+}
+
+/** 将计划首项写入集合变量（内部走 ``p2515ApplyPoolPlanToCollectionVars``，供 doc gap / tc-P3 等）。 */
+function p2515ApplyFirstPoolPlanToCollection(pm, mid, cross) {
+  var plan = p2515ApplyPoolPlanToCollectionVars(pm, mid, cross);
+  return plan.length ? plan[0] : null;
+}
+
+    """.strip()
+    return js.splitlines()
+
+
+
+def _BuildP2515TestExecLines(
+    *,
+    save_token: bool = False,
+    save_mid: bool = False,
+    extra_lines: Optional[Sequence[str]] = None,
+) -> List[str]:
+    lines: List[str] = []
+    # Auth 等无业务断言步勿注入完整 helpers（约 35KB），避免 Apifox sandbox 异常；与 2548 Auth 精简风格对齐。
+    if extra_lines:
+        lines.extend(BuildP2515JsHelpersLines())
+    if save_token:
+        # 与 2548 一致：从响应体取 token（勿先 get collectionVariables）；并写入 env/variables 供后续 {{accessToken}}
+        lines.extend(
+            [
+                "pm.test('Auth：HTTP 200', function () { pm.response.to.have.status(200); });",
+                "pm.test('Auth：accessToken 非空', function () {",
+                "  var _jAuth = {};",
+                "  try { _jAuth = pm.response.json(); } catch (eAuth) { _jAuth = {}; }",
+                "  var _dAuth = _jAuth && _jAuth.data !== undefined ? _jAuth.data : _jAuth;",
+                "  var _tAuth = _dAuth && (_dAuth.accessToken || _dAuth.token || _dAuth.access_token);",
+                "  var _preview = '';",
+                "  try { _preview = String(pm.response.text() || '').slice(0, 240); } catch (ePrev) {}",
+                "  pm.expect(_tAuth, 'Auth body preview=' + _preview).to.be.ok;",
+                "  var _tok = String(_tAuth);",
+                "  // 统一 accessToken：多作用域写入（Apifox 场景 collection 常不可用）",
+                "  try { pm.variables.set('accessToken', _tok); } catch (eV) {}",
+                "  try { pm.collectionVariables.set('accessToken', _tok); } catch (eC) {}",
+                "  try { pm.environment.set('accessToken', _tok); } catch (eE) {}",
+                "  try { if (pm.globals && typeof pm.globals.set === 'function') pm.globals.set('accessToken', _tok); } catch (eG) {}",
+                "});",
+                "pm.test('Auth：accessToken 已写入运行时', function () {",
+                "  var _a = ''; try { _a = String(pm.variables.get('accessToken') || '').trim(); } catch (e1) {}",
+                "  var _b = ''; try { _b = String(pm.collectionVariables.get('accessToken') || '').trim(); } catch (e2) {}",
+                "  var _c = ''; try { _c = String((pm.environment && pm.environment.get('accessToken')) || '').trim(); } catch (e3) {}",
+                "  var _d = ''; try { _d = String((pm.globals && pm.globals.get('accessToken')) || '').trim(); } catch (e4) {}",
+                "  pm.expect(_a || _b || _c || _d, 'variables/collection/env/globals 均无 accessToken').to.be.ok;",
+                "});",
+            ]
+        )
+    if save_mid:
+        lines.extend(
+            [
+                "try {",
+                "  var j = pm.response.json();",
+                "  var mid = j.data && j.data.membershipId;",
+                "  if (mid) pm.collectionVariables.set('membershipId', String(mid));",
+                "} catch (e) { console.warn(e); }",
+            ]
+        )
+    if extra_lines:
+        lines.extend(list(extra_lines))
+    return lines
+
+
+def MakeP2515TestEvent(
+    *,
+    save_token: bool = False,
+    save_mid: bool = False,
+    extra_lines: Optional[Sequence[str]] = None,
+) -> List[JsonObject]:
+    return [
+        {
+            "listen": "test",
+            "script": {
+                "exec": _BuildP2515TestExecLines(
+                    save_token=save_token,
+                    save_mid=save_mid,
+                    extra_lines=extra_lines,
+                ),
+                "type": "text/javascript",
+            },
+        }
+    ]
+
+
+def AuthJsonHeaders() -> List[JsonObject]:
+    # 与 collection_builder_common / pytest BuildCommonHeaders(DP_X_VERSION→x-version) 对齐
+    return [
+        {"key": "X-Program-ID", "value": "{{ProgramID}}"},
+        {"key": "x-version", "value": "{{x-version}}"},
+        {"key": "X-Request-ID", "value": "{{$guid}}"},
+        {"key": "Content-Type", "value": "application/json"},
+        {"key": "Accept", "value": "*/*"},
+    ]
+
+
+def BearerJsonHeaders() -> List[JsonObject]:
+    return [
+        {"key": "X-Program-ID", "value": "{{ProgramID}}"},
+        {"key": "x-version", "value": "{{x-version}}"},
+        {"key": "X-Request-ID", "value": "{{$guid}}"},
+        {"key": "Authorization", "value": "Bearer {{accessToken}}"},
+        {"key": "Content-Type", "value": "application/json"},
+        {"key": "Accept", "value": "*/*"},
+    ]
+
+
+def Lines_EnsureBearerPrerequest() -> List[str]:
+    """发送前：多环境 baseUrl/x-version；数据集 ProgramID/clientId/secret；强制写入 Authorization。"""
+    return [
+        "try {",
+        "  var _base = '';",
+        "  try { _base = String((pm.environment && pm.environment.get('baseUrl')) || '').trim(); } catch (eB0) {}",
+        "  if (!_base) { try { _base = String(pm.variables.get('baseUrl') || '').trim(); } catch (eB1) {} }",
+        "  if (!_base) { try { _base = String(pm.collectionVariables.get('baseUrl') || '').trim(); } catch (eB2) {} }",
+        "  if (_base) {",
+        "    try { pm.variables.set('baseUrl', _base); } catch (eBS1) {}",
+        "    try { pm.collectionVariables.set('baseUrl', _base); } catch (eBS2) {}",
+        "  }",
+        "  // 数据集标准列：ProgramID / clientId / secret",
+        "  var _pid = '';",
+        "  try { _pid = String(pm.variables.get('ProgramID') || '').trim(); } catch (eP0) {}",
+        "  if (!_pid) { try { _pid = String(pm.collectionVariables.get('ProgramID') || '').trim(); } catch (eP2) {} }",
+        "  if (!_pid) { try { _pid = String((pm.environment && pm.environment.get('ProgramID')) || '').trim(); } catch (eP3) {} }",
+        "  if (_pid) {",
+        "    try { pm.variables.set('ProgramID', _pid); } catch (ePS1) {}",
+        "    try { pm.collectionVariables.set('ProgramID', _pid); } catch (ePS2) {}",
+        "    try {",
+        "      if (pm.request && pm.request.headers && typeof pm.request.headers.upsert === 'function') {",
+        "        pm.request.headers.upsert({ key: 'X-Program-ID', value: _pid });",
+        "      }",
+        "    } catch (ePH) {}",
+        "  }",
+        "  var _xv = '';",
+        "  try { _xv = String((pm.environment && pm.environment.get('x-version')) || '').trim(); } catch (eX0) {}",
+        "  if (!_xv) { try { _xv = String(pm.variables.get('x-version') || '').trim(); } catch (eX1) {} }",
+        "  if (!_xv) { try { _xv = String(pm.collectionVariables.get('x-version') || '').trim(); } catch (eX2) {} }",
+        "  if (_xv && ['omit','none','off'].indexOf(String(_xv).toLowerCase()) < 0) {",
+        "    try { pm.variables.set('x-version', _xv); } catch (eXS) {}",
+        "    try {",
+        "      if (pm.request && pm.request.headers && typeof pm.request.headers.upsert === 'function') {",
+        "        pm.request.headers.upsert({ key: 'x-version', value: _xv });",
+        "      }",
+        "    } catch (eXH) {}",
+        "  }",
+        "  // 数据集空 accessToken 列会盖掉 Auth 写入",
+        "  try {",
+        "    var _rawTok = pm.variables.get('accessToken');",
+        "    if (_rawTok !== undefined && _rawTok !== null && String(_rawTok).trim() === '') {",
+        "      try { pm.variables.unset('accessToken'); } catch (eUn) {}",
+        "    }",
+        "  } catch (eClr) {}",
+        "  var _tok = '';",
+        "  try { _tok = String(pm.collectionVariables.get('accessToken') || '').trim(); } catch (e3) {}",
+        "  if (!_tok) { try { _tok = String((pm.globals && pm.globals.get('accessToken')) || '').trim(); } catch (eG1) {} }",
+        "  if (!_tok) { try { _tok = String((pm.environment && pm.environment.get('accessToken')) || '').trim(); } catch (e4) {} }",
+        "  if (!_tok) { try { _tok = String(pm.variables.get('accessToken') || '').trim(); } catch (e5) {} }",
+        "  if (_tok) {",
+        "    try { pm.variables.set('accessToken', _tok); } catch (eTV) {}",
+        "    try { pm.collectionVariables.set('accessToken', _tok); } catch (eTC) {}",
+        "    try { pm.environment.set('accessToken', _tok); } catch (eTE) {}",
+        "    try { if (pm.globals && typeof pm.globals.set === 'function') pm.globals.set('accessToken', _tok); } catch (eTG) {}",
+        "    var _auth = 'Bearer ' + _tok;",
+        "    try {",
+        "      var _hdrs = pm.request && pm.request.headers;",
+        "      if (_hdrs && typeof _hdrs.upsert === 'function') {",
+        "        _hdrs.upsert({ key: 'Authorization', value: _auth });",
+        "      } else if (_hdrs && typeof _hdrs.add === 'function') {",
+        "        try { if (typeof _hdrs.remove === 'function') _hdrs.remove('Authorization'); } catch (eRm) {}",
+        "        _hdrs.add({ key: 'Authorization', value: _auth });",
+        "      }",
+        "    } catch (eH) { console.warn('P2515 ensure bearer', eH); }",
+        "  }",
+        "} catch (eAll) {}",
+        *Lines_EnsureRequestIdHeader(),
+    ]
+
+
+def PostmanUrl(url_path: str) -> JsonObject:
+    """尽量贴近 Postman 客户端导出结构，兼容 Apifox 对 `url` 形态的严格校验。"""
+    raw: str = "{{baseUrl}}" + url_path
+    path_parts: List[str] = [part for part in url_path.split("/") if part]
+    return {"raw": raw, "host": ["{{baseUrl}}"], "path": path_parts}
+
+
+def PostmanJsonRawBody(raw: str) -> JsonObject:
+    """与 Postman 导出一致，便于 Apifox 识别 JSON Body。"""
+    return {"mode": "raw", "raw": raw, "options": {"raw": {"language": "json"}}}
+
+
+def CollectionVariable(key: str, value: str) -> JsonObject:
+    """与 Postman/Apifox 示例一致，显式标注集合变量类型。"""
+    return {"key": key, "value": value, "type": "string"}
+
+
+def RequestItem(
+    *,
+    name: str,
+    method: str,
+    url_path: str,
+    body: Optional[str],
+    headers: List[JsonObject],
+    description: str,
+    save_token: bool = False,
+    save_mid: bool = False,
+    test_lines: Optional[Sequence[str]] = None,
+    prerequest_lines: Optional[Sequence[str]] = None,
+) -> JsonObject:
+    req: JsonObject = {
+        "method": method,
+        "header": headers,
+        "url": PostmanUrl(url_path),
+        "description": description,
+    }
+    if body is not None:
+        req["body"] = PostmanJsonRawBody(body)
+    out: JsonObject = {"name": name, "request": req}
+    # 所有步骤都做数据集列名兼容（programId→ProgramID 等）；带 Bearer 的再强制写 Authorization
+    pre_lines: List[str] = list(Lines_EnsureBearerPrerequest())
+    if prerequest_lines is not None:
+        pre_lines.extend(list(prerequest_lines))
+    if pre_lines:
+        out["event"] = [
+            {
+                "listen": "prerequest",
+                "script": {"exec": pre_lines, "type": "text/javascript"},
+            },
+            {
+                "listen": "test",
+                "script": {
+                    "exec": _BuildP2515TestExecLines(
+                        save_token=save_token,
+                        save_mid=save_mid,
+                        extra_lines=test_lines,
+                    ),
+                    "type": "text/javascript",
+                },
+            },
+        ]
+    else:
+        out["event"] = MakeP2515TestEvent(
+            save_token=save_token,
+            save_mid=save_mid,
+            extra_lines=test_lines,
+        )
+    return out
+
+
+def Folder(name: str, items: Sequence[Union[JsonObject, Mapping[str, Any]]], description: str = "") -> JsonObject:
+    folder: JsonObject = {"name": name, "item": list(items)}
+    if description:
+        folder["description"] = description
+    return folder
+
+
+def RegisterBodyRaw() -> str:
+    """
+    注册体模板。``firstName`` / ``lastName`` 仅使用 **英文字母**（Latin A–Z/a–z），勿含中文、符号或数字，
+    以满足网关/校验常见限制；场景标识放在 ``email`` 前缀等字段。
+    """
+    return (
+        "{\n"
+        '  "clientUserId": "{{$string.uuid}}",\n'
+        '  "firstName": "John",\n'
+        '  "lastName": "Doe",\n'
+        '  "phoneNumber": "8081966002",\n'
+        '  "callingCode": "44",\n'
+        '  "email": "p2515_{{$timestamp}}@example.com",\n'
+        '  "expirationDate": "2027-12-31T10:10:33+00:00",\n'
+        '  "programId": "{{ProgramID}}"\n'
+        "}\n"
+    )
+
+
+def ModuleExclusiveUpdateBodyRaw() -> str:
+    return (
+        "{\n"
+        '  "membershipId": "{{membershipId}}",\n'
+        '  "quantity": 2,\n'
+        '  "module": "1",\n'
+        '  "tier": 2,\n'
+        '  "usageRestriction": 1\n'
+        "}\n"
+    )
+
+
+def Lines_Register_S01() -> List[str]:
+    return [
+        "pm.test('注册：HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = {};",
+        "try { j = pm.response.json(); } catch (eReg) { j = {}; }",
+        "var _preview = '';",
+        "try { _preview = String(pm.response.text() || '').slice(0, 280); } catch (eP) {}",
+        "pm.test('注册：业务成功', function () {",
+        "  pm.expect(p2515IsBusinessSuccess(j), 'register body preview=' + _preview).to.be.true;",
+        "});",
+        "if (!p2515IsBusinessSuccess(j)) {",
+        "  p2515SkipOk(pm, '注册失败，跳过后续 cross/moduleExclusive 契约');",
+        "} else {",
+        "  var ent = p2515ExtractEntitlementsFromData(j.data);",
+        "  var cross = p2515GetCrossModule(ent);",
+        "  var me = p2515GetModuleExclusive(ent);",
+        "  if (cross.length) {",
+        "    p2515AssertCrossModuleContract(pm, cross, { context: 'PAPI-2515-S01' });",
+        "  }",
+        "  if (me.length) {",
+        "    p2515AssertModuleExclusiveDetailsContract(pm, me, 'PAPI-2515-S01');",
+        "  }",
+        "}",
+    ]
+
+
+def Lines_E2e_Search_Baseline() -> List[str]:
+    return [
+        "pm.test('E2E S02：HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('E2E S02：业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "var ent = p2515ExtractEntitlementsFromData(j.data);",
+        "var cross = p2515GetCrossModule(ent);",
+        "if (!cross.length) {",
+        "  p2515SkipOk(pm, 'E2E S02：当前 Program 注册后无 cross（对齐 pytest skip；需 P2515 program）');",
+        "} else {",
+        "  pm.test('E2E S02：存在 crossModuleEntitlements', function () { pm.expect(cross.length).to.be.above(0); });",
+        "  p2515AssertCrossModuleContract(pm, cross, { context: 'PAPI-2515-S02' });",
+        "  pm.collectionVariables.set('p2515_norm_cross_baseline', p2515NormalizeCrossString(cross));",
+        "}",
+    ]
+
+
+def Lines_E2e_Entitlements_Update() -> List[str]:
+    return [
+        "pm.test('E2E S03：HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "if (!p2515IsBusinessSuccess(j)) {",
+        "  p2515SkipOk(pm, 'E2E S03：业务未成功（program 可能不支持 module update）');",
+        "} else {",
+        "  pm.test('E2E S03：业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "  var ent = p2515ExtractEntitlementsFromData(j.data);",
+        "  var cross = p2515GetCrossModule(ent);",
+        "  var me = p2515GetModuleExclusive(ent);",
+        "  if (cross.length) {",
+        "    p2515AssertCrossModuleContract(pm, cross, { context: 'PAPI-2515-S03' });",
+        "  }",
+        "  if (me.length) {",
+        "    p2515AssertModuleExclusiveDetailsContract(pm, me, 'PAPI-2515-S03');",
+        "  }",
+        "}",
+    ]
+
+
+def Lines_E2e_Search_After_Module() -> List[str]:
+    return [
+        "pm.test('E2E S04：HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('E2E S04：业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "var cross = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j.data));",
+        "var base = pm.collectionVariables.get('p2515_norm_cross_baseline');",
+        "if (!base) {",
+        "  p2515SkipOk(pm, 'E2E S04：无基线（S02 已因无 cross 跳过）');",
+        "} else {",
+        "  pm.test('E2E S04：cross 归一化与基线一致', function () {",
+        "    pm.expect(p2515NormalizeCrossString(cross)).to.eql(base);",
+        "  });",
+        "  p2515AssertCrossModuleContract(pm, cross, { context: 'PAPI-2515-S04' });",
+        "}",
+        "var mid = pm.collectionVariables.get('membershipId');",
+        "var plan = p2515ApplyPoolPlanToCollectionVars(pm, mid, cross);",
+        "if (!plan.length) {",
+        "  var __sn = p2515ResolveSetNextRequest();",
+        "  if (__sn) __sn(P2515_E2E_S06_REQUEST_NAME);",
+        "  else {",
+        "    console.warn('P2515：无按池计划且不支持 setNextRequest，请用 Postman Runner 或手动执行 [S06][S07]。');",
+        "  }",
+        "}",
+    ]
+
+
+def Lines_E2e_Pool_Update_Prerequest() -> List[str]:
+    """[S05] 前置：按 ``p2515_pool_plan_index`` 写入当前条的 poolId/body（与 pytest 循环按池一致）。"""
+    return [
+        "var idx = parseInt(String(pm.collectionVariables.get('p2515_pool_plan_index') || '0'), 10);",
+        "var plan = [];",
+        "try { plan = JSON.parse(pm.collectionVariables.get('p2515_pool_plan_json') || '[]'); } catch (ePr) { plan = []; }",
+        "if (plan.length && idx >= 0 && idx < plan.length) {",
+        "  var item = plan[idx];",
+        "  pm.collectionVariables.set('entitlementPoolId', item.entitlementPoolId);",
+        "  pm.collectionVariables.set('p2515_pool_update_body_raw', JSON.stringify(item.body));",
+        "}",
+    ]
+
+
+def Lines_E2e_Pool_Update() -> List[str]:
+    return [
+        "pm.test('E2E 按池 update：HTTP 200（无计划时 entitlementPoolId 可能为空，请求可能失败）', function () {",
+        "  pm.response.to.have.status(200);",
+        "});",
+        "var j = pm.response.json();",
+        "pm.test('E2E 按池 update：业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "p2515E2eS05AfterResponseContinueFlow(pm);",
+    ]
+
+
+def Lines_E2e_Search_S06() -> List[str]:
+    return [
+        "pm.test('E2E S06：HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('E2E S06：业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "var cross = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j.data));",
+        "p2515AssertCrossModuleContract(pm, cross, { context: 'PAPI-2515-S06' });",
+    ]
+
+
+def Lines_E2e_Search_S07() -> List[str]:
+    return [
+        "pm.test('E2E S07：HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('E2E S07：业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "var cross = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j.data));",
+        "p2515AssertCrossModuleContract(pm, cross, { context: 'PAPI-2515-S07' });",
+    ]
+
+
+def Lines_Probe_Search() -> List[str]:
+    return [
+        "var probeId = String(p2515VarGet(pm, 'probeMembershipId') || '').trim();",
+        "if (!probeId || probeId.indexOf('{{') >= 0) {",
+        "  p2515SkipOk(pm, '探测：未配置 probeMembershipId（对齐 DP_P2515_PROBE_MEMBERSHIP_ID）');",
+        "} else {",
+        "  pm.test('探测 search：HTTP 200', function () { pm.response.to.have.status(200); });",
+        "  var j = pm.response.json();",
+        "  if (!p2515IsBusinessSuccess(j)) {",
+        "    p2515SkipOk(pm, '探测：业务失败（检查 probeMembershipId / Program）');",
+        "  } else {",
+        "    pm.test('探测 search：业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "    var cross = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j.data));",
+        "    if (!cross.length) {",
+        "      p2515SkipOk(pm, '探测：会籍无 cross（换 probeMembershipId）');",
+        "    } else {",
+        "      pm.test('探测：存在 cross（否则换 probeMembershipId）', function () { pm.expect(cross.length).to.be.above(0); });",
+        "      p2515AssertCrossModuleContract(pm, cross, { context: 'PAPI-2515-probe' });",
+        "    }",
+        "  }",
+        "}",
+    ]
+
+
+def Lines_DocGap_Entitlements_Search() -> List[str]:
+    return [
+        "pm.test('doc gap：entitlements/search HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "var cross = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j.data));",
+        "if (!cross.length) { p2515SkipOk(pm, 'doc gap ES：无 cross'); }",
+        "else {",
+        "  pm.test('有 cross', function () { pm.expect(cross.length).to.be.above(0); });",
+        "  p2515AssertCrossModuleContract(pm, cross, { context: 'PAPI-2515-gap-entitlements-search' });",
+        "  pm.collectionVariables.set('p2515_norm_cross_es', p2515NormalizeCrossString(cross));",
+        "}",
+    ]
+
+
+def Lines_DocGap_Memberships_Search() -> List[str]:
+    return [
+        "pm.test('doc gap：memberships/search HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "var cross = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j.data));",
+        "if (!cross.length) { p2515SkipOk(pm, 'doc gap MBR：无 cross'); }",
+        "else {",
+        "  pm.test('会籍侧有 cross', function () { pm.expect(cross.length).to.be.above(0); });",
+        "  p2515AssertCrossModuleContract(pm, cross, { context: 'PAPI-2515-gap-memberships-search' });",
+        "  var nb = p2515NormalizeCrossString(cross);",
+        "  var na = pm.collectionVariables.get('p2515_norm_cross_es');",
+        "  if (!na) { p2515SkipOk(pm, 'doc gap MBR：无 ES 基线可对拍'); }",
+        "  else { pm.test('tc-P2-MBR-001：两路 cross 归一化一致', function () { pm.expect(nb).to.eql(na); }); }",
+        "}",
+    ]
+
+
+def Lines_DocGap_Combo_Search() -> List[str]:
+    return [
+        "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "var cross = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j.data));",
+        "if (!cross.length) { p2515SkipOk(pm, 'doc gap combo：无 cross'); }",
+        "else {",
+        "  pm.test('有 cross', function () { pm.expect(cross.length).to.be.above(0); });",
+        "  try { p2515AssertSummaryGuestAggregateKeys(pm, cross, 'PAPI-2515-tc-P1-GEN-002'); } catch (e1) { p2515SkipOk(pm, 'tc-P1-GEN-002 不适用'); }",
+        "  try { p2515AssertSingleRowPerApplicableModules(pm, cross, 'PAPI-2515-tc-P1-GEN-005'); } catch (e2) { p2515SkipOk(pm, 'tc-P1-GEN-005 不适用'); }",
+        "  try { p2515AssertFictiveZeroPurchasedPool(pm, cross, 'PAPI-2515-tc-P2-GEN-005'); } catch (e3) { p2515SkipOk(pm, 'tc-P2-GEN-005 不适用'); }",
+        "}",
+    ]
+
+
+def Lines_DocGap_TcP204_Search() -> List[str]:
+    return [
+        "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "var cross = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j.data));",
+        "if (!cross.length) { p2515SkipOk(pm, 'tc-P2-GEN-004：无 cross'); }",
+        "else {",
+        "  try {",
+        "    p2515AssertAtLeastTwoDistinctCrossGroups(pm, cross, 'PAPI-2515-tc-P2-GEN-004');",
+        "    p2515AssertCrossModuleContract(pm, cross, { context: 'PAPI-2515-tc-P2-GEN-004' });",
+        "  } catch (e204) { p2515SkipOk(pm, 'tc-P2-GEN-004：不足两组 applicableModules'); }",
+        "}",
+    ]
+
+
+def Lines_TcP2001_Baseline_Search() -> List[str]:
+    return [
+        "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+    ]
+
+
+def Lines_TcP2001_After_Update() -> List[str]:
+    return [
+        "pm.test('update：HTTP 200', function () { pm.response.to.have.status(200); });",
+        "pm.collectionVariables.set('p2515_json_after_update', pm.response.text());",
+        "var j = pm.response.json();",
+        "if (!p2515IsBusinessSuccess(j)) { p2515SkipOk(pm, 'tc-P2-GEN-001：update 业务未成功'); }",
+        "else { pm.test('update：业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; }); }",
+    ]
+
+
+def Lines_TcP2001_Follow_Search() -> List[str]:
+    return [
+        "pm.test('follow search：HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var jsonB = pm.response.json();",
+        "var parsedA = {};",
+        "try { parsedA = JSON.parse(pm.collectionVariables.get('p2515_json_after_update') || '{}'); } catch (e1) { parsedA = {}; }",
+        # 对齐 pytest test_update_tc_p2_gen_001：update 响应无 cross 时 skip，勿硬失败
+        "var _ma = p2515CrossMetricsFromResponseJson(parsedA);",
+        "if (!_ma || !Object.keys(_ma).length) {",
+        "  p2515SkipOk(pm, 'tc-P2-GEN-001：update 响应无 cross，无法对拍（对齐 pytest skip）');",
+        "} else {",
+        "  p2515AssertCrossMetricsEqualBetweenResponses(pm, parsedA, jsonB, 'PAPI-2515-tc-P2-GEN-001');",
+        "}",
+    ]
+
+
+def Lines_TcP2002_Pick_Pool() -> List[str]:
+    return [
+        "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "var cross = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j.data));",
+        "var pid = p2515FindFirstPurchasedPoolId(cross);",
+        "if (!pid) { p2515SkipOk(pm, 'tc-P2-GEN-002：无 purchased>0 买点池'); }",
+        "else {",
+        "  pm.test('存在 purchased>0 买点池', function () { pm.expect(pid).to.be.ok; });",
+        "  pm.collectionVariables.set('entitlementPoolId', pid);",
+        "}",
+    ]
+
+
+def Lines_TcP2002_After_Zero_Search() -> List[str]:
+    return [
+        "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "var cross = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j.data));",
+        "if (!p2515HasFictiveZeroPurchasedPool(cross)) {",
+        "  p2515SkipOk(pm, 'tc-P2-GEN-002：归零后未见 purchased=0 池（前置可能已跳过）');",
+        "} else {",
+        "  pm.test('tc-P2-GEN-002：归零后仍存在 purchased=0 买点池', function () {",
+        "    pm.expect(p2515HasFictiveZeroPurchasedPool(cross)).to.be.true;",
+        "  });",
+        "}",
+    ]
+
+
+def Lines_TcP3001_Search_Before() -> List[str]:
+    return [
+        "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "var cross = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j.data));",
+        "if (!cross.length) { p2515SkipOk(pm, 'tc-P3-GEN-001：无 cross'); }",
+        "else {",
+        "  try {",
+        "    p2515AssertAtLeastTwoDistinctCrossGroups(pm, cross, 'PAPI-2515-tc-P3-GEN-001-prep');",
+        "    pm.collectionVariables.set('p2515_cross_before_json', JSON.stringify(cross));",
+        "    p2515ApplyFirstPoolPlanToCollection(pm, pm.collectionVariables.get('membershipId'), cross);",
+        "    if (!pm.collectionVariables.get('entitlementPoolId')) {",
+        "      p2515SkipOk(pm, 'tc-P3-GEN-001：无可执行池计划');",
+        "    } else {",
+        "      pm.test('有可执行池计划', function () {",
+        "        pm.expect(pm.collectionVariables.get('entitlementPoolId')).to.be.ok;",
+        "      });",
+        "    }",
+        "  } catch (eIso) { p2515SkipOk(pm, 'tc-P3-GEN-001：不足两组 / 无计划'); }",
+        "}",
+    ]
+
+
+def Lines_TcP3001_Pool_Update() -> List[str]:
+    return [
+        "var poolId = String(pm.collectionVariables.get('entitlementPoolId') || '').trim();",
+        "if (!poolId) { p2515SkipOk(pm, '单池 update：无 entitlementPoolId（前置已跳过）'); }",
+        "else {",
+        "  pm.test('单池 update：HTTP 200', function () { pm.response.to.have.status(200); });",
+        "  var j = pm.response.json();",
+        "  if (!p2515IsBusinessSuccess(j)) {",
+        "    p2515SkipOk(pm, '单池 update：业务失败（program 禁按池见 errCode）');",
+        "  } else {",
+        "    pm.test('业务成功（program 禁按池时可能失败，见 errCode）', function () {",
+        "      pm.expect(p2515IsBusinessSuccess(j)).to.be.true;",
+        "    });",
+        "  }",
+        "}",
+    ]
+
+
+def Lines_TcP3001_Search_After() -> List[str]:
+    return [
+        "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+        "var j = pm.response.json();",
+        "pm.test('业务成功', function () { pm.expect(p2515IsBusinessSuccess(j)).to.be.true; });",
+        "var crossAfter = p2515GetCrossModule(p2515ExtractEntitlementsFromData(j.data));",
+        "var crossBefore = [];",
+        "try { crossBefore = JSON.parse(pm.collectionVariables.get('p2515_cross_before_json') || '[]'); } catch (e2) { crossBefore = []; }",
+        "var touched = pm.collectionVariables.get('p2515_touched_am_key');",
+        "p2515AssertOtherGroupsNormalizedUnchanged(pm, crossBefore, crossAfter, touched, 'PAPI-2515-tc-P3-GEN-001');",
+    ]
+
+
+def BuildCollection() -> JsonObject:
+    auth_folder: JsonObject = Folder(
+        "00 Auth",
+        [
+            RequestItem(
+                name=PurposeName("鉴权获取访问令牌", "Auth", "POST", "/auth/token"),
+                method="POST",
+                url_path="/v2/auth/token",
+                body=json.dumps(
+                    # 与 2548 / Apifox env 351893 一致：变量名为 secret（非 clientSecret）
+                    {"clientId": "{{clientId}}", "secret": "{{secret}}"},
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                headers=AuthJsonHeaders(),
+                description="与 papi2548_helpers.GetAccessToken 一致；勿带 Authorization: undefined。鉴权 secret 用集合/环境变量 secret。",
+                save_token=True,
+            ),
+        ],
+        description="先执行以写入 accessToken。",
+    )
+
+    probe_folder: JsonObject = Folder(
+        "01 Probe（TestP2515SearchCrossModuleContract）",
+        [
+            RequestItem(
+                name=PurposeName("探测会籍 crossModule 契约（只读）", "P01", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{probeMembershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="需集合变量 probeMembershipId（对齐环境变量 DP_P2515_PROBE_MEMBERSHIP_ID）；会籍须含 crossModuleEntitlements。",
+                test_lines=Lines_Probe_Search(),
+            ),
+        ],
+        description="只读探测：不注册新会籍。",
+    )
+
+    # E2E 请求「name」与 Allure 中 ``FormatAllureHttpStepTitle`` 一致（见 papi2548_helpers）。
+    # 按池 update：``[S05]`` 的 Tests 末尾 ``postman.setNextRequest`` 回到同名请求，直至计划耗尽（与 pytest 循环一致）。
+    # 须在 Postman Collection Runner / Newman / 支持 setNextRequest 的 Apifox 自动化中跑文件夹；单点「发送」不会循环。
+    e2e_folder: JsonObject = Folder(
+        "02 E2E（TestP2515CrossModuleE2E::test_e2e_register_search_module_update_pool_updates）",
+        [
+            RequestItem(
+                name=PurposeName("注册会籍（P2515 模板）", "S01", "POST", "/memberships"),
+                method="POST",
+                url_path="/v2/memberships",
+                body=RegisterBodyRaw(),
+                headers=BearerJsonHeaders(),
+                description=(
+                    "RunP2515MainE2EScenario 起点；body.programId / 头 X-Program-ID 用 {{ProgramID}}（与 env 351893 一致）。"
+                    " Tests 内标签 PAPI-2515-S01 与 Allure 子断言对应。"
+                ),
+                save_mid=True,
+                test_lines=Lines_Register_S01(),
+            ),
+            RequestItem(
+                name=PurposeName("entitlements/search 基线", "S02", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="基线 cross + p2515_norm_cross_baseline。按池计划改在 [S04] module 更新后 search 写入（对齐 pytest cross2）。",
+                test_lines=Lines_E2e_Search_Baseline(),
+            ),
+            RequestItem(
+                name=PurposeName("单品类 module+tier entitlements/update", "S03", "POST", "/entitlements/update"),
+                method="POST",
+                url_path="/v2/entitlements/update",
+                body=ModuleExclusiveUpdateBodyRaw(),
+                headers=BearerJsonHeaders(),
+                description="BuildP2515ModuleExclusiveUpdateBody 对齐。",
+                test_lines=Lines_E2e_Entitlements_Update(),
+            ),
+            RequestItem(
+                name=PurposeName("module 更新后 entitlements/search", "S04", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="cross 归一化与基线一致。",
+                test_lines=Lines_E2e_Search_After_Module(),
+            ),
+            RequestItem(
+                name=P2515_E2E_S05_REQUEST_NAME,
+                method="POST",
+                url_path="/v2/entitlements/{{entitlementPoolId}}/update",
+                body="{{p2515_pool_update_body_raw}}",
+                headers=BearerJsonHeaders(),
+                description=(
+                    "按池 body 与路径由 ``p2515BuildPoolUpdatePlan`` 生成（对齐 ``papi2515_helpers.BuildP2515PoolUpdatePlan``）："
+                    " 按 ``applicableModules`` 分组轮询 ``pools[].entitlementPoolId``；"
+                    " 仅 ``purchasedEntitlements`` 的池用 ``purchasedQuantity``；否则按 ``cardholderExclusiveEntitlements→usageRestriction=1``、"
+                    " ``guestsExclusiveEntitlements→2``、``sharedEntitlements→3`` 分别可能产生多条 POST（同池多指标）。"
+                    " ``quantity``/``purchasedQuantity`` 见集合变量 ``DP_P2515_ATTACH2_POOL_QUANTITY`` / ``DP_P2515_ATTACH2_POOL_PURCHASED_QTY``。"
+                    " 前置脚本写 ``plan[0]``；Tests 末 ``pm.sendRequest`` 执行 ``plan[1..]`` 后跳转或内联 [S06][S07]。"
+                    " Apifox 若 ``setNextRequest`` 无效：设集合/环境变量 ``DP_P2515_FORCE_INLINE_TAIL=1``（或 ``P2515_FORCE_INLINE_TAIL``）强制内联收尾，并取消勾选 [S06][S07]。"
+                    " 调试 [S05] 按池内联：``DP_P2515_VERBOSE_SEND_IO=1`` 仅对 ``plan[1..]`` 的 ``pm.sendRequest`` 打印入参/出参（``Authorization`` 脱敏，body 过长截断）。"
+                ),
+                prerequest_lines=Lines_E2e_Pool_Update_Prerequest(),
+                test_lines=Lines_E2e_Pool_Update(),
+            ),
+            RequestItem(
+                name=P2515_E2E_S06_REQUEST_NAME,
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="全部按池 update 完成后；Allure 步骤号为 5+N（N=计划条数）。",
+                test_lines=Lines_E2e_Search_S06(),
+            ),
+            RequestItem(
+                name=PurposeName("最终一致性 entitlements/search", "S07", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="第二次收尾 search；Allure 步骤号为 6+N（N=按池计划条数）。",
+                test_lines=Lines_E2e_Search_S07(),
+            ),
+        ],
+        description=(
+            "与 ``RunP2515MainE2EScenario`` HTTP 顺序一致；请求名目的前置（PurposeName）。"
+            " 按池更新：主请求只打 ``plan[0]``；``plan[1..]`` 在 [S05] 后置脚本用 ``pm.sendRequest`` 串行发出（不依赖 Apifox 对 ``postman.setNextRequest`` 的循环支持）。"
+            " 跳转 [S06] 优先 ``pm.execution.setNextRequest``，其次 ``postman.setNextRequest``；皆不可用时内联两次 search（控制台会提示，必要时在场景中取消 [S06][S07] 避免重复）。"
+            " 若运行器表面有 ``setNextRequest`` 但不跳转：设 ``DP_P2515_FORCE_INLINE_TAIL=1``（或 ``P2515_FORCE_INLINE_TAIL``）强制走内联收尾。"
+            " 计划与 pytest 一致：在 [S04] module 更新后 search 的 cross 上调用 ``BuildP2515PoolUpdatePlan``。"
+            " 软断言与 moduleExclusive 增量仍以 pytest 为准。"
+        ),
+    )
+
+    doc_mbr_folder: JsonObject = Folder(
+        "03 Doc gap（tc-P1-MBR + tc-P2-MBR-001）",
+        [
+            RequestItem(
+                name=PurposeName("注册会籍供 MBR 对拍", "D01", "POST", "/memberships"),
+                method="POST",
+                url_path="/v2/memberships",
+                body=RegisterBodyRaw(),
+                headers=BearerJsonHeaders(),
+                description="test_memberships_search_cross_aligns_with_entitlements_search",
+                save_mid=True,
+                test_lines=Lines_Register_S01(),
+            ),
+            RequestItem(
+                name=PurposeName("entitlements/search 供 MBR 对拍", "D02", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="写入 p2515_norm_cross_es。",
+                test_lines=Lines_DocGap_Entitlements_Search(),
+            ),
+            RequestItem(
+                name=PurposeName("memberships/search 与 entitlements cross 对拍", "D03", "POST", "/memberships/search"),
+                method="POST",
+                url_path="/v2/memberships/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="与 D02 cross 归一化对拍。",
+                test_lines=Lines_DocGap_Memberships_Search(),
+            ),
+        ],
+        description="test_memberships_search_cross_aligns_with_entitlements_search。",
+    )
+
+    doc_combo_folder: JsonObject = Folder(
+        "04 Doc gap（tc-P1-GEN-002 + P1-GEN-005 + P2-GEN-005）",
+        [
+            RequestItem(
+                name=PurposeName("注册会籍供组合契约", "C01", "POST", "/memberships"),
+                method="POST",
+                url_path="/v2/memberships",
+                body=RegisterBodyRaw(),
+                headers=BearerJsonHeaders(),
+                description="test_search_tc_p1_gen_005_and_fictive_purchase_zero",
+                save_mid=True,
+                test_lines=Lines_Register_S01(),
+            ),
+            RequestItem(
+                name=PurposeName("cross+moduleExclusive 组合契约 search", "C02", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="携伴键 + 分组唯一 + 虚构买点池。",
+                test_lines=Lines_DocGap_Combo_Search(),
+            ),
+        ],
+        description="模板不满足时 pytest skip；Postman 会失败，需换 program。",
+    )
+
+    doc_p204_folder: JsonObject = Folder(
+        "05 Doc gap（tc-P2-GEN-004）",
+        [
+            RequestItem(
+                name=PurposeName("注册会籍供两组 cross", "G401", "POST", "/memberships"),
+                method="POST",
+                url_path="/v2/memberships",
+                body=RegisterBodyRaw(),
+                headers=BearerJsonHeaders(),
+                description="test_search_tc_p2_gen_004_at_least_two_cross_groups",
+                save_mid=True,
+                test_lines=Lines_Register_S01(),
+            ),
+            RequestItem(
+                name=PurposeName("至少两组 applicableModules 契约", "G402", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="至少两组 applicableModules。",
+                test_lines=Lines_DocGap_TcP204_Search(),
+            ),
+        ],
+        description="无两组 cross 时 pytest skip。",
+    )
+
+    doc_p2001_folder: JsonObject = Folder(
+        "06 Doc gap（tc-P2-GEN-001 Update vs search）",
+        [
+            RequestItem(
+                name=PurposeName("注册会籍供 update 对拍", "U01", "POST", "/memberships"),
+                method="POST",
+                url_path="/v2/memberships",
+                body=RegisterBodyRaw(),
+                headers=BearerJsonHeaders(),
+                description="test_update_tc_p2_gen_001_metrics_match_followup_search",
+                save_mid=True,
+                test_lines=Lines_Register_S01(),
+            ),
+            RequestItem(
+                name=PurposeName("update 对拍基线 search", "U02", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="基线 search。",
+                test_lines=Lines_TcP2001_Baseline_Search(),
+            ),
+            RequestItem(
+                name=PurposeName("单品类 entitlements/update 后指标", "U03", "POST", "/entitlements/update"),
+                method="POST",
+                url_path="/v2/entitlements/update",
+                body=ModuleExclusiveUpdateBodyRaw(),
+                headers=BearerJsonHeaders(),
+                description="与 E2E 文件夹中 [S03] 单品类 update 同型 body。",
+                test_lines=Lines_TcP2001_After_Update(),
+            ),
+            RequestItem(
+                name=PurposeName("紧跟 update 的 search 指标对拍", "U04", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="cross summary 四指标与 update 响应一致。",
+                test_lines=Lines_TcP2001_Follow_Search(),
+            ),
+        ],
+        description="update 响应无 cross 时 pytest skip。",
+    )
+
+    pool_zero_folder: JsonObject = Folder(
+        "07 Doc gap（tc-P2-GEN-002 买点归零）",
+        [
+            RequestItem(
+                name=PurposeName("注册会籍供买点归零", "Z01", "POST", "/memberships"),
+                method="POST",
+                url_path="/v2/memberships",
+                body=RegisterBodyRaw(),
+                headers=BearerJsonHeaders(),
+                description="test_update_tc_p2_gen_002_purchase_pool_zero_after_pool_update",
+                save_mid=True,
+                test_lines=Lines_Register_S01(),
+            ),
+            RequestItem(
+                name=PurposeName("选 purchased 池", "Z02", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="p2515FindFirstPurchasedPoolId → entitlementPoolId。",
+                test_lines=Lines_TcP2002_Pick_Pool(),
+            ),
+            RequestItem(
+                name=PurposeName("按池 update purchasedQuantity=0", "Z03", "POST", "/entitlements/{{entitlementPoolId}}/update"),
+                method="POST",
+                url_path="/v2/entitlements/{{entitlementPoolId}}/update",
+                body=json.dumps(
+                    {"membershipId": "{{membershipId}}", "purchasedQuantity": 0},
+                    indent=2,
+                ),
+                headers=BearerJsonHeaders(),
+                description="program 禁按池时可能业务失败。",
+                test_lines=Lines_TcP3001_Pool_Update(),
+            ),
+            RequestItem(
+                name=PurposeName("买点归零后 search", "Z04", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="p2515HasFictiveZeroPurchasedPool。",
+                test_lines=Lines_TcP2002_After_Zero_Search(),
+            ),
+        ],
+        description="无 purchased>0 买点池时 pytest skip。",
+    )
+
+    iso_folder: JsonObject = Folder(
+        "08 Doc gap（tc-P3-GEN-001 单池隔离）",
+        [
+            RequestItem(
+                name=PurposeName("注册会籍供单池隔离", "I01", "POST", "/memberships"),
+                method="POST",
+                url_path="/v2/memberships",
+                body=RegisterBodyRaw(),
+                headers=BearerJsonHeaders(),
+                description="test_pool_update_other_applicable_modules_unchanged",
+                save_mid=True,
+                test_lines=Lines_Register_S01(),
+            ),
+            RequestItem(
+                name=PurposeName("单池更新前 search 存快照", "I02", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="至少两组 cross + 保存 cross_before + 首条池计划。",
+                test_lines=Lines_TcP3001_Search_Before(),
+            ),
+            RequestItem(
+                name=PurposeName("单池 isolation update", "I03", "POST", "/entitlements/{{entitlementPoolId}}/update"),
+                method="POST",
+                url_path="/v2/entitlements/{{entitlementPoolId}}/update",
+                body="{{p2515_pool_update_body_raw}}",
+                headers=BearerJsonHeaders(),
+                description="与 I02 写入的 plan 首项一致。",
+                test_lines=Lines_TcP3001_Pool_Update(),
+            ),
+            RequestItem(
+                name=PurposeName("单池更新后其它组不变", "I04", "POST", "/entitlements/search"),
+                method="POST",
+                url_path="/v2/entitlements/search",
+                body=json.dumps({"membershipId": "{{membershipId}}"}, indent=2),
+                headers=BearerJsonHeaders(),
+                description="p2515AssertOtherGroupsNormalizedUnchanged。",
+                test_lines=Lines_TcP3001_Search_After(),
+            ),
+        ],
+        description="test_pool_update_other_applicable_modules_unchanged。",
+    )
+
+    info: JsonObject = {
+        "name": "PAPI-2515 crossModule（对齐 tests/features/test_cross_module_entitlements + services/papi2515_service）",
+        "description": (
+            "由 GeneratePostmanCollectionPapi2515.py 生成；Tests 内联 BuildP2515JsHelpersLines（与 services/papi2515_service.py 语义对齐）。\n"
+            "导入 Apifox 后位于「后置脚本」。\n\n"
+            "环境（多环境）：baseUrl、x-version；数据集鉴权三列 ProgramID/clientId/secret；"
+            "运行时：accessToken、membershipId、probeMembershipId、"
+            "entitlementPoolId、p2515_pool_update_body_raw、p2515_touched_am_key、p2515_norm_cross_baseline、"
+            "p2515_norm_cross_es、p2515_cross_before_json、p2515_json_after_update；"
+            "可选 DP_RELAX_SUMMARY_POOL_SUM、DP_P2515_ATTACH2_POOL_QUANTITY、DP_P2515_ATTACH2_POOL_PURCHASED_QTY、"
+            "DP_P2515_SUMMARY_GUEST_KEY_*。"
+        ),
+        "schema": POSTMAN_SCHEMA,
+    }
+
+    default_pool_body = json.dumps(
+        {"membershipId": "{{membershipId}}", "quantity": 2, "usageRestriction": 1},
+        ensure_ascii=False,
+    )
+
+    variables: List[JsonObject] = [
+        # baseUrl / x-version 留空，由 Environment 注入；勿预置空 accessToken（会盖住 Auth）
+        CollectionVariable("baseUrl", ""),
+        CollectionVariable("x-version", ""),
+        CollectionVariable("membershipId", ""),
+        CollectionVariable("probeMembershipId", ""),
+        CollectionVariable("entitlementPoolId", ""),
+        CollectionVariable("p2515_pool_update_body_raw", default_pool_body),
+        CollectionVariable("p2515_touched_am_key", ""),
+        CollectionVariable("p2515_norm_cross_baseline", ""),
+        CollectionVariable("p2515_norm_cross_es", ""),
+        CollectionVariable("p2515_cross_before_json", ""),
+        CollectionVariable("p2515_json_after_update", ""),
+        CollectionVariable("DP_RELAX_SUMMARY_POOL_SUM", ""),
+        CollectionVariable("DP_P2515_ATTACH2_POOL_QUANTITY", "2"),
+        CollectionVariable("DP_P2515_ATTACH2_POOL_PURCHASED_QTY", "1"),
+        CollectionVariable("DP_P2515_SUMMARY_GUEST_KEY_ALLOWED", ""),
+        CollectionVariable("DP_P2515_SUMMARY_GUEST_KEY_MAX", ""),
+    ]
+
+    root: JsonObject = {
+        "info": info,
+        "variable": variables,
+        "item": [
+            auth_folder,
+            probe_folder,
+            e2e_folder,
+            doc_mbr_folder,
+            doc_combo_folder,
+            doc_p204_folder,
+            doc_p2001_folder,
+            pool_zero_folder,
+            iso_folder,
+        ],
+    }
+    return root
+
+
+def Main() -> None:
+    out_path = CollectionPath(OUT_NAME)
+    payload = BuildCollection()
+    out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"Wrote {out_path}")
+
+
+if __name__ == "__main__":
+    Main()

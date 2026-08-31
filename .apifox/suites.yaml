@@ -1,6 +1,6 @@
 # Apifox CLI · Repo-first 套件映射
 # 权威：项目 ID / Base URL 以 .apifox/settings.json 为准；本文件顶层 project_id/api_base_url 仅作对照备注。
-# ApifoxRepoFirst.ps1 / tools/ApifoxSuitesYaml.py 从 assets.<key> 读路径与场景配置。
+# ApifoxRepoFirst.ps1 / tools/apifox-cli/ApifoxSuitesYaml.py 从 assets.<key> 读路径与场景配置。
 
 # 对照备注（脚本不读；以 settings.json 为准）
 project_id: 346275
@@ -10,19 +10,20 @@ assets:
   papi_2548:
     title: PAPI-2548 会籍 extensions
     # 扩新资产 = 复制本段并改字段；勿改 ApifoxRepoFirst.ps1 写死路径
-    # postman/ 按角色：generators(正本) / collections(可审) / docs；中间件默认 apifox-reports/<asset>/generated/
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionPapi2548.py
-    collection: api-testcases/api_tests/postman/collections/PAPI-2548-membership-extensions.postman_collection.json
+    # 必抄：push_mode: http + unbind_after_push: true（漏写则 UI 改入参会发空鉴权头；见 Skill reference「场景 Headers 参数值为空」）
+    # apifox-cli/ 按角色：generators(正本) / collections(可审) / docs；中间件默认 apifox-reports/<asset>/generated/
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionPapi2548.py
+    collection: api-testcases/api_tests/apifox-cli/collections/PAPI-2548-membership-extensions.postman_collection.json
     # apifox_package / openapi_bridge 省略 → 默认 apifox-reports/<asset>/generated/（gitignore，勿提交）
-    # 以下字段仅文档/对照，脚本不读（pytest 主线见 api-testcase-pack）
-    pytest_e2e: api-testcases/api_tests/tests/features/test_membership_extensions.py
-    scenario_orchestrator: RunPapi2548MainE2EScenario
+    # pytest 已退役（2026-08-12）；helpers/service 仍可能被其它冻结套件引用
+    pytest_e2e: null
+    scenario_orchestrator: null
     collection_name: PAPI-2548 membership extensions
     scenario_name: PAPI-2548 extensions · CLI sync
-    # 用户 2026-07-29：PAPI-2548 → common/P1/others
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
-    doc: api-testcases/api_tests/postman/docs/PAPI-2548-apifox-cli-repo-first.md
+    # 用户 2026-08-12：挪到 membership/P1/others
+    scenario_folder: membership/P1（全量用例）/others
+    scenario_folder_id: 350030
+    doc: api-testcases/api_tests/apifox-cli/docs/PAPI-2548-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,PAPI-2548
     module_id: 301424
     cli_import_format: apifox
@@ -34,21 +35,24 @@ assets:
     environment_id: 351893
     # 场景 options.useDataSetId：鉴权三列 ProgramID / clientId / secret（环境 get 常不回显）
     use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
     # triage 默认不配 → 失败一律 leftover。禁止每需求写 Triage*.py / 自动改生成器。
 
   papi_2515:
     title: PAPI-2515 crossModule entitlements
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionPapi2515.py
-    collection: api-testcases/api_tests/postman/collections/PAPI-2515-cross-module-entitlements.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionPapi2515.py
+    collection: api-testcases/api_tests/apifox-cli/collections/PAPI-2515-cross-module-entitlements.postman_collection.json
     # apifox_package / openapi_bridge 省略 → 默认 apifox-reports/<asset>/generated/
-    pytest_e2e: api-testcases/api_tests/tests/features/test_cross_module_entitlements.py
-    scenario_orchestrator: RunP2515MainE2EScenario
+    # pytest 已退役（2026-08-12 用户确认跑通）；后续调整见 pytest-retirement-map「待办」
+    pytest_e2e: null
+    scenario_orchestrator: null
     collection_name: PAPI-2515 crossModule entitlements
     scenario_name: PAPI-2515 crossModule · CLI sync
     # 场景挂载目录（L1/L2/L3）；落新资产前须先问用户再填
     scenario_folder: membership/P1（全量用例）/others
     scenario_folder_id: 350030
-    doc: api-testcases/api_tests/postman/docs/PAPI-2515-apifox-cli-repo-first.md
+    doc: api-testcases/api_tests/apifox-cli/docs/PAPI-2515-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,PAPI-2515
     cli_import_format: apifox
     test_scenario_id: 365972
@@ -57,20 +61,23 @@ assets:
     environment_id: 351893
     # 场景专属数据集「数据 1」；列名须为 ProgramID / clientId / secret
     use_data_set_id: 3475755
+    push_mode: http
+    unbind_after_push: true
     # triage 默认不配 → 失败一律 leftover。
 
   papi_2424:
     title: PAPI-2424 ePasses details MS 订单提示
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionPapi2424.py
-    collection: api-testcases/api_tests/postman/collections/PAPI-2424-ePasses-details-ms-order-hint.postman_collection.json
-    pytest_e2e: api-testcases/api_tests/tests/regression/test_epass_orders_ms_hint.py
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionPapi2424.py
+    collection: api-testcases/api_tests/apifox-cli/collections/PAPI-2424-ePasses-details-ms-order-hint.postman_collection.json
+    # pytest 已退役（2026-08-12）；helpers/service 仍可能被 historical_epass 引用
+    pytest_e2e: null
     scenario_orchestrator: null
     collection_name: PAPI-2424 ePasses/details MS 订单提示
     scenario_name: PAPI-2424 ePasses details MS · CLI sync
     # 场景挂载目录（L1/L2/L3）；落新资产前须先问用户再填
     scenario_folder: epass/P1（全量用例）/others
     scenario_folder_id: 350039
-    doc: api-testcases/api_tests/postman/docs/PAPI-2424-apifox-cli-repo-first.md
+    doc: api-testcases/api_tests/apifox-cli/docs/PAPI-2424-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,PAPI-2424
     cli_import_format: apifox
     test_scenario_id: 365975
@@ -79,20 +86,23 @@ assets:
     environment_id: 351893
     # 场景专属数据集「数据 1」；列名须为 ProgramID / clientId / secret（填 ePass 凭据）
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
     # triage 默认不配 → 失败一律 leftover。
 
   local_offers_options:
     title: Local Offers options 只读查询
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLocalOffersOptions.py
-    collection: api-testcases/api_tests/postman/collections/LocalOffers-Options-P1.postman_collection.json
-    pytest_e2e: api-testcases/api_tests/tests/features/test_local_offers_options.py
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionLocalOffersOptions.py
+    collection: api-testcases/api_tests/apifox-cli/collections/LocalOffers-Options-P1.postman_collection.json
+    # pytest 已退役（2026-08-12）：features/smoke/contract 三文件已删
+    pytest_e2e: null
     scenario_orchestrator: null
     collection_name: Local Offers options · P1（只读查询）
     scenario_name: Local Offers options · CLI sync
     # 场景挂载目录（L1/L2/L3）；用户确认 common/P1/others
     scenario_folder: common/P1（全量用例）/others
     scenario_folder_id: 350048
-    doc: api-testcases/api_tests/postman/docs/LocalOffers-Options-apifox-cli-repo-first.md
+    doc: api-testcases/api_tests/apifox-cli/docs/LocalOffers-Options-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,local-offers-options
     cli_import_format: apifox
     test_scenario_id: 365976
@@ -101,20 +111,22 @@ assets:
     environment_id: 351893
     # 与 2548 共用会籍鉴权数据集（ProgramID/clientId/secret = DP_PROGRAM_*）
     use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
     # triage 默认不配 → 失败一律 leftover。
 
   local_offer_epass_p0:
     title: Local Offer ePass P0 冒烟（E2E 核心）
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLocalOfferEpass.py
-    collection: api-testcases/api_tests/postman/collections/LocalOffer-ePass-P0-e2e-core.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionLocalOfferEpass.py
+    collection: api-testcases/api_tests/apifox-cli/collections/LocalOffer-ePass-P0-e2e-core.postman_collection.json
     pytest_e2e: api-testcases/api_tests/tests/features/test_local_offer_epass.py
     scenario_orchestrator: RunLocalOfferEpassCreateMainE2EScenario
     collection_name: Local Offer ePass · P0 E2E 核心
     scenario_name: Local Offer ePass P0 · CLI sync
-    # 用户 2026-07-29 全量迁移：其余旧场景 → common/P1/others
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
-    doc: api-testcases/api_tests/postman/docs/LocalOffer-ePass-P0-apifox-cli-repo-first.md
+    # 2026-08-23 按用户要求迁回 epass/P0/prebooking
+    scenario_folder: epass/P0(冒烟用例)/prebooking
+    scenario_folder_id: 350033
+    doc: api-testcases/api_tests/apifox-cli/docs/LocalOffer-ePass-P0-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,local-offer-epass,P0
     cli_import_format: apifox
     test_scenario_id: 366256
@@ -123,19 +135,21 @@ assets:
     environment_id: 351893
     # 复用 PAPI-2424 数据集 3475756（ProgramID=1919249349977088 · ePass 凭据）
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
 
   local_offer_epass_p1:
     title: Local Offer ePass P1 全量（E2E + 分模块）
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLocalOfferEpassFull.py
-    collection: api-testcases/api_tests/postman/collections/LocalOffer-ePass-P1-full.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionLocalOfferEpassFull.py
+    collection: api-testcases/api_tests/apifox-cli/collections/LocalOffer-ePass-P1-full.postman_collection.json
     pytest_e2e: api-testcases/api_tests/tests/features/local_offer_epass/
     scenario_orchestrator: RunLocalOfferEpassPrebookingMainE2EScenario
     collection_name: Local Offer ePass · P1 Full (pytest-sync)
     scenario_name: Local Offer ePass P1 Full · CLI sync
-    # 用户 2026-07-29 全量迁移：其余旧场景 → common/P1/others
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
-    doc: api-testcases/api_tests/postman/docs/LocalOffer-ePass-P1-apifox-cli-repo-first.md
+    # 2026-08-23 按用户要求迁回 epass/P1/prebooking
+    scenario_folder: epass/P1（全量用例）/prebooking
+    scenario_folder_id: 350037
+    doc: api-testcases/api_tests/apifox-cli/docs/LocalOffer-ePass-P1-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,local-offer-epass,P1
     cli_import_format: apifox
     test_scenario_id: 366257
@@ -144,18 +158,62 @@ assets:
     environment_id: 351893
     # 复用 PAPI-2424 数据集 3475756（ProgramID=1919249349977088 · ePass 凭据）
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
+
+  local_offer_membership_p0:
+    title: Local Offer Membership P0 预约冒烟
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionLocalOfferMembership.py
+    collection: api-testcases/api_tests/apifox-cli/collections/LocalOffer-Membership-P0-e2e-core.postman_collection.json
+    pytest_e2e: null
+    scenario_orchestrator: null
+    collection_name: Local Offer Membership · P0 预约冒烟
+    scenario_name: Local Offer Membership P0 · CLI sync
+    scenario_folder: membership/P0(冒烟用例)/prebooking
+    scenario_folder_id: 350024
+    doc: null
+    convert_tags: cli-sync,repo-first,local-offer-membership,P0
+    cli_import_format: apifox
+    test_scenario_id: 369083
+    working_branch: ai/apifox-cli-sync
+    test_suite_id: null
+    environment_id: 351893
+    use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
+
+  local_offer_membership_p1:
+    title: Local Offer Membership P1 预约全量
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionLocalOfferMembership.py
+    collection: api-testcases/api_tests/apifox-cli/collections/LocalOffer-Membership-P1-e2e-core.postman_collection.json
+    pytest_e2e: null
+    scenario_orchestrator: null
+    collection_name: Local Offer Membership · P1 预约全量
+    scenario_name: Local Offer Membership P1 · CLI sync
+    scenario_folder: membership/P1（全量用例）/prebooking
+    scenario_folder_id: 350028
+    doc: null
+    convert_tags: cli-sync,repo-first,local-offer-membership,P1
+    cli_import_format: apifox
+    test_scenario_id: 369084
+    working_branch: ai/apifox-cli-sync
+    test_suite_id: null
+    environment_id: 351893
+    use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
 
   ft_membership_payment_p0:
     title: FT Membership Prebooking Payment P0 冒烟
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionFtMembershipPaymentP0.py
-    collection: api-testcases/api_tests/postman/collections/FT-Membership-Prebooking-Payment-P0.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionFtMembershipPaymentP0.py
+    collection: api-testcases/api_tests/apifox-cli/collections/FT-Membership-Prebooking-Payment-P0.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
     collection_name: FT Membership Prebooking Payment · P0 冒烟
     scenario_name: FT Membership Prebooking Payment P0 · CLI sync
     scenario_folder: membership/P0(冒烟用例)/prebooking
     scenario_folder_id: 350024
-    doc: api-testcases/api_tests/postman/docs/FT-Membership-Payment-P0-apifox-cli-repo-first.md
+    doc: api-testcases/api_tests/apifox-cli/docs/FT-Membership-Payment-P0-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,ft-payment,membership,P0
     cli_import_format: apifox
     test_scenario_id: 366258
@@ -163,18 +221,20 @@ assets:
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
 
   ft_membership_payment_p1:
     title: FT Membership Prebooking Payment P1 全量
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionFtMembershipPaymentP1.py
-    collection: api-testcases/api_tests/postman/collections/FT-Membership-Prebooking-Payment-P1.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionFtMembershipPaymentP1.py
+    collection: api-testcases/api_tests/apifox-cli/collections/FT-Membership-Prebooking-Payment-P1.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
     collection_name: FT Membership Prebooking Payment · P1 全量
     scenario_name: FT Membership Prebooking Payment P1 · CLI sync
     scenario_folder: membership/P1（全量用例）/prebooking
     scenario_folder_id: 350028
-    doc: api-testcases/api_tests/postman/docs/FT-Membership-Payment-P1-apifox-cli-repo-first.md
+    doc: api-testcases/api_tests/apifox-cli/docs/FT-Membership-Payment-P1-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,ft-payment,membership,P1
     cli_import_format: apifox
     test_scenario_id: 366261
@@ -182,18 +242,20 @@ assets:
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
 
   ft_epass_payment_p0:
     title: FT E-pass Prebooking Payment P0 冒烟
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionFtEpassPaymentP0.py
-    collection: api-testcases/api_tests/postman/collections/FT-Epass-Prebooking-Payment-P0.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionFtEpassPaymentP0.py
+    collection: api-testcases/api_tests/apifox-cli/collections/FT-Epass-Prebooking-Payment-P0.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
     collection_name: FT E-pass Prebooking Payment · P0 冒烟
     scenario_name: FT E-pass Prebooking Payment P0 · CLI sync
     scenario_folder: epass/P0(冒烟用例)/prebooking
     scenario_folder_id: 350033
-    doc: api-testcases/api_tests/postman/docs/FT-Epass-Payment-P0-apifox-cli-repo-first.md
+    doc: api-testcases/api_tests/apifox-cli/docs/FT-Epass-Payment-P0-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,ft-payment,epass,P0
     cli_import_format: apifox
     test_scenario_id: 366262
@@ -201,18 +263,20 @@ assets:
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
 
   ft_epass_payment_p1:
     title: FT E-pass Prebooking Payment P1 全量
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionFtEpassPaymentP1.py
-    collection: api-testcases/api_tests/postman/collections/FT-Epass-Prebooking-Payment-P1.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionFtEpassPaymentP1.py
+    collection: api-testcases/api_tests/apifox-cli/collections/FT-Epass-Prebooking-Payment-P1.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
     collection_name: FT E-pass Prebooking Payment · P1 全量
     scenario_name: FT E-pass Prebooking Payment P1 · CLI sync
     scenario_folder: epass/P1（全量用例）/prebooking
     scenario_folder_id: 350037
-    doc: api-testcases/api_tests/postman/docs/FT-Epass-Payment-P1-apifox-cli-repo-first.md
+    doc: api-testcases/api_tests/apifox-cli/docs/FT-Epass-Payment-P1-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,ft-payment,epass,P1
     cli_import_format: apifox
     test_scenario_id: 366263
@@ -220,18 +284,20 @@ assets:
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
 
   lounge_membership_payment_p0:
     title: Lounge Membership Prebooking Payment P0 冒烟
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLoungeMembershipPaymentP0.py
-    collection: api-testcases/api_tests/postman/collections/Lounge-Membership-Prebooking-Payment-P0.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionLoungeMembershipPaymentP0.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Lounge-Membership-Prebooking-Payment-P0.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
     collection_name: Lounge Membership Prebooking Payment · P0 冒烟
     scenario_name: Lounge Membership Prebooking Payment P0 · CLI sync
     scenario_folder: membership/P0(冒烟用例)/prebooking
     scenario_folder_id: 350024
-    doc: api-testcases/api_tests/postman/docs/Lounge-Membership-Payment-P0-apifox-cli-repo-first.md
+    doc: api-testcases/api_tests/apifox-cli/docs/Lounge-Membership-Payment-P0-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,lounge-payment,membership,P0
     cli_import_format: apifox
     test_scenario_id: 366310
@@ -239,18 +305,20 @@ assets:
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
 
   lounge_membership_payment_p1:
     title: Lounge Membership Prebooking Payment P1 全量
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLoungeMembershipPaymentP1.py
-    collection: api-testcases/api_tests/postman/collections/Lounge-Membership-Prebooking-Payment-P1.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionLoungeMembershipPaymentP1.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Lounge-Membership-Prebooking-Payment-P1.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
     collection_name: Lounge Membership Prebooking Payment · P1 全量
     scenario_name: Lounge Membership Prebooking Payment P1 · CLI sync
     scenario_folder: membership/P1（全量用例）/prebooking
     scenario_folder_id: 350028
-    doc: api-testcases/api_tests/postman/docs/Lounge-Membership-Payment-P1-apifox-cli-repo-first.md
+    doc: api-testcases/api_tests/apifox-cli/docs/Lounge-Membership-Payment-P1-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,lounge-payment,membership,P1
     cli_import_format: apifox
     test_scenario_id: 366311
@@ -258,18 +326,20 @@ assets:
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
 
   lounge_epass_payment_p0:
     title: Lounge E-pass Prebooking Payment P0 冒烟
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLoungeEpassPaymentP0.py
-    collection: api-testcases/api_tests/postman/collections/Lounge-Epass-Prebooking-Payment-P0.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionLoungeEpassPaymentP0.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Lounge-Epass-Prebooking-Payment-P0.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
     collection_name: Lounge E-pass Prebooking Payment · P0 冒烟
     scenario_name: Lounge E-pass Prebooking Payment P0 · CLI sync
     scenario_folder: epass/P0(冒烟用例)/prebooking
     scenario_folder_id: 350033
-    doc: api-testcases/api_tests/postman/docs/Lounge-Epass-Payment-P0-apifox-cli-repo-first.md
+    doc: api-testcases/api_tests/apifox-cli/docs/Lounge-Epass-Payment-P0-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,lounge-payment,epass,P0
     cli_import_format: apifox
     test_scenario_id: 366312
@@ -277,18 +347,20 @@ assets:
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
 
   lounge_epass_payment_p1:
     title: Lounge E-pass Prebooking Payment P1 全量
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLoungeEpassPaymentP1.py
-    collection: api-testcases/api_tests/postman/collections/Lounge-Epass-Prebooking-Payment-P1.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionLoungeEpassPaymentP1.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Lounge-Epass-Prebooking-Payment-P1.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
     collection_name: Lounge E-pass Prebooking Payment · P1 全量
     scenario_name: Lounge E-pass Prebooking Payment P1 · CLI sync
     scenario_folder: epass/P1（全量用例）/prebooking
     scenario_folder_id: 350037
-    doc: api-testcases/api_tests/postman/docs/Lounge-Epass-Payment-P1-apifox-cli-repo-first.md
+    doc: api-testcases/api_tests/apifox-cli/docs/Lounge-Epass-Payment-P1-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,lounge-payment,epass,P1
     cli_import_format: apifox
     test_scenario_id: 366313
@@ -296,19 +368,21 @@ assets:
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
 
   membership_purchase_p0:
     title: 首次会籍商品购买 P0 冒烟
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionMembershipPurchaseP0.py
-    collection: api-testcases/api_tests/postman/collections/Membership-Purchase-P0.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionMembershipPurchaseP0.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Membership-Purchase-P0.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
     collection_name: Membership Purchase · P0 冒烟（首次会籍购买）
     scenario_name: Membership Purchase P0 · CLI sync
-    # 用户 2026-07-29 全量迁移：其余旧场景 → common/P1/others
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
-    doc: api-testcases/api_tests/postman/docs/Membership-Purchase-P0-apifox-cli-repo-first.md
+    # 用户 2026-08-23：挂到 common/P0/prebooking
+    scenario_folder: common/P0(冒烟用例)/prebooking
+    scenario_folder_id: 350042
+    doc: api-testcases/api_tests/apifox-cli/docs/Membership-Purchase-P0-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,membership-purchase,P0
     cli_import_format: apifox
     test_scenario_id: 366587
@@ -316,19 +390,21 @@ assets:
     test_suite_id: null
     environment_id: 351893
     # 复用 UAT canary 环境（含可用 baseUrl 变量）；鉴权/业务期望由生成器从 .env / DEFAULT 注入
+    push_mode: http
+    unbind_after_push: true
 
   membership_purchase_p1:
     title: 首次会籍商品购买 P1 全量
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionMembershipPurchaseP1.py
-    collection: api-testcases/api_tests/postman/collections/Membership-Purchase-P1.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionMembershipPurchaseP1.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Membership-Purchase-P1.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
     collection_name: Membership Purchase · P1 全量（首次会籍购买）
     scenario_name: Membership Purchase P1 · CLI sync
-    # 用户 2026-07-29 全量迁移：其余旧场景 → common/P1/others
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
-    doc: api-testcases/api_tests/postman/docs/Membership-Purchase-P1-apifox-cli-repo-first.md
+    # 用户 2026-08-23：挂到 common/P1/prebooking
+    scenario_folder: common/P1（全量用例）/prebooking
+    scenario_folder_id: 350046
+    doc: api-testcases/api_tests/apifox-cli/docs/Membership-Purchase-P1-apifox-cli-repo-first.md
     convert_tags: cli-sync,repo-first,membership-purchase,P1
     cli_import_format: apifox
     test_scenario_id: 366626
@@ -336,17 +412,19 @@ assets:
     test_suite_id: null
     environment_id: 351893
     # 复用 P0 鉴权 MP_P0_* + Environment 351893；P1 增量业务变量见生成器 MERGED_BUSINESS_ENV
+    push_mode: http
+    unbind_after_push: true
 
   fitness_epass_p0:
     title: fitness ePass P0 E2E 核心
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionFitnessEpass.py
-    collection: api-testcases/api_tests/postman/collections/Fitness-ePass-P0-e2e-core.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionFitnessEpass.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Fitness-ePass-P0-e2e-core.postman_collection.json
     pytest_e2e: api-testcases/api_tests/tests/regression/test_historical_epass_regression.py
     scenario_orchestrator: null
     collection_name: fitness ePass · P0 E2E 核心
     scenario_name: fitness ePass P0 · CLI sync
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
+    scenario_folder: epass/P0(冒烟用例)/prebooking
+    scenario_folder_id: 350033
     doc: null
     convert_tags: cli-sync,repo-first,fitness-epass,P0
     cli_import_format: apifox
@@ -355,17 +433,41 @@ assets:
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
+
+  fitness_membership_p0:
+    title: fitness Membership P0 预约冒烟
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionFitnessMembership.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Fitness-Membership-P0-e2e-core.postman_collection.json
+    pytest_e2e: null
+    scenario_orchestrator: null
+    collection_name: fitness Membership · P0 预约冒烟
+    scenario_name: fitness Membership P0 · CLI sync
+    scenario_folder: membership/P0(冒烟用例)/prebooking
+    scenario_folder_id: 350024
+    doc: null
+    convert_tags: cli-sync,repo-first,fitness-membership,P0
+    cli_import_format: apifox
+    test_scenario_id: 369082
+    working_branch: ai/apifox-cli-sync
+    test_suite_id: null
+    environment_id: 351893
+    use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
 
   esim_epass_p0:
     title: eSIM ePass P0 E2E 核心
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionEsimEpass.py
-    collection: api-testcases/api_tests/postman/collections/Esim-ePass-P0-e2e-core.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionEsimEpass.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Esim-ePass-P0-e2e-core.postman_collection.json
     pytest_e2e: api-testcases/api_tests/tests/regression/test_historical_epass_esim.py
     scenario_orchestrator: null
     collection_name: eSIM ePass · P0 E2E 核心
     scenario_name: eSIM ePass P0 · CLI sync
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
+    # 2026-08-23 按用户要求迁到 epass/P0/prebooking
+    scenario_folder: epass/P0(冒烟用例)/prebooking
+    scenario_folder_id: 350033
     doc: null
     convert_tags: cli-sync,repo-first,esim-epass,P0
     cli_import_format: apifox
@@ -374,126 +476,142 @@ assets:
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475756
-
-  lounge_epass_p0:
-    title: lounge ePass P0 E2E 核心
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLoungeEpass.py
-    collection: api-testcases/api_tests/postman/collections/Lounge-ePass-P0-e2e-core.postman_collection.json
-    pytest_e2e: api-testcases/api_tests/tests/regression/test_historical_epass_regression.py
-    scenario_orchestrator: null
-    collection_name: lounge ePass · P0 E2E 核心
-    scenario_name: lounge ePass P0 · CLI sync
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
-    doc: null
-    convert_tags: cli-sync,repo-first,lounge-epass,P0
-    cli_import_format: apifox
-    test_scenario_id: 366656
-    working_branch: ai/apifox-cli-sync
-    test_suite_id: null
-    environment_id: 351893
-    use_data_set_id: 3475756
-
-  lounge_epass_p0_v1:
-    title: lounge ePass P0 E2E 核心（API v1）
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionLoungeEpassV1.py
-    collection: api-testcases/api_tests/postman/collections/Lounge-ePass-P0-e2e-core-v1.postman_collection.json
-    pytest_e2e: null
-    scenario_orchestrator: null
-    collection_name: lounge ePass · P0 E2E 核心 · API v1
-    scenario_name: lounge ePass P0 v1 · CLI sync
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
-    doc: null
-    convert_tags: cli-sync,repo-first,lounge-epass,P0,v1
-    cli_import_format: apifox
-    test_scenario_id: 366657
-    working_branch: ai/apifox-cli-sync
-    test_suite_id: null
-    environment_id: 351893
-    use_data_set_id: 3475756
-
-  fasttrack_epass_p0:
-    title: fastTrack ePass P0 E2E 核心
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionFastTrackEpass.py
-    collection: api-testcases/api_tests/postman/collections/FastTrack-ePass-P0-e2e-core.postman_collection.json
-    pytest_e2e: api-testcases/api_tests/tests/regression/test_historical_epass_regression.py
-    scenario_orchestrator: null
-    collection_name: fastTrack ePass · P0 E2E 核心
-    scenario_name: fastTrack ePass P0 · CLI sync
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
-    doc: null
-    convert_tags: cli-sync,repo-first,fasttrack-epass,P0
-    cli_import_format: apifox
-    test_scenario_id: 366658
-    working_branch: ai/apifox-cli-sync
-    test_suite_id: null
-    environment_id: 351893
-    use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
 
   papi_2839:
-    title: PAPI-2839 FT 姓名正则
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionPapi2839.py
-    collection: api-testcases/api_tests/postman/collections/PAPI-2839-FastTrack-NameRegex-P1.postman_collection.json
+    title: PAPI-2839 FT 姓名正则 ePass
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionPapi2839.py
+    collection: api-testcases/api_tests/apifox-cli/collections/PAPI-2839-FastTrack-NameRegex-P1.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
-    collection_name: PAPI-2839 · FT 姓名正则（prebookingRequiredInfo + passengers）
-    scenario_name: PAPI-2839 FT NameRegex · CLI sync
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
+    collection_name: PAPI-2839 · FT 姓名正则 ePass（prebookingRequiredInfo + passengers）
+    scenario_name: PAPI-2839 FT NameRegex ePass · CLI sync
+    # 2026-08-23：从 common 拆出 ePass 轨，挂 epass/P1/prebooking
+    scenario_folder: epass/P1（全量用例）/prebooking
+    scenario_folder_id: 350037
     doc: null
-    convert_tags: cli-sync,repo-first,PAPI-2839,FT
+    convert_tags: cli-sync,repo-first,PAPI-2839,FT,epass
     cli_import_format: apifox
     test_scenario_id: 366659
     working_branch: ai/apifox-cli-sync
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
 
-  papi_2839_lounge:
-    title: PAPI-2839 Lounge 姓名正则品类隔离回归
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionPapi2839LoungeRegression.py
-    collection: api-testcases/api_tests/postman/collections/PAPI-2839-Lounge-NameRegex-Regression-P1.postman_collection.json
+  papi_2839_membership:
+    title: PAPI-2839 FT 姓名正则 Membership
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionPapi2839.py
+    collection: api-testcases/api_tests/apifox-cli/collections/PAPI-2839-FastTrack-NameRegex-P1-Membership.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
-    collection_name: PAPI-2839 · Lounge 姓名正则品类隔离回归
-    scenario_name: PAPI-2839 Lounge NameRegex · CLI sync
-    # 用户 2026-07-29：与 PAPI-2548 一并挂 common/P1/others
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
+    collection_name: PAPI-2839 · FT 姓名正则 Membership（prebookingRequiredInfo + passengers）
+    scenario_name: PAPI-2839 FT NameRegex Membership · CLI sync
+    scenario_folder: membership/P1（全量用例）/prebooking
+    scenario_folder_id: 350028
     doc: null
-    convert_tags: cli-sync,repo-first,PAPI-2839,Lounge
+    convert_tags: cli-sync,repo-first,PAPI-2839,FT,membership
+    cli_import_format: apifox
+    test_scenario_id: 369080
+    working_branch: ai/apifox-cli-sync
+    test_suite_id: null
+    environment_id: 351893
+    use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
+
+  papi_2839_lounge:
+    title: PAPI-2839 Lounge 姓名正则品类隔离回归 ePass
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionPapi2839LoungeRegression.py
+    collection: api-testcases/api_tests/apifox-cli/collections/PAPI-2839-Lounge-NameRegex-Regression-P1.postman_collection.json
+    pytest_e2e: null
+    scenario_orchestrator: null
+    collection_name: PAPI-2839 · Lounge 姓名正则品类隔离回归 ePass
+    scenario_name: PAPI-2839 Lounge NameRegex ePass · CLI sync
+    # 2026-08-23：从 common 拆出 ePass 轨，挂 epass/P1/prebooking
+    scenario_folder: epass/P1（全量用例）/prebooking
+    scenario_folder_id: 350037
+    doc: null
+    convert_tags: cli-sync,repo-first,PAPI-2839,Lounge,epass
     cli_import_format: apifox
     test_scenario_id: 366660
     working_branch: ai/apifox-cli-sync
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
 
-  papi_2722:
-    title: PAPI-2722 FT PII
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionPapi2722FastTrackPii.py
-    collection: api-testcases/api_tests/postman/collections/PAPI-2722-FastTrack-PII-P1.postman_collection.json
+  papi_2839_lounge_membership:
+    title: PAPI-2839 Lounge 姓名正则品类隔离回归 Membership
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionPapi2839LoungeRegression.py
+    collection: api-testcases/api_tests/apifox-cli/collections/PAPI-2839-Lounge-NameRegex-Regression-P1-Membership.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
-    collection_name: PAPI-2722 · FT PII（全部使用人·无航班号）
-    scenario_name: PAPI-2722 FT PII · CLI sync
-    scenario_folder: common/P1（全量用例）/others
-    scenario_folder_id: 350048
+    collection_name: PAPI-2839 · Lounge 姓名正则品类隔离回归 Membership
+    scenario_name: PAPI-2839 Lounge NameRegex Membership · CLI sync
+    scenario_folder: membership/P1（全量用例）/prebooking
+    scenario_folder_id: 350028
     doc: null
-    convert_tags: cli-sync,repo-first,PAPI-2722,FT
+    convert_tags: cli-sync,repo-first,PAPI-2839,Lounge,membership
+    cli_import_format: apifox
+    test_scenario_id: 369081
+    working_branch: ai/apifox-cli-sync
+    test_suite_id: null
+    environment_id: 351893
+    use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
+
+  papi_2722:
+    title: PAPI-2722 FT PII ePass
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionPapi2722FastTrackPii.py
+    collection: api-testcases/api_tests/apifox-cli/collections/PAPI-2722-FastTrack-PII-P1.postman_collection.json
+    pytest_e2e: null
+    scenario_orchestrator: null
+    collection_name: PAPI-2722 · FT PII ePass（全部使用人·无航班号）
+    scenario_name: PAPI-2722 FT PII ePass · CLI sync
+    # 2026-08-23：从 common 拆出 ePass 轨，挂 epass/P1/prebooking
+    scenario_folder: epass/P1（全量用例）/prebooking
+    scenario_folder_id: 350037
+    doc: null
+    convert_tags: cli-sync,repo-first,PAPI-2722,FT,epass
     cli_import_format: apifox
     test_scenario_id: 366661
     working_branch: ai/apifox-cli-sync
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
+
+  papi_2722_membership:
+    title: PAPI-2722 FT PII Membership
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionPapi2722FastTrackPii.py
+    collection: api-testcases/api_tests/apifox-cli/collections/PAPI-2722-FastTrack-PII-P1-Membership.postman_collection.json
+    pytest_e2e: null
+    scenario_orchestrator: null
+    collection_name: PAPI-2722 · FT PII Membership（全部使用人·无航班号）
+    scenario_name: PAPI-2722 FT PII Membership · CLI sync
+    scenario_folder: membership/P1（全量用例）/prebooking
+    scenario_folder_id: 350028
+    doc: null
+    convert_tags: cli-sync,repo-first,PAPI-2722,FT,membership
+    cli_import_format: apifox
+    test_scenario_id: 369079
+    working_branch: ai/apifox-cli-sync
+    test_suite_id: null
+    environment_id: 351893
+    use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
 
   resource_details_scan:
     title: Resource Details 全量扫描
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionResourceDetailsScan.py
-    collection: api-testcases/api_tests/postman/collections/Resource-Details-Scan.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionResourceDetailsScan.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Resource-Details-Scan.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
     collection_name: Resource Details · 全量扫描（prebookingRequiredInfo / code=0）
@@ -508,14 +626,38 @@ assets:
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
+
+  resource_details_scan_langdyn:
+    title: Resource Details forEach 语种列表扫描
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionResourceDetailsScanLangDyn.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Resource-Details-Scan-LangDyn.postman_collection.json
+    pytest_e2e: null
+    scenario_orchestrator: null
+    collection_name: Resource Details · forEach 语种列表 + 资源 forEach（LIST→DETAIL · code=0）
+    scenario_name: Resource Details Scan LangDyn · CLI sync
+    scenario_folder: common/P1（全量用例）/others
+    scenario_folder_id: 350048
+    doc: null
+    convert_tags: cli-sync,repo-first,resource-details-scan-langdyn
+    cli_import_format: apifox
+    test_scenario_id: 368817
+    working_branch: ai/apifox-cli-sync
+    test_suite_id: null
+    environment_id: 351893
+    # 场景 related「数据 1」现为 3476397；旧 3475756 在 AI 分支已 404，会导致 clientId/secret 未注入
+    use_data_set_id: 3476397
+    push_mode: http
+    unbind_after_push: true
 
   resource_is_bookable_scan:
     title: Resource isBookable scan
-    generator: api-testcases/api_tests/postman/generators/GeneratePostmanCollectionResourceIsBookableScan.py
-    collection: api-testcases/api_tests/postman/collections/Resource-IsBookable-Scan.postman_collection.json
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionResourceIsBookableScan.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Resource-IsBookable-Scan.postman_collection.json
     pytest_e2e: null
     scenario_orchestrator: null
-    collection_name: Resource isBookable scan (prebookingPolicy)
+    collection_name: Resource isBookable · 扫描（prebookingPolicy · forEach）
     scenario_name: Resource isBookable Scan - CLI sync
     scenario_folder: common/P1（全量用例）/others
     scenario_folder_id: 350048
@@ -527,6 +669,73 @@ assets:
     test_suite_id: null
     environment_id: 351893
     use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
+
+  transport_hubs_scan:
+    title: Transport Hubs 站点全量扫描
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionTransportHubsScan.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Transport-Hubs-Scan.postman_collection.json
+    pytest_e2e: null
+    scenario_orchestrator: null
+    collection_name: Transport Hubs · 站点全量扫描（语种×列表×详情 code=0）
+    scenario_name: Transport Hubs Scan · CLI sync
+    scenario_folder: common/P1（全量用例）/others
+    scenario_folder_id: 350048
+    doc: null
+    convert_tags: cli-sync,repo-first,transport-hubs-scan
+    cli_import_format: apifox
+    test_scenario_id: 366797
+    working_branch: ai/apifox-cli-sync
+    test_suite_id: null
+    environment_id: 351893
+    use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
+
+  dining_discount_epass:
+    title: Dining Discount ePass walk-in（P0+同场景 P1 负向）
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionDiningDiscountEpass.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Dining-Discount-ePass-P0-e2e-core.postman_collection.json
+    pytest_e2e: null
+    scenario_orchestrator: null
+    collection_name: Dining Discount ePass · P0 walk-in（含 P1 负向）
+    scenario_name: Dining Discount ePass · CLI sync
+    # 用户已确认：epass / P0(冒烟用例) / walk-in；walk-in 目录首次 Push 前需 folder create
+    scenario_folder: epass/P0(冒烟用例)/walk-in
+    scenario_folder_id: 350034
+    doc: null
+    convert_tags: cli-sync,repo-first,dining-discount,epass,P0,walk-in
+    cli_import_format: apifox
+    test_scenario_id: 370239
+    working_branch: ai/apifox-cli-sync
+    test_suite_id: null
+    environment_id: 351893
+    use_data_set_id: 3475756
+    push_mode: http
+    unbind_after_push: true
+
+  dining_discount_membership:
+    title: Dining Discount Membership walk-in P0
+    generator: api-testcases/api_tests/apifox-cli/generators/GeneratePostmanCollectionDiningDiscountMembership.py
+    collection: api-testcases/api_tests/apifox-cli/collections/Dining-Discount-Membership-P0-e2e-core.postman_collection.json
+    pytest_e2e: null
+    scenario_orchestrator: null
+    collection_name: Dining Discount Membership · P0 walk-in
+    scenario_name: Dining Discount Membership · CLI sync
+    # 用户已确认：membership / P0(冒烟用例) / walk-in；walk-in 目录首次 Push 前需 folder create
+    scenario_folder: membership/P0(冒烟用例)/walk-in
+    scenario_folder_id: 350025
+    doc: null
+    convert_tags: cli-sync,repo-first,dining-discount,membership,P0,walk-in
+    cli_import_format: apifox
+    test_scenario_id: 370240
+    working_branch: ai/apifox-cli-sync
+    test_suite_id: null
+    environment_id: 351893
+    use_data_set_id: 3475754
+    push_mode: http
+    unbind_after_push: true
 
 # suites: 预留（尚未接线 -Action Run -Suite）；勿以为会生效
 # suites:
@@ -534,3 +743,25 @@ assets:
 #     description: PAPI-2548 smoke
 #     asset: papi_2548
 #     prefer: test_scenario_id
+
+# 离线批处理资产组；现有解析器只读取 assets:，遇到本顶层键会安全停止。
+# Batch 仅将组展开为资产 key，不赋予 Run / SyncCheck 能力。
+asset_groups:
+  payment:
+    - ft_membership_payment_p0
+    - ft_membership_payment_p1
+    - ft_epass_payment_p0
+    - ft_epass_payment_p1
+    - lounge_membership_payment_p0
+    - lounge_membership_payment_p1
+    - lounge_epass_payment_p0
+    - lounge_epass_payment_p1
+  smoke:
+    - local_offer_epass_p0
+    - local_offer_membership_p0
+    - ft_epass_payment_p0
+    - ft_membership_payment_p0
+    - fitness_epass_p0
+    - esim_epass_p0
+    - dining_discount_epass
+    - membership_purchase_p0

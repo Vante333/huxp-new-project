@@ -1,0 +1,755 @@
+# DiningDiscountAPI订单测试用例
+
+## DiningDiscount订单-epass
+
+### CreateEpassOrder发放DiningDiscountEPass POST /v2/orders/discounts/ePasses
+
+- 入参校验
+  - tc-p1: path:module增加枚举值discounts
+    - 可以用该值进行请求
+  - tc-p1: body：module增加枚举值5
+    - 结果与需求及Apifox一致
+  - tc-p1: clientUserId
+    - 必传
+  - extra
+    - tc-p1: firstName
+      - 必传
+    - tc-p1: lastName
+      - 必传
+    - tc-p1: activationDate
+      - 可选
+    - tc-p1: expirationDate
+      - 必传
+    - tc-p1: availableUsages
+      - 必传
+  - allowedResources
+    - tc-p1: resourceIds
+      - 支持
+    - tc-p1: countryOrRegion
+      - 支持
+    - tc-p1: iata
+      - 支持
+    - tc-p1: resourceIds不传
+      - 发放成功，不限制到具体餐厅，不传空数组
+    - tc-p1: resourceIds传对应DiningDiscount资源
+      - 发放成功，allowedResources.resourceIds仅包含请求资源
+    - tc-p1: resourceIds传1个和30个
+      - 两组均发放成功，resourceIds分别完整回显
+    - tc-p1: iata不传
+      - 发放成功，不形成IATA限制
+    - tc-p1: iata传对应机场
+      - 发放成功，allowedResources.iata与请求一致
+    - tc-p1: countryOrRegion不传
+      - 发放成功，不形成国家限制
+    - tc-p1: countryOrRegion传对应国家
+      - 发放成功，allowedResources.countryOrRegion与请求一致
+- 返回校验
+  - 与数据结构一致
+    - tc-p1: 特别关注字段
+      - module为5
+      - category为1
+    - 其他字段
+      - tc-p1: status
+        - 1
+      - tc-p1: clientUserId传入的字段
+        - 与入参传入值一致
+      - tc-p1: orderId生成的订单id
+        - 非空且为系统生成的有效订单标识
+      - tc-p1: orderCreatedDate创建日期
+        - 为订单创建时间，格式与Apifox一致
+      - tc-p1: orderCancelledDate
+        - null
+      - extra
+        - tc-p1: ePassId
+          - 字段存在且为16位数字
+        - tc-p1: ePassStatus
+          - 1
+        - tc-p1: firstName
+          - 与入参传入值一致
+        - tc-p1: lastName
+          - 与入参传入值一致
+        - tc-p1: activationDate
+          - 与入参传入值一致
+        - tc-p1: expirationDate
+          - 与入参传入值一致
+        - tc-p1: availableUsages
+          - 与入参传入值一致
+        - tc-p1: usedUsages
+          - 0
+        - tc-p1: allowedResources
+          - resourceIds;iata;countryOrRegion与本次唯一限制方式一致
+- 错误码
+  - tc-p1: resourceId中传了非这个接口对应品类的其他资源，例如创建DiningDiscount的Epass，传了lounge的code
+    - 500.063.001
+      - The 'resourceId' array contains resources that are not associated with the expected module. Please verify and ensure the resource IDs match the correct module.
+  - tc-p1: resourceId中传了超过30个资源code
+    - 500.063.002
+      - The 'resourceId' array exceeds the maximum limit of 30 resource IDs. Please reduce the number of resource IDs and try again.
+  - tc-p1: 发放失败（内部原因）
+    - 500.063.010
+      - Sorry, we're unable to process your order at the moment. Please try again later or contact DragonPass support team.
+  - tc-p1: 同时入参多个限制条件
+    - 弹出合理提示，不生成E-pass
+  - tc-p1: 路径为discounts但body.module不是5
+    - 弹出合理提示，不按其他品类发放
+
+
+### RetrieveEpassDetails查询EPass主订单 POST /v2/orders/ePasses/search
+
+- 入参校验
+  - tc-p1: orderId
+    - 与ePassId二选一查询
+  - tc-p1: ePassId
+    - 与orderId二选一查询
+- 出参特殊校验
+  - tc-p1: category
+    - 1
+  - tc-p1: module
+    - 5
+  - tc-p1: expirationDate
+    - 入参相同
+- 业务逻辑
+  - 通过orderId查询
+    - tc-p1: status
+      - 1
+    - tc-p1: orderId
+      - 与发放主订单一致
+    - tc-p1: availableUsages
+      - 与发放入参一致
+    - tc-p1: activationDate
+      - 与发放入参一致
+    - tc-p1: expirationDate
+      - 与发放入参一致
+    - tc-p1: category
+      - 1
+    - tc-p1: clientUserId
+      - 与入参传入值一致
+    - tc-p1: usedUsages
+      - 发放后未使用为0
+    - tc-p1: allowedResources
+      - 与发放请求采用的唯一限制方式一致
+    - tc-p1: orderCreatedDate
+      - 为订单创建时间，格式与Apifox一致
+    - tc-p1: orderCancelledDate
+      - null
+    - tc-p1: module
+      - 5
+    - extra
+      - tc-p1: ePassId
+        - 与发放结果一致
+      - tc-p1: lastName
+        - 与入参传入值一致
+      - tc-p1: firstName
+        - 与入参传入值一致
+      - ePassStatus
+        - tc-p1: Expired过期
+          - 9
+        - tc-p1: Suspended暂停
+          - 2
+        - tc-p1: Active
+          - 1
+        - tc-p1: Cancelled
+          - 3
+        - tc-p1: PendingActivation
+          - 0
+  - 通过ePassId查询
+    - tc-p1: 查询结果与通过orderId查询的主订单一致
+      - module=5、category=1、orderId/ePassId/clientUserId均匹配发放结果
+- 错误码
+  - tc-p1: 订单号不存在
+    - 弹出合理提示，不返回其他订单
+  - tc-p1: 订单号不属于当前program
+    - 弹出合理提示，不泄露其他Program数据
+  - tc-p1: 获取订单详情失败
+    - 500.000.006
+      - Sorry, we're unable to retrieve the order details at the moment. Please try again later.
+
+
+### RetrieveUserEpassesList查询用户EPass列表 POST /v2/users/ePasses
+
+- 入参校验
+  - tc-p1: clientUserId
+    - 必传
+  - tc-p1: status（可选）
+    - 按当前E-pass状态过滤
+  - tc-p1: pageSize
+    - 必传
+  - tc-p1: pageNumber
+    - 必传
+- 返回参数
+  - pagination
+    - tc-p1: pageSize
+      - 正确
+    - tc-p1: pageNumber
+      - 正确
+    - tc-p1: totalNumber
+      - 正确
+  - ePassesList
+    - tc-p1: module
+      - 5
+    - tc-p1: ePassId
+      - 与发放结果一致
+    - tc-p1: status
+      - 与当前E-pass状态一致
+
+
+### RetrieveE-passOrderList查询EPass使用订单列表 POST /v2/orders/ePasses
+
+- 入参校验
+  - tc-p1: ePassId
+    - 必传
+  - tc-p1: module（可选）
+    - 5
+  - tc-p1: pageSize
+    - 必传
+  - tc-p1: pageNumber
+    - 必传
+  - tc-p1: status（可选）
+    - 按使用订单状态过滤，枚举1/2/3/4/5/10
+- 返回响应
+  - tc-p1: code
+    - 0
+  - data
+    - pagination
+      - tc-p1: pageSize
+        - 正确
+      - tc-p1: pageNumber
+        - 正确
+      - tc-p1: totalNumber
+        - 正确
+    - orders
+      - tc-p1: orderId
+        - 正确
+      - status
+        - tc-p1: CONFIRMED未核销订单
+          - 1
+        - tc-p1: USED已核销订单
+          - 2
+        - tc-p1: CANCELLED已取消订单
+          - 3
+        - tc-p1: EXPIRED已过期订单
+          - 4
+        - tc-p1: PENDING待处理订单
+          - 5
+        - tc-p1: FAILED失败订单
+          - 10
+      - usedUsages
+        - tc-p1: 已核销订单
+          - 实际核销人数
+        - tc-p1: 未核销订单
+          - 不返回usedUsages字段
+      - tc-p1: module
+        - 5
+      - tc-p1: category
+        - 1
+      - tc-p1: orderCreatedDate
+        - 正确
+      - tc-p1: resourceId
+        - 正确
+      - tc-p1: resourceName
+        - 正确
+      - tc-p1: image
+        - 正确
+      - extra
+        - tc-p1: optionId
+          - null
+        - tc-p1: optionName
+          - null
+        - tc-p1: transportHubName
+          - 正确
+        - tc-p1: transportHubId
+          - 正确
+        - tc-p1: city
+          - 正确
+        - tc-p1: countryOrRegion
+          - 正确
+- 错误码
+  - tc-p1: 无法获取到订单列表
+    - 500.000.005
+      - Sorry, we’re unable to retrieve the order list at the moment. Please try again later.
+
+
+### RetrieveE-passUsageOrderDetails查询EPass使用订单详情 POST /v2/orders/ePasses/details
+
+- 入参校验
+  - tc-p1: orderId
+    - 必传
+- 返回校验
+  - tc-p1: status
+    - 未核销为1
+    - 已核销为2
+    - 已取消为3
+  - tc-p1: module
+    - 5
+  - tc-p1: category
+    - 1
+  - tc-p1: ePassId
+    - 与发放结果一致
+  - tc-p1: orderId
+    - 与请求orderId一致
+  - tc-p1: orderCreatedDate
+    - 为订单创建时间，格式与Apifox一致
+  - tc-p1: orderCancelledDate
+    - 未取消为null，已取消为实际取消时间
+  - extra
+    - tc-p1: clientUserId
+      - 与发放入参一致
+    - usageDate
+      - tc-p1: 未核销订单
+        - null
+      - tc-p1: 已核销订单
+        - 实际核销时间
+    - usedUsages
+      - tc-p1: 未核销订单
+        - 不返回usedUsages字段
+      - tc-p1: 已核销订单
+        - 实际核销人数
+    - tc-p1: resourceId
+      - 正确
+    - tc-p1: resourceName
+      - 正确
+    - tc-p1: iata
+      - 正确
+    - tc-p1: transportHubName
+      - 正确
+    - tc-p1: terminal
+      - 正确
+    - tc-p1: city
+      - 正确
+    - tc-p1: countryOrRegion
+      - 正确
+  - tc-p1: payment
+    - null
+- 错误码
+  - tc-p1: 获取订单详情失败
+    - 500.000.006
+      - Sorry, we're unable to retrieve the order details at the moment. Please try again later.
+
+
+## DiningDiscount订单-membership
+
+### MembershipRegistration注册会籍 POST /v2/memberships
+
+- 入参校验
+  - tc-p1: clientUserId
+    - 必传
+  - tc-p1: firstName
+    - 必传
+  - tc-p1: lastName
+    - 必传
+  - tc-p1: phoneNumber
+    - 可选
+  - tc-p1: callingCode
+    - 可选
+  - tc-p1: email
+    - 可选
+  - tc-p1: activationDate
+    - 可选
+  - tc-p1: expirationDate
+    - 可选
+- 返回校验
+  - tc-p1: programId
+    - 当前Program
+  - tc-p1: clientUserId
+    - 与入参传入值一致
+  - tc-p1: membershipId
+    - 非空且为16位数字
+  - tc-p1: status
+    - 与会籍当前状态一致
+  - tc-p1: registrationDate
+    - 为注册时间，格式与Apifox一致
+  - tc-p1: activationDate
+    - 与入参或Program默认生效时间一致
+  - tc-p1: expirationDate
+    - 与入参或Program默认失效时间一致
+  - entitlements.moduleExclusiveEntitlements
+    - tc-p1: module
+      - 5
+    - details
+      - tc-p1: cardholderExclusiveEntitlements
+        - 等于模板预设值
+      - tc-p1: guestsExclusiveEntitlements
+        - 等于模板预设值
+      - tc-p1: sharedEntitlements
+        - 等于模板预设值
+      - tc-p1: purchasedEntitlements
+        - 等于模板预设值
+      - tc-p1: allowedGuestsPerUsage
+        - 等于Program预设值
+      - tc-p1: maxGuestsNextUse
+        - 按剩余权益计算
+- 业务逻辑
+  - tc-p1: 注册会籍发放DiningDiscount预设权益
+    - 会籍创建成功，module=5的持卡人专属cardholderExclusiveEntitlements、携客专属guestsExclusiveEntitlements、共享sharedEntitlements、充值purchasedEntitlements等于模板预设值
+
+
+### RetrieveUserMembershipsList查询用户会籍列表 POST /v2/users/memberships
+
+- 入参校验
+  - tc-p1: clientUserId
+    - 必传
+  - tc-p1: status（可选）
+    - 按会籍状态过滤，枚举0/1/2/3/9
+  - tc-p1: pageSize
+    - 必传
+  - tc-p1: pageNumber
+    - 必传
+- 返回参数
+  - pagination
+    - tc-p1: pageSize
+      - 正确
+    - tc-p1: pageNumber
+      - 正确
+    - tc-p1: totalNumber
+      - 正确
+  - membershipsList
+    - tc-p1: programId
+      - 当前Program
+    - tc-p1: membershipId
+      - 与注册结果一致
+    - tc-p1: status
+      - 与会籍当前状态一致
+
+
+### RetrieveMembershipInformation查询会籍 POST /v2/memberships/search
+
+- 入参校验
+  - tc-p1: membershipId
+    - 必传
+- 返回校验
+  - tc-p1: clientUserId
+    - 与注册入参一致
+  - tc-p1: programId
+    - 当前Program
+  - tc-p1: membershipId
+    - 与请求一致
+  - tc-p1: status
+    - 与会籍当前状态一致
+  - tc-p1: registrationDate
+    - 正确
+  - tc-p1: activationDate
+    - 正确
+  - tc-p1: expirationDate
+    - 正确
+- 错误码
+  - tc-p1: 无法查询会籍
+    - 500.030.003
+      - Sorry, we’re unable to retrieve the membership at the moment. Please try again later.
+
+
+### UpdateAMembership更新会籍 POST /v2/memberships/update
+
+- 入参校验
+  - tc-p1: membershipId
+    - 必传
+  - tc-p1: status
+    - 可选
+  - tc-p1: activationDate
+    - 可选
+  - tc-p1: expirationDate
+    - 可选
+- 返回校验
+  - tc-p1: membershipId
+    - 与请求一致
+  - tc-p1: status
+    - 与请求一致
+  - tc-p1: registrationDate
+    - 不被更新改写
+  - tc-p1: activationDate
+    - 与请求一致
+  - tc-p1: expirationDate
+    - 与请求一致
+- 业务逻辑
+  - tc-p1: 更新会籍有效期后DiningDiscount权益归属保持一致
+    - module=5四类权益余额不被错误重置
+- 错误码
+  - tc-p1: 无法更新会籍
+    - 500.030.002
+      - 弹出通用提示语
+
+
+### UpdateMembershipEntitlements更新权益 POST /v2/entitlements/update
+
+- 入参校验
+  - tc-p1: membershipId
+    - 必传
+  - tc-p1: module
+    - 5
+  - tc-p1: usageRestriction
+    - 1持卡人专属、2携客专属、3共享
+  - tc-p1: quantity
+    - 更新大客户权益时传入
+  - tc-p1: purchasedQuantity
+    - 更新充值权益时传入
+- 返回校验
+  - tc-p1: membershipId
+    - 与请求一致
+  - entitlements.moduleExclusiveEntitlements
+    - tc-p1: module
+      - 5
+    - details
+      - tc-p1: cardholderExclusiveEntitlements
+        - 正确
+      - tc-p1: guestsExclusiveEntitlements
+        - 正确
+      - tc-p1: sharedEntitlements
+        - 正确
+      - tc-p1: purchasedEntitlements
+        - 正确
+      - tc-p1: allowedGuestsPerUsage
+        - 正确
+      - tc-p1: maxGuestsNextUse
+        - 正确
+- 业务逻辑
+  - tc-p1: 分别更新DiningDiscount四类权益
+    - 目标权益按更新量变化，其他三类及其他品类不变
+- 错误码
+  - tc-p1: 无法更新权益
+    - 弹出通用提示语
+
+
+### RetrieveMembershipEntitlementSummary查询权益概览 POST /v2/entitlements/search
+
+- 入参校验
+  - tc-p1: membershipId
+    - 必传
+- 返回校验
+  - entitlements.moduleExclusiveEntitlements
+    - tc-p1: module
+      - 5
+    - details
+      - tc-p1: cardholderExclusiveEntitlements
+        - 正确
+      - tc-p1: guestsExclusiveEntitlements
+        - 正确
+      - tc-p1: sharedEntitlements
+        - 正确
+      - tc-p1: purchasedEntitlements
+        - 正确
+      - tc-p1: allowedGuestsPerUsage
+        - 正确
+      - tc-p1: maxGuestsNextUse
+        - 正确
+- 业务逻辑
+  - tc-p1: 权益更新后概览与明细一致
+    - 两个接口中module=5四类权益余额一致
+- 错误码
+  - tc-p1: 无法查询权益
+    - 500.030.007
+      - Sorry, we’re unable to retrieve the membership entitlements at the moment. Please try again later.
+
+
+### RetrieveMembershipEntitlementDetails查询权益明细 POST /v2/entitlements/details
+
+- 入参校验
+  - tc-p1: membershipId
+    - 必传
+  - tc-p1: module
+    - 5
+- 返回校验
+  - tc-p1: membershipId
+    - 与请求一致
+  - tc-p1: module
+    - 5
+  - tc-p1: scopeType
+    - 1
+  - entitlements
+    - details
+      - tc-p1: cardholderExclusiveEntitlements
+        - 正确
+      - tc-p1: guestsExclusiveEntitlements
+        - 正确
+      - tc-p1: sharedEntitlements
+        - 正确
+      - tc-p1: purchasedEntitlements
+        - 正确
+      - tc-p1: allowedGuestsPerUsage
+        - 正确
+      - tc-p1: maxGuestsNextUse
+        - 正确
+- 业务逻辑
+  - tc-p1: 取消前后DiningDiscount权益余额完整恢复
+    - 各类权益恢复到取消前基线
+- 错误码
+  - tc-p1: 无法查询权益明细
+    - 弹出通用提示语
+
+
+### GenerateMembershipDynamicQRCodes生成会籍动态二维码 POST /v2/memberships/qrCodes
+
+- 入参校验
+  - tc-p1: membershipId
+    - 必传
+  - tc-p1: durationInSeconds
+    - 必传，合法范围60到7200
+- 返回校验
+  - tc-p1: qrCode
+    - 非空
+  - tc-p1: validUntil
+    - Unix时间戳，与请求有效期一致
+
+
+### RetrieveMembershipOrderList查询Membership订单列表 POST /v2/orders/memberships
+
+- 入参校验
+  - tc-p1: membershipId
+    - 必传
+  - tc-p1: module（可选）
+    - 5
+  - tc-p1: status（可选）
+    - 按使用订单状态过滤，枚举1/2/3/4/5/10
+  - tc-p1: pageSize
+    - 必传
+  - tc-p1: pageNumber
+    - 必传
+- 返回响应
+  - tc-p1: code
+    - 0
+  - data
+    - pagination
+      - tc-p1: pageSize
+        - 正确
+      - tc-p1: pageNumber
+        - 正确
+      - tc-p1: totalNumber
+        - 正确
+    - orders
+      - tc-p1: orderId
+        - 正确
+      - status
+        - tc-p1: CONFIRMED未核销订单
+          - 1
+        - tc-p1: USED已核销订单
+          - 2
+        - tc-p1: CANCELLED已取消订单
+          - 3
+        - tc-p1: EXPIRED已过期订单
+          - 4
+        - tc-p1: PENDING待处理订单
+          - 5
+        - tc-p1: FAILED失败订单
+          - 10
+      - tc-p1: module
+        - 5
+      - tc-p1: category
+        - 1
+      - passengerCounts
+        - tc-p1: 已核销订单
+          - cardholder/guests等于实际核销人数
+        - tc-p1: 未核销订单
+          - 不返回passengerCounts字段
+      - tc-p1: orderCreatedDate
+        - 正确
+      - tc-p1: resourceId
+        - 正确
+      - tc-p1: resourceName
+        - 正确
+      - tc-p1: image
+        - 正确
+      - extra
+        - tc-p1: optionId
+          - null
+        - tc-p1: optionName
+          - null
+        - tc-p1: transportHubId
+          - 正确
+        - tc-p1: transportHubName
+          - 正确
+        - tc-p1: city
+          - 正确
+        - tc-p1: countryOrRegion
+          - 正确
+- 错误码
+  - tc-p1: 无法获取到订单列表
+    - 弹出通用提示语，不泄露其他Program数据
+
+
+### RetrieveMembershipUsageOrderDetails查询Membership订单详情 POST /v2/orders/memberships/details
+
+- 入参校验
+  - tc-p1: orderId
+    - 必传
+- 返回校验
+  - tc-p1: status
+    - 未核销为1
+    - 已核销为2
+    - 已取消为3
+  - tc-p1: module
+    - 5
+  - tc-p1: category
+    - 1
+  - tc-p1: membershipId
+    - 与源会籍一致
+  - tc-p1: orderId
+    - 与请求orderId一致
+  - tc-p1: orderCreatedDate
+    - 为订单创建时间，格式与Apifox一致
+  - tc-p1: orderCancelledDate
+    - 未取消为null，已取消为实际取消时间
+  - extra
+    - usageDate
+      - tc-p1: 未核销订单
+        - null
+      - tc-p1: 已核销订单
+        - 实际核销时间
+    - passengerCounts
+      - tc-p1: 未核销订单
+        - 不返回passengerCounts
+      - tc-p1: 已核销订单
+        - cardholder/guests等于实际核销人数
+    - usedEntitlementDetails
+      - tc-p1: 未核销订单
+        - 不返回usedEntitlementDetails
+      - tc-p1: 已核销订单
+        - cardholderExclusiveEntitlements/guestsExclusiveEntitlements/sharedEntitlements/purchasedEntitlements等于最终扣减数量，不校验扣减顺序
+    - usedEntitlementBreakdown
+      - tc-p1: 未核销订单
+        - 不返回usedEntitlementBreakdown
+      - tc-p1: 已核销订单
+        - 可返回；DiningDiscount不涉及swap/tier，不校验cross_module与tier
+    - tc-p1: resourceId
+      - 正确
+    - tc-p1: resourceName
+      - 正确
+    - tc-p1: iata
+      - 正确
+    - tc-p1: transportHubName
+      - 正确
+    - tc-p1: terminal
+      - 正确
+    - tc-p1: city
+      - 正确
+    - tc-p1: countryOrRegion
+      - 正确
+- 错误码
+  - tc-p1: 查不到详情
+    - 弹出通用提示语，不泄露其他会员数据
+
+
+## DiningDiscount订单-common
+
+### CancelanOrder取消订单 PATCH /v2/orders
+
+- 入参校验
+  - tc-p1: orderId
+    - 必传
+  - tc-p1: status
+    - 必传，固定为3
+- 返回校验
+  - tc-p1: code
+    - 0
+  - tc-p1: msg
+    - 与Apifox成功提示一致
+- 取消DiningDiscount使用订单
+  - tc-p1: 取消未核销EPass订单
+    - 取消成功，可用次数完整恢复，usedUsages不增加
+  - tc-p1: 取消未核销Membership订单
+    - 取消成功，四类DiningDiscount权益完整回退
+  - tc-p1: 已核销订单不允许取消
+    - 取消失败，已核销使用量和权益扣减保持不变
+  - tc-p1: 重复取消未核销订单
+    - 不重复回退E-pass次数或权益
+- 错误码
+  - tc-p1: 订单取消失败
+    - 500.041.006
+      - Order cancellation failed. Please try again later.

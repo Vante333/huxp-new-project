@@ -5,5 +5,6 @@
 - **分支**：`ai/apifox-cli-sync`
 - **环境**：351893
 - **数据集**：3475756
-- **详解**：[`Lounge-Epass-Payment-P1-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/postman/docs/Lounge-Epass-Payment-P1-apifox-cli-repo-first.md)
+- **详解**：[`Lounge-Epass-Payment-P1-apifox-cli-repo-first.md`](../../../../api-testcases/api_tests/apifox-cli/docs/Lounge-Epass-Payment-P1-apifox-cli-repo-first.md)
 - **生成器**：`GeneratePostmanCollectionLoungeEpassPaymentP1.py`（`category=lounge`）
+- **Push**：`push_mode: http` + `unbind_after_push: true`
