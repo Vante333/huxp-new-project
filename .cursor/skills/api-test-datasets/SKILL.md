@@ -53,6 +53,15 @@ description: >-
 - 如需把本人新增内容入库，用 `git push myproject main`，不要用 `git push origin`。
 - `business-international-developer-api` / `basedata` / `api-auth` 是其它业务代码仓库，同样**只读**，不要把测试产物塞进去，也不要改它们的远端。
 
+## Git 提交身份（务必用本人，勿用领导账号）
+
+- **本人提交身份（固定，勿改）：**
+  - `user.name` = `胡鑫朋`（注意是「朋」，不是「明」）
+  - `user.email` = `huxp@dragonpass.com.cn`
+- **刘冬霞（liudx@dragonpass.com.cn）是本人领导**，**严禁**用她的名字/邮箱作为提交作者。历史提交里出现「刘冬霞」的，只可能是她本人在 `liudx/interface_cursor` 的原始提交，**不要改写那些原始提交的作者**；本人新增的提交若误用了她的身份，必须改回 `胡鑫朋 <huxp@dragonpass.com.cn>`。
+- 本仓库已设 **local** `user.name/user.email` = 胡鑫朋 / huxp@dragonpass.com.cn；新机器或新 clone 后记得重设。
+- 推送目标：`huxp/my-project`（本人有写权限，PAT 已存凭据管理器）。`huxp/my-project` 的 `main` 是受保护分支，平时普通推即可；只在改写历史时才需临时解除保护并强推（已做过一次，恢复保护后勿再强推）。
+
 ## 新人怎么填 Apifox
 
 1. 打开 Apifox，选对应环境，URL 前缀用沙箱：`https://developer-sandbox.dragonpass.com/api`
