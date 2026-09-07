@@ -24,3 +24,15 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# 本地密钥 / 一次性调试（不要进 Git）
+**/*.postman_environment.json
+tools/q3-sp4-xmind-apifox/smoke_pre.js
+tools/q3-sp4-xmind-apifox/smoke_pay.js
+tools/q3-sp4-xmind-apifox/smoke-*.txt
+tools/q3-sp4-xmind-apifox/smoke-*.json
+tools/q3-sp4-xmind-apifox/generated/*
+!tools/q3-sp4-xmind-apifox/generated/pushed-ids.json
+tools/sso-links-q3-sp4/run-results/
+.cursor/skills/api-test-datasets/datasets/
+.cursor/skills/api-test-datasets/catalog.md

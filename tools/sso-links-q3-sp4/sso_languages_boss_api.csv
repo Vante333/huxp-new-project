@@ -1,0 +1,30 @@
+language,case_id,note
+en-US,SSO-STD-006_en-US,枚举 EN_US
+ja-JP,SSO-STD-006_ja-JP,枚举 JA_JP
+de-DE,SSO-STD-006_de-DE,枚举 DE_DE
+es-ES,SSO-STD-006_es-ES,枚举 ES_ES
+fr-FR,SSO-STD-006_fr-FR,枚举 FR_FR
+it-IT,SSO-STD-006_it-IT,枚举 IT_IT
+pl-PL,SSO-STD-006_pl-PL,枚举 PL_PL
+pt-PT,SSO-STD-006_pt-PT,枚举 PT_PT
+ru-RU,SSO-STD-006_ru-RU,枚举 RU_RU
+th-TH,SSO-STD-006_th-TH,枚举 TH_TH
+uk-UA,SSO-STD-006_uk-UA,枚举 UK_UA
+vi-VN,SSO-STD-006_vi-VN,枚举 VI_VN
+pt-BR,SSO-STD-006_pt-BR,新增巴西葡语 PT_BR
+ko-KR,SSO-STD-006_ko-KR,枚举 KO_KR
+zh-HK,SSO-STD-006_zh-HK,新增繁中 HK；映射 zh-tw 需对照页面
+zh-CN,SSO-STD-006_zh-CN,新增简中；与 STD-005 重复覆盖
+es-419,SSO-STD-006_es-419,映射写成 zh/zh/es 异常；canary 曾 301
+fr-CA,SSO-STD-006_fr-CA,枚举 FR_CA
+ar-SA,SSO-STD-006_ar-SA,枚举 AR_SA
+ro-RO,SSO-STD-006_ro-RO,枚举 RO_RO
+bs-BA,SSO-STD-006_bs-BA,枚举 BS_BA
+sr-SP,SSO-STD-006_sr-SP,枚举 SR_SP
+sr-ME,SSO-STD-006_sr-ME,枚举 SR_ME
+hr-HR,SSO-STD-006_hr-HR,枚举 HR_HR
+nl-NL,SSO-STD-006_nl-NL,枚举 NL_NL
+el-GR,SSO-STD-006_el-GR,枚举 EL_GR
+si-SI,SSO-STD-006_si-SI,枚举 SI_SI
+he-IL,SSO-STD-006_he-IL,枚举 HE_IL
+hu-HU,SSO-STD-006_hu-HU,枚举 HU_HU

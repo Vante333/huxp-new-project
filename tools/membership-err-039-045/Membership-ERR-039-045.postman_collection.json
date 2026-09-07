@@ -1,0 +1,538 @@
+{
+  "info": {
+    "_postman_id": "membership-err-039-045-q3sp4",
+    "name": "会籍错误码迁移039-045(Q3-SP4)",
+    "description": "迁移：旧 500.020.030~035 → 新 500.030.039~044；purchase/details 新增 045。\n鉴权：会籍数据集 3475754，Program 2032786406298624。\n固定 profile：email=2484268151@qq.COM，phoneNumber=15838657142，callingCode=86。\n不要用 FT availability 测这些码。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "profileEmail", "value": "2484268151@qq.COM" },
+    { "key": "profilePhone", "value": "15838657142" },
+    { "key": "profileCallingCode", "value": "86" },
+    { "key": "expect039", "value": "500.030.039" },
+    { "key": "expect040", "value": "500.030.040" },
+    { "key": "expect041", "value": "500.030.041" },
+    { "key": "expect042", "value": "500.030.042" },
+    { "key": "expect043", "value": "500.030.043" },
+    { "key": "expect044", "value": "500.030.044" },
+    { "key": "expect045", "value": "500.030.045" }
+  ],
+  "item": [
+    {
+      "name": "00 Auth",
+      "item": [
+        {
+          "name": "会籍鉴权",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('Auth HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Auth code=0', function () { pm.expect(json.code).to.eql(0); });",
+                  "const token = json && json.data && (json.data.accessToken || json.data.access_token);",
+                  "pm.test('写出 access_token', function () { pm.expect(token).to.be.ok; });",
+                  "if (token) { pm.environment.set('access_token', token); }",
+                  "const pid = pm.variables.get('ProgramID') || pm.environment.get('Program-ID') || '2032786406298624';",
+                  "pm.environment.set('Program-ID', pid);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-version", "value": "{{x-version}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": \"{{clientId}}\",\n  \"secret\": \"{{secret}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v2/auth/token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 对照成功",
+      "item": [
+        {
+          "name": "对照 Preview autoRenewal=false",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('code=0 对照成功', function () { pm.expect(json.code).to.eql(0); });",
+                  "pm.test('不是 039~045', function () {",
+                  "  pm.expect(String(json.errCode || '')).to.not.match(/^500\\.030\\.04[0-5]$|^500\\.030\\.039$/);",
+                  "});",
+                  "const extra = json.data && json.data.extra;",
+                  "const profile = extra && extra.profile;",
+                  "if (profile) {",
+                  "  pm.test('email 回显', function () { pm.expect(String(profile.email)).to.eql('2484268151@qq.COM'); });",
+                  "  if (profile.callingCode != null) {",
+                  "    pm.test('callingCode=86', function () { pm.expect(String(profile.callingCode)).to.eql('86'); });",
+                  "  }",
+                  "  if (profile.phoneNumber != null) {",
+                  "    pm.test('phoneNumber 回显', function () { pm.expect(String(profile.phoneNumber)).to.eql('15838657142'); });",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Program-ID", "value": "{{Program-ID}}" },
+              { "key": "x-version", "value": "{{x-version}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appId\": 1,\n  \"autoRenewal\": false,\n  \"profile\": {\n    \"email\": \"2484268151@qq.COM\",\n    \"clientUserId\": \"{{$string.uuid}}\",\n    \"callingCode\": \"86\",\n    \"phoneNumber\": \"15838657142\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/v2/orders/memberships/purchase/preview"
+          }
+        },
+        {
+          "name": "对照 Create 一次性购买",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('code=0', function () { pm.expect(json.code).to.eql(0); });",
+                  "if (json.code === 0 && json.data) {",
+                  "  if (json.data.orderId) { pm.collectionVariables.set('purchaseOrderId', String(json.data.orderId)); }",
+                  "  const act = json.data.extra && json.data.extra.activation;",
+                  "  const mid = (act && act.membershipId) || json.data.membershipId;",
+                  "  if (mid) { pm.collectionVariables.set('oneTimeMembershipId', String(mid)); }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Program-ID", "value": "{{Program-ID}}" },
+              { "key": "x-version", "value": "{{x-version}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appId\": 1,\n  \"autoRenewal\": false,\n  \"profile\": {\n    \"email\": \"2484268151@qq.COM\",\n    \"clientUserId\": \"{{$string.uuid}}\",\n    \"callingCode\": \"86\",\n    \"phoneNumber\": \"15838657142\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/v2/orders/memberships/purchase"
+          }
+        },
+        {
+          "name": "对照 purchase/details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('code=0', function () { pm.expect(json.code).to.eql(0); });",
+                  "pm.test('不是 045', function () { pm.expect(String(json.errCode || '')).to.not.eql('500.030.045'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Program-ID", "value": "{{Program-ID}}" },
+              { "key": "x-version", "value": "{{x-version}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{purchaseOrderId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v2/orders/memberships/purchase/details"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 ERR-039 Preview",
+      "item": [
+        {
+          "name": "039 商品B+autoRenewal=true",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const err = String(json.errCode || '');",
+                  "const msg = String(json.msg || '');",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('code=-1', function () { pm.expect(json.code).to.eql(-1); });",
+                  "pm.test('不得仍是旧码 500.020.030', function () { pm.expect(err).to.not.eql('500.020.030'); });",
+                  "pm.test('文案不得含 current local time', function () { pm.expect(msg.toLowerCase()).to.not.include('current local time'); });",
+                  "pm.test('039 或 042（码文案成对）', function () {",
+                  "  if (err === '500.030.039') {",
+                  "    pm.expect(msg).to.eql('Unable to preview the order at the moment. Please try again later.');",
+                  "  } else if (err === '500.030.042') {",
+                  "    pm.expect(msg).to.eql('Auto-renewal is not supported for this program.');",
+                  "  } else {",
+                  "    pm.expect.fail('实际 errCode=' + err + ' msg=' + msg + '，期望 500.030.039 或 500.030.042');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Program-ID", "value": "{{Program-ID}}" },
+              { "key": "x-version", "value": "{{x-version}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appId\": 1,\n  \"autoRenewal\": true,\n  \"profile\": {\n    \"email\": \"2484268151@qq.COM\",\n    \"clientUserId\": \"{{$string.uuid}}\",\n    \"callingCode\": \"86\",\n    \"phoneNumber\": \"15838657142\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/v2/orders/memberships/purchase/preview"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 ERR-042 Create",
+      "item": [
+        {
+          "name": "042 Create 不支持自动续费",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('code=-1', function () { pm.expect(json.code).to.eql(-1); });",
+                  "pm.test('errCode=500.030.042', function () { pm.expect(String(json.errCode)).to.eql('500.030.042'); });",
+                  "pm.test('msg', function () { pm.expect(String(json.msg)).to.eql('Auto-renewal is not supported for this program.'); });",
+                  "pm.test('不得仍是旧码 500.020.033', function () { pm.expect(String(json.errCode)).to.not.eql('500.020.033'); });",
+                  "pm.test('无 orderId', function () { pm.expect(json.data && json.data.orderId).to.not.be.ok; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Program-ID", "value": "{{Program-ID}}" },
+              { "key": "x-version", "value": "{{x-version}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appId\": 1,\n  \"autoRenewal\": true,\n  \"profile\": {\n    \"email\": \"2484268151@qq.COM\",\n    \"clientUserId\": \"{{$string.uuid}}\",\n    \"callingCode\": \"86\",\n    \"phoneNumber\": \"15838657142\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/v2/orders/memberships/purchase"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 ERR-040 Create",
+      "item": [
+        {
+          "name": "040 周期券+autoRenewal=false",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const coupon = String(pm.variables.get('CouponIntroValid') || pm.environment.get('CouponIntroValid') || '').trim();",
+                  "if (!coupon || coupon.indexOf('{{') === 0) {",
+                  "  pm.test.skip('未配置 CouponIntroValid，跳过 040');",
+                  "} else {",
+                  "  pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "  pm.test('code=-1', function () { pm.expect(json.code).to.eql(-1); });",
+                  "  pm.test('errCode=500.030.040', function () { pm.expect(String(json.errCode)).to.eql('500.030.040'); });",
+                  "  pm.test('不得仍是旧码 500.020.031', function () { pm.expect(String(json.errCode)).to.not.eql('500.020.031'); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Program-ID", "value": "{{Program-ID}}" },
+              { "key": "x-version", "value": "{{x-version}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appId\": 1,\n  \"couponCode\": \"{{CouponIntroValid}}\",\n  \"autoRenewal\": false,\n  \"profile\": {\n    \"email\": \"2484268151@qq.COM\",\n    \"clientUserId\": \"{{$string.uuid}}\",\n    \"callingCode\": \"86\",\n    \"phoneNumber\": \"15838657142\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/v2/orders/memberships/purchase"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 ERR-041 已有订阅",
+      "item": [
+        {
+          "name": "041 Preview 已有生效订阅",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const err = String(json.errCode || '');",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "if (json.code === 0 || err === '500.030.039' || err === '500.030.042') {",
+                  "  pm.test.skip('当前邮箱尚无生效订阅（实际 ' + (err || 'code=0') + '），041 跳过：先支付出订阅再测');",
+                  "} else {",
+                  "  pm.test('code=-1', function () { pm.expect(json.code).to.eql(-1); });",
+                  "  pm.test('errCode=500.030.041', function () { pm.expect(err).to.eql('500.030.041'); });",
+                  "  pm.test('msg', function () { pm.expect(String(json.msg)).to.eql('An active membership subscription already exists for this program.'); });",
+                  "  pm.test('不得仍是旧码 500.020.032', function () { pm.expect(err).to.not.eql('500.020.032'); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Program-ID", "value": "{{Program-ID}}" },
+              { "key": "x-version", "value": "{{x-version}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appId\": 1,\n  \"autoRenewal\": true,\n  \"profile\": {\n    \"email\": \"2484268151@qq.COM\",\n    \"clientUserId\": \"{{$string.uuid}}\",\n    \"callingCode\": \"86\",\n    \"phoneNumber\": \"15838657142\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/v2/orders/memberships/purchase/preview"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 ERR-045 Details",
+      "item": [
+        {
+          "name": "045 不存在的 orderId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('code=-1', function () { pm.expect(json.code).to.eql(-1); });",
+                  "pm.test('errCode=500.030.045', function () { pm.expect(String(json.errCode)).to.eql('500.030.045'); });",
+                  "pm.test('msg', function () { pm.expect(String(json.msg)).to.eql(\"Sorry, we're unable to retrieve the order details at the moment. Please try again later.\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Program-ID", "value": "{{Program-ID}}" },
+              { "key": "x-version", "value": "{{x-version}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"9999999999999999\"\n}"
+            },
+            "url": "{{baseUrl}}/v2/orders/memberships/purchase/details"
+          }
+        },
+        {
+          "name": "045 购买单打进使用单详情",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const oid = String(pm.collectionVariables.get('purchaseOrderId') || '').trim();",
+                  "if (!oid) {",
+                  "  pm.test.skip('没有 purchaseOrderId，先跑对照 Create');",
+                  "} else {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "  pm.test('code=-1 不得当购买详情成功', function () { pm.expect(json.code).to.eql(-1); });",
+                  "  pm.test('errCode 非空', function () { pm.expect(String(json.errCode || '')).to.not.eql(''); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Program-ID", "value": "{{Program-ID}}" },
+              { "key": "x-version", "value": "{{x-version}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{purchaseOrderId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v2/orders/memberships/details"
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 ERR-043/044 Cancel",
+      "item": [
+        {
+          "name": "043 一次性会籍无订阅计划",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const mid = String(pm.collectionVariables.get('oneTimeMembershipId') || pm.environment.get('oneTimeMembershipId') || '').trim();",
+                  "if (!mid) {",
+                  "  pm.test.skip('没有 oneTimeMembershipId：对照 Create 未返回 membershipId 时，手工填环境变量后再跑');",
+                  "} else {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "  pm.test('code=-1', function () { pm.expect(json.code).to.eql(-1); });",
+                  "  pm.test('errCode=500.030.043', function () { pm.expect(String(json.errCode)).to.eql('500.030.043'); });",
+                  "  pm.test('msg', function () { pm.expect(String(json.msg)).to.eql('No active subscription plan found for this membership.'); });",
+                  "  pm.test('不得仍是旧码 500.020.034', function () { pm.expect(String(json.errCode)).to.not.eql('500.020.034'); });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Program-ID", "value": "{{Program-ID}}" },
+              { "key": "x-version", "value": "{{x-version}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"membershipId\": \"{{oneTimeMembershipId}}\",\n  \"email\": \"2484268151@qq.COM\"\n}"
+            },
+            "url": "{{baseUrl}}/v2/memberships/subscriptions/cancellation"
+          }
+        },
+        {
+          "name": "044 会籍不存在",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('code=-1', function () { pm.expect(json.code).to.eql(-1); });",
+                  "pm.test('errCode=500.030.044', function () { pm.expect(String(json.errCode)).to.eql('500.030.044'); });",
+                  "pm.test('msg', function () { pm.expect(String(json.msg)).to.eql('Failed to cancel the subscription plan. Please try again later.'); });",
+                  "pm.test('不得仍是旧码 500.020.035', function () { pm.expect(String(json.errCode)).to.not.eql('500.020.035'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Program-ID", "value": "{{Program-ID}}" },
+              { "key": "x-version", "value": "{{x-version}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"membershipId\": \"0000000000000000\",\n  \"email\": \"2484268151@qq.COM\"\n}"
+            },
+            "url": "{{baseUrl}}/v2/memberships/subscriptions/cancellation"
+          }
+        },
+        {
+          "name": "044 邮箱不一致",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const mid = String(pm.collectionVariables.get('oneTimeMembershipId') || pm.environment.get('oneTimeMembershipId') || '').trim();",
+                  "if (!mid) { pm.variables.set('oneTimeMembershipId', '0000000000000000'); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('code=-1', function () { pm.expect(json.code).to.eql(-1); });",
+                  "pm.test('errCode=500.030.044', function () { pm.expect(String(json.errCode)).to.eql('500.030.044'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "X-Program-ID", "value": "{{Program-ID}}" },
+              { "key": "x-version", "value": "{{x-version}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"membershipId\": \"{{oneTimeMembershipId}}\",\n  \"email\": \"wrong@qq.com\"\n}"
+            },
+            "url": "{{baseUrl}}/v2/memberships/subscriptions/cancellation"
+          }
+        }
+      ]
+    }
+  ]
+}

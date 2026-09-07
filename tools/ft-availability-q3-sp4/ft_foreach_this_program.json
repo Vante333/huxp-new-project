@@ -1,0 +1,7 @@
+[
+  {"tz":"Asia/Bangkok","offset":"7","iata":"BKK","resourceId":"C10826"},
+  {"tz":"Asia/Shanghai","offset":"8","iata":"PEK","resourceId":"C10711"},
+  {"tz":"Asia/Dubai","offset":"4","iata":"DXB","resourceId":"C10726"},
+  {"tz":"Europe/Prague","offset":"2","iata":"PRG","resourceId":"C10849"},
+  {"tz":"America/Argentina/Buenos_Aires","offset":"-3","iata":"AEP","resourceId":"C10899"}
+]

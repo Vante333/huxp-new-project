@@ -1,0 +1,497 @@
+{
+  "info": {
+    "_postman_id": "papi-3135-pay-link-lite",
+    "name": "PAPI-3135 支付链接-语种与有效期(轻量可导入)",
+    "description": "轻量版：保证 Apifox 预览有内容。完整断言请导入后粘贴 apifox_pre / apifox_post 两个 js。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "pay_duration_max",
+      "value": "1800"
+    },
+    {
+      "key": "pay_duration_default",
+      "value": "600"
+    }
+  ],
+  "item": [
+    {
+      "name": "1.语种language校验",
+      "item": [
+        {
+          "name": "LANG_DEFAULT 不传language",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('case_id','LANG_DEFAULT');",
+                  "pm.variables.set('req_language','');",
+                  "pm.variables.set('req_duration','');",
+                  "// 若已在集合级粘贴完整 pre 脚本可删下面日志",
+                  "console.log('[pay-link] case=', pm.variables.get('case_id'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "console.log('[pay-link] code=', json.code, 'err=', json.errCode);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Program-ID",
+                "value": "{{programId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{pay_orderId}}\",\n  \"returnUrl\": \"{{pay_returnUrl}}\",\n  \"paymentMethod\": \"{{pay_paymentMethod}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v2/orders/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "orders",
+                "payments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "LANG_EN 传language=en-US",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('case_id','LANG_EN');",
+                  "pm.variables.set('req_language','en-US');",
+                  "pm.variables.set('req_duration','');",
+                  "// 若已在集合级粘贴完整 pre 脚本可删下面日志",
+                  "console.log('[pay-link] case=', pm.variables.get('case_id'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "console.log('[pay-link] code=', json.code, 'err=', json.errCode);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Program-ID",
+                "value": "{{programId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{pay_orderId}}\",\n  \"returnUrl\": \"{{pay_returnUrl}}\",\n  \"paymentMethod\": \"{{pay_paymentMethod}}\",\n  \"language\": \"en-US\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v2/orders/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "orders",
+                "payments"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2.有效期durationInSeconds校验",
+      "item": [
+        {
+          "name": "DUR_DEFAULT 不传duration",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('case_id','DUR_DEFAULT');",
+                  "pm.variables.set('req_language','');",
+                  "pm.variables.set('req_duration','');",
+                  "// 若已在集合级粘贴完整 pre 脚本可删下面日志",
+                  "console.log('[pay-link] case=', pm.variables.get('case_id'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "console.log('[pay-link] code=', json.code, 'err=', json.errCode);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Program-ID",
+                "value": "{{programId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{pay_orderId}}\",\n  \"returnUrl\": \"{{pay_returnUrl}}\",\n  \"paymentMethod\": \"{{pay_paymentMethod}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v2/orders/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "orders",
+                "payments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DUR_60 duration=60",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('case_id','DUR_60');",
+                  "pm.variables.set('req_language','');",
+                  "pm.variables.set('req_duration','60');",
+                  "// 若已在集合级粘贴完整 pre 脚本可删下面日志",
+                  "console.log('[pay-link] case=', pm.variables.get('case_id'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "console.log('[pay-link] code=', json.code, 'err=', json.errCode);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Program-ID",
+                "value": "{{programId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{pay_orderId}}\",\n  \"returnUrl\": \"{{pay_returnUrl}}\",\n  \"paymentMethod\": \"{{pay_paymentMethod}}\",\n  \"durationInSeconds\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v2/orders/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "orders",
+                "payments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DUR_MAX duration=上限",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('case_id','DUR_MAX');",
+                  "pm.variables.set('req_language','');",
+                  "pm.variables.set('req_duration', pm.environment.get('pay_duration_max') || '1800');",
+                  "// 若已在集合级粘贴完整 pre 脚本可删下面日志",
+                  "console.log('[pay-link] case=', pm.variables.get('case_id'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "console.log('[pay-link] code=', json.code, 'err=', json.errCode);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Program-ID",
+                "value": "{{programId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{pay_orderId}}\",\n  \"returnUrl\": \"{{pay_returnUrl}}\",\n  \"paymentMethod\": \"{{pay_paymentMethod}}\",\n  \"durationInSeconds\": 1800\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v2/orders/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "orders",
+                "payments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DUR_OVER 超上限应失败",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('case_id','DUR_OVER');",
+                  "pm.variables.set('req_language','');",
+                  "pm.variables.set('req_duration','1801');",
+                  "// 若已在集合级粘贴完整 pre 脚本可删下面日志",
+                  "console.log('[pay-link] case=', pm.variables.get('case_id'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "console.log('[pay-link] code=', json.code, 'err=', json.errCode);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Program-ID",
+                "value": "{{programId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{pay_orderId}}\",\n  \"returnUrl\": \"{{pay_returnUrl}}\",\n  \"paymentMethod\": \"{{pay_paymentMethod}}\",\n  \"durationInSeconds\": 1801\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v2/orders/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "orders",
+                "payments"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3.手工-链接过期",
+      "item": [
+        {
+          "name": "EXPIRY 建60s链接",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('case_id','EXPIRY_CREATE_60');",
+                  "pm.variables.set('req_language','');",
+                  "pm.variables.set('req_duration','60');",
+                  "// 若已在集合级粘贴完整 pre 脚本可删下面日志",
+                  "console.log('[pay-link] case=', pm.variables.get('case_id'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+                  "console.log('[pay-link] code=', json.code, 'err=', json.errCode);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "X-Program-ID",
+                "value": "{{programId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{pay_orderId}}\",\n  \"returnUrl\": \"{{pay_returnUrl}}\",\n  \"paymentMethod\": \"{{pay_paymentMethod}}\",\n  \"durationInSeconds\": 60\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v2/orders/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v2",
+                "orders",
+                "payments"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "SSO免登短链 · 一次性E2E",
+  "description": "换 Token → 出列表链 → 打开短链轮询 → 语种 forEach → 过期轮询 → 有 orderId 时出详情链。",
+  "folderId": 350760,
+  "priority": 0,
+  "tags": ["sso", "e2e", "q3-sp4"]
+}

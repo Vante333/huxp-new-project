@@ -1,0 +1,7 @@
+{
+  "name": "SSO免登短链 · 全量自动化",
+  "description": "按 XMind 全量接口用例。先 Auth 再逐条 POST /v2/sso/links。参数请填环境变量，不要写在本说明里。",
+  "folderId": 350761,
+  "priority": 1,
+  "tags": ["sso", "full", "q3-sp4"]
+}
