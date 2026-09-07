@@ -40,6 +40,19 @@ description: >-
 
 5. 这些是测试凭证。不要提交到 git、不要写进公开回复的大段重复粘贴；回答里用「鉴权1 / AllCategories 那一行」指代即可，需要调试时再读文件。
 
+## Git 仓库访问权限（务必遵守，勿越权推送）
+
+| 仓库 | 远端 | 我的权限 | 说明 |
+|------|------|----------|------|
+| `interface_cursor`（本人测试主仓库） | `http://192.168.1.165:62000/huxp/my-project.git` | ✅ 读 + 写 | 本人账号 `huxp`，PAT 已存凭据管理器，可 `git push` |
+| `interface_cursor`（同事刘冬霞的仓库） | `http://192.168.1.165:62000/liudx/interface_cursor.git` | 🔒 只读拉取 | **不是本人账号，只有访问/拉取权限，不得更改或推送内容** |
+
+**硬性规则：**
+- **永远不要**对 `liudx/interface_cursor` 执行 `git push`、`git config`、改远端、force-push、删分支等写操作。
+- 本地 `interface_cursor` 默认远端 `origin` 指向 `liudx/interface_cursor.git`（历史遗留），**仅用于拉取最新代码参考**；要保存本人工作请推到 `myproject`（`huxp/my-project`）。
+- 如需把本人新增内容入库，用 `git push myproject main`，不要用 `git push origin`。
+- `business-international-developer-api` / `basedata` / `api-auth` 是其它业务代码仓库，同样**只读**，不要把测试产物塞进去，也不要改它们的远端。
+
 ## 新人怎么填 Apifox
 
 1. 打开 Apifox，选对应环境，URL 前缀用沙箱：`https://developer-sandbox.dragonpass.com/api`
