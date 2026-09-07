@@ -62,6 +62,49 @@ description: >-
 - 本仓库已设 **local** `user.name/user.email` = 胡鑫朋 / huxp@dragonpass.com.cn；新机器或新 clone 后记得重设。
 - 推送目标：`huxp/my-project`（本人有写权限，PAT 已存凭据管理器）。`huxp/my-project` 的 `main` 是受保护分支，平时普通推即可；只在改写历史时才需临时解除保护并强推（已做过一次，恢复保护后勿再强推）。
 
+## Git / GitLab 基础概念（新人别混）
+
+三层东西，完全不同：
+
+| 名字 | 是什么 | 官网 | 收费 |
+|------|--------|------|------|
+| **Git** | 版本控制**工具**本身（命令行那个 `git`） | https://git-scm.com | 永久免费、开源 |
+| **GitLab** | 基于 Git 的**代码托管/协作平台**（网页、MR、CI） | https://gitlab.com | 有免费版也有付费版 |
+| **GitHub** | 另一家代码托管平台（和 GitLab 是竞品） | https://github.com | 有免费版也有付费版 |
+
+- **GitLab 自己**分：**CE（Community Edition，免费开源）** 和 **EE（Enterprise Edition，付费企业版，功能更多）**。
+- **本公司用的是自己搭的私有 GitLab**：`http://192.168.1.165:62000`，只有公司内网能访问。CE 还是 EE 看不出，但对使用无影响。
+- 一句话：**Git 是工具，GitLab 是平台，本公司搭的是私有 GitLab。** 不需要去 git-scm.com 注册账号。
+
+## 本地工作区 `d:\api` 的仓库布局
+
+`d:\api` 下有 **4 个独立 git 仓库**（每个都有自己的 `.git`）：
+
+| 仓库目录 | 是什么 | 我的权限 |
+|----------|--------|----------|
+| `interface_cursor` | 测试主仓库（日常用这个） | 见下表（连两个远端） |
+| `business-international-developer-api` | 业务代码仓库 | 🔒 只读 |
+| `business-international-developer-basedata` | 基础数据仓库 | 🔒 只读 |
+| `business-international-api-auth` | 鉴权代码仓库 | 🔒 只读 |
+
+后三个是研发同事的代码仓库，只 clone 下来参考接口实现，**不要往里推、不要改**。
+
+## `interface_cursor` 的两个远端（重点）
+
+一个本地仓库可以连多个远端。`d:\api\interface_cursor` 同时连着 2 个：
+
+| 远端名 | GitLab 项目 | 我的权限 | 用途 |
+|--------|-------------|----------|------|
+| `myproject` | `huxp/my-project`（**本人**） | ✅ 读 + 写 | **保存本人工作**，`git push myproject main` |
+| `origin` | `liudx/interface_cursor`（**领导刘冬霞**） | 🔒 只读 | 拉取领导维护的用例/框架作参考，`git fetch origin` / `git pull origin` |
+
+**日常三句话：**
+1. 保存自己工作 → `git push myproject main`
+2. 看领导最新加了什么 → `git fetch origin` 后 `git log origin/main`（只看）；要合并 `git pull origin`
+3. **永远不要** `git push origin`（领导仓库，推了 403，且不该推）
+
+**真正属于本人的仓库只有 1 个：`huxp/my-project`。** 领导的 `liudx/interface_cursor` 只是看。
+
 ## 新人怎么填 Apifox
 
 1. 打开 Apifox，选对应环境，URL 前缀用沙箱：`https://developer-sandbox.dragonpass.com/api`
