@@ -11,7 +11,10 @@ description: >-
 
 调 Generic API / Apifox 时，**先读本 skill 的数据集**，不要让用户再从桌面复制。
 
-工作区副本：请用本机 `d:/api/testdata/`（不要提交密钥）。Skill 里的 `datasets/` 仅本机使用，Git 已忽略。
+工作区副本：`d:/api/testdata/`  
+Skill 副本：`datasets/`（与工作区同内容）
+
+详细字段表见 [catalog.md](catalog.md)。
 
 ## 三份数据集怎么用
 
@@ -27,6 +30,9 @@ description: >-
 2. 鉴权1、鉴权2 **不要混用** secret；ProgramID 都是 `2045264240542720`。
 3. `测试数据集-2222.csv` 前两行数据相同，用一行即可；第三行是另一套 Lounge+FT Program。
 4. 支付链接 Body 桌面原文件带 `//` 注释，**不能直接当 JSON 发送**。发请求用：
+
+**测前检查（域名/Headers/变量配对、201.000.001）：** 必读 skill `dragonpass-api-preflight`。PRE epass/membership 与沙箱不要混 Host。
+
 
 ```json
 {
@@ -104,6 +110,23 @@ description: >-
 3. **永远不要** `git push origin`（领导仓库，推了 403，且不该推）
 
 **真正属于本人的仓库只有 1 个：`huxp/my-project`。** 领导的 `liudx/interface_cursor` 只是看。
+
+## 保存顺序与多远端规则（2026-09-07 起，务必遵守）
+
+本人有三类远端，**保存顺序固定**：
+
+| 远端名 | 平台 | 仓库 | 权限 | 保存顺序 |
+|--------|------|------|------|----------|
+| `github` | GitHub（个人） | `https://github.com/Vante333/huxp-new-project.git` | ✅ 读 + 写 | **第 1 步：先存这里** |
+| `myproject` | GitLab 企业版（公司私有） | `http://192.168.1.165:62000/huxp/my-project.git` | ✅ 读 + 写 | **第 2 步：存这里前必须先问本人，本人同意才能推** |
+| `origin` | GitLab 企业版（公司私有） | `http://192.168.1.165:62000/liudx/interface_cursor.git` | 🔒 只读 | 不推，只拉取参考 |
+
+**硬性规则：**
+1. **先 GitHub，后 GitLab 企业版。** 每次保存内容，先 `git push github main`，成功后再考虑推 `myproject`。
+2. **GitLab 企业版（`myproject`）每次推送前必须先问本人**：「是否同意推到公司 GitLab `huxp/my-project`？」本人明确同意后才执行 `git push myproject main`。**不要未经询问直接推 `myproject`。**
+3. GitHub PAT（细粒度，`github_pat_...`）已存凭据管理器，但**必须带 `Contents: Read and write` 权限**才能推；token 失效或缺权限时让本人重新生成。
+4. 公司优先级：GitLab 企业版 > GitHub（公司工作以 GitLab 为准；GitHub 是个人备份/拉取用）。
+5. GitHub 仅用于本人保存/拉取内容，不推到任何他人 GitHub 仓库。
 
 ## 新人怎么填 Apifox
 
