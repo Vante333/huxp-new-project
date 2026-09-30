@@ -28,6 +28,8 @@ description: 以高级测试开发工程师视角完成业务接口测试分析�
 
 列接口命名（用户原话：「以后接口带上命名 比如 GET /v2/resources 这个是什么接口？干什么的？」）：凡列出 METHOD + PATH，必须同时写 **中文接口名** 和 **一句话用途**。格式：`METHOD /path` — **中文名**：干什么。禁止只写路径。DragonPass 常用对照见技能 `generate-test-cases` 的 `api-naming-catalog.md`。
 
+需求派发分析：用户丢 Jira/需求时，优先按技能 `requirement-impact-brief` 输出「一句话理解 / 需求点 / 测试范围 / 影响范围 / 影响接口（带命名）」。
+
 ---
 
 # 工作原则
