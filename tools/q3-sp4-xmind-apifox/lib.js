@@ -39,6 +39,8 @@ function apiHeaders(withAuth) {
   return rows;
 }
 function customHttp(httpN, { name, method, reqPath, headers, body, pre, post }) {
+  const p = String(reqPath || "");
+  const fullPath = p.indexOf("{{") === 0 || /^https?:/i.test(p) ? p : "{{baseUrl}}" + (p.charAt(0) === "/" ? p : "/" + p);
   return {
     id: "step-" + httpN,
     name,
@@ -49,7 +51,7 @@ function customHttp(httpN, { name, method, reqPath, headers, body, pre, post }) 
     customHttpRequest: {
       id: 0,
       name,
-      path: reqPath,
+      path: fullPath,
       method: String(method || "post").toLowerCase(),
       folderId: 0,
       parameters: { path: [], query: [], header: headers || [], cookie: [] },
@@ -93,18 +95,22 @@ const AUTH_POST = [
 function authPre(seedJs) {
   return [
     seedJs,
-    "if (!pm.environment.get('x-version')) pm.environment.set('x-version', 'canary');",
+    "if (!pm.environment.get('x-version')) {",
+    "  var bu = String(pm.environment.get('baseUrl') || '');",
+    "  var isPre = bu.indexOf('developer.dragonpass.com') >= 0 && bu.indexOf('sandbox') < 0;",
+    "  pm.environment.set('x-version', isPre ? 'gray' : 'canary');",
+    "}",
     "var pid = String(pm.environment.get('ProgramID') || pm.environment.get('Program-ID') || '');",
     "if (pid) { pm.environment.set('ProgramID', pid); pm.environment.set('Program-ID', pid); }",
     RID,
   ].join("\n");
 }
 
-function authStep(n, title, seedJs) {
+function authStep(n, title, seedJs, reqPath) {
   return customHttp(n, {
     name: title || "【换Token】| AUTH | POST /v2/auth/token",
     method: "post",
-    reqPath: "/v2/auth/token",
+    reqPath: reqPath || "/v2/auth/token",
     headers: apiHeaders(false),
     body: { clientId: "{{clientId}}", secret: "{{secret}}" },
     pre: authPre(seedJs),
